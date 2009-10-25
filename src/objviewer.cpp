@@ -44,7 +44,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
     winX(100), winY(100), winWidth(800), winHeight(600),
     fullscreen(false),
     mouseX(0), mouseY(0),
-    xRot(0.0f), yRot(0.0f)
+    xRot(0.0f), yRot(0.0f),
+    model(NULL)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_SINGLE | GLUT_RGBA);
@@ -87,8 +88,28 @@ void OBJViewerApp::renderScene()
     //glRotatef(xRot, 0, 1, 0);
     //glRotatef(yRot, 1, 0, 0);
 
-    //glutSolidCone(width / 4, height / 2, 360, 20);
-    glutWireTeapot(fminf(width, height));
+    if (model == NULL) {
+        glutWireTeapot(fminf(width, height));
+    } else {
+        const bool enable_textures = false;
+        for (unsigned int f = 0; f < model->faces.size(); ++f) {
+            Face& face = *model->faces[f];
+            glBegin(GL_LINE_LOOP);
+            for (unsigned int i = 0; i < face.size(); ++i) {
+                if (enable_textures && face[i].vt >= 0) {
+                    Vec4& vt = model->vt[face[i].vt];
+                    glTexCoord3f(vt.x, vt.y, vt.z);
+                }
+                
+                Vec4& vn = model->vn[face[i].vn];
+                glNormal3f(vn.x, vn.y, vn.z);
+
+                Vec4& v = model->v[face[i].v];
+                glVertex4f(v.x, v.y, v.z, v.w);
+            }
+            glEnd();
+        }
+    }
 
     glPopMatrix();
     glFlush();
@@ -221,6 +242,13 @@ void OBJViewerApp::processArgs(int argc, char **argv)
     }
     argc -= optind;
     argv += optind;
+    if (argc > 0) {
+        try {
+            model = loadModel(argv[0]);
+        } catch (ParseException& e) {
+            fprintf(stderr, "Unable to load model. Continuing with default model.\n");
+        }
+    }
 }
 
 

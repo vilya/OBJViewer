@@ -2,6 +2,7 @@
 #define OBJViewer_objviewer_h
 
 #include <map>
+#include "model.h"
 
 
 //
@@ -74,6 +75,8 @@ private:
     bool fullscreen;
     int mouseX, mouseY;
     float xRot, yRot;
+
+    Model *model;
 };
 
 
