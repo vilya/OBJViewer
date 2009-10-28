@@ -99,6 +99,19 @@ void eatChar(char ch, char*& col) throw(ParseException) {
 }
 
 
+std::string resolvePath(const std::string& baseDir, const std::string& path) throw(ParseException) {
+  if (baseDir.size() == 0 || path[0] == '/') {
+    return path;
+  } else {
+    int len = baseDir.size();
+    if (len == 0 || baseDir[len-1] == '/')
+      return baseDir + path;
+    else
+      return baseDir + "/" + path;
+  }
+}
+
+
 //
 // GENERIC PARSING
 //
@@ -469,12 +482,12 @@ Face *objParseFace(char* line, char*& col, Material *activeMaterial) throw(Parse
 }
 
 
-void objParseMTLLIB(char* line, char*& col, std::map<std::string, Material>& materials) throw(ParseException) {
+void objParseMTLLIB(char* line, char*& col, const char* baseDir, std::map<std::string, Material>& materials) throw(ParseException) {
   col = line;
   while (!isEnd(*col) && !isCommentStart(*col)) {
     eatSpace(col, true);
     if (!isEnd(*col) && !isCommentStart(*col)) {
-      std::string filename = parseFilename(col, col);
+      std::string filename = resolvePath(baseDir, parseFilename(col, col));
       loadMaterialLibrary(filename.c_str(), materials);
     }
 
@@ -540,7 +553,7 @@ Model* loadModel(const char* path) throw(ParseException) {
           activeMaterial = objParseUSEMTL(col, col, model->materials);
           break;
         case OBJ_LINETYPE_MTLLIB:
-          objParseMTLLIB(col, col, model->materials);
+          objParseMTLLIB(col, col, dirname(const_cast<char*>(path)), model->materials);
           break;
         case OBJ_LINETYPE_BLANK:
         case OBJ_LINETYPE_COMMENT:
