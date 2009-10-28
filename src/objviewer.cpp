@@ -45,7 +45,7 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
     fullscreen(false),
     mouseX(0), mouseY(0),
     xRot(0.0f), yRot(0.0f),
-    polygons(false),
+    polygons(true),
     model(NULL)
 {
     glutInit(&argc, argv);
@@ -90,6 +90,9 @@ void OBJViewerApp::renderScene()
     //glRotatef(yRot, 1, 0, 0);
 
     if (model == NULL) {
+      if (polygons)
+        glutSolidTeapot(fminf(width, height));
+      else
         glutWireTeapot(fminf(width, height));
     } else {
         const bool enable_textures = false;
@@ -101,10 +104,10 @@ void OBJViewerApp::renderScene()
               glBegin(GL_LINE_LOOP);
             for (unsigned int i = 0; i < face.size(); ++i) {
                 if (face.material != NULL) {
-                  glColor3fv(face.material->Kd.data);
-                  //glMaterialfv(GL_FRONT, GL_AMBIENT, face.material->Ka.data);
-                  //glMaterialfv(GL_FRONT, GL_DIFFUSE, face.material->Kd.data);
-                  //glMaterialfv(GL_FRONT, GL_SPECULAR, face.material->Ks.data);
+                  //glColor3fv(face.material->Kd.data);
+                  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
+                  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
+                  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
                   //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
                 }
 
@@ -143,7 +146,7 @@ void OBJViewerApp::changeSize(int width, int height)
     glViewport(0, 0, width, height);
 
     // Set up the camera position
-    gluPerspective(30, double(winWidth) / double(winHeight), 0.001, 100.0);
+    gluPerspective(30, double(winWidth) / double(winHeight), 0.1, 100.0);
     gluLookAt(0, 0, -10, 0, 0, 0, 0, 1, 0);
 
     glMatrixMode(GL_MODELVIEW);
@@ -221,6 +224,15 @@ void OBJViewerApp::checkGLError(const char *errMsg, const char *okMsg)
 void OBJViewerApp::init()
 {
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+
+  float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+  glShadeModel(GL_SMOOTH);
+
+  float position[4] = { 0, 0, -10, 0 };
+  glLightfv(GL_LIGHT0, GL_POSITION, position);
 }
 
 
