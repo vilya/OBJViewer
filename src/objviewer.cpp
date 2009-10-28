@@ -45,6 +45,7 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
     fullscreen(false),
     mouseX(0), mouseY(0),
     xRot(0.0f), yRot(0.0f),
+    polygons(false),
     model(NULL)
 {
     glutInit(&argc, argv);
@@ -74,7 +75,7 @@ OBJViewerApp::~OBJViewerApp()
 
 void OBJViewerApp::renderScene()
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     float left = -0.5f;
     float right = 0.5f;
@@ -94,17 +95,28 @@ void OBJViewerApp::renderScene()
         const bool enable_textures = false;
         for (unsigned int f = 0; f < model->faces.size(); ++f) {
             Face& face = *model->faces[f];
-            glBegin(GL_LINE_LOOP);
+            if (polygons)
+              glBegin(GL_POLYGON);
+            else
+              glBegin(GL_LINE_LOOP);
             for (unsigned int i = 0; i < face.size(); ++i) {
+                if (face.material != NULL) {
+                  glColor3fv(face.material->Kd.data);
+                  //glMaterialfv(GL_FRONT, GL_AMBIENT, face.material->Ka.data);
+                  //glMaterialfv(GL_FRONT, GL_DIFFUSE, face.material->Kd.data);
+                  //glMaterialfv(GL_FRONT, GL_SPECULAR, face.material->Ks.data);
+                  //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
+                }
+
                 if (enable_textures && face[i].vt >= 0) {
-                    Vec4& vt = model->vt[face[i].vt];
+                    Float4& vt = model->vt[face[i].vt];
                     glTexCoord3f(vt.x, vt.y, vt.z);
                 }
                 
-                Vec4& vn = model->vn[face[i].vn];
+                Float4& vn = model->vn[face[i].vn];
                 glNormal3f(vn.x, vn.y, vn.z);
 
-                Vec4& v = model->v[face[i].v];
+                Float4& v = model->v[face[i].v];
                 glVertex4f(v.x, v.y, v.z, v.w);
             }
             glEnd();
@@ -158,6 +170,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
             else
                 glutReshapeWindow(winWidth, winHeight);
             break;
+        case 'p':
+            polygons = !polygons;
+            glutPostRedisplay();
         default:
             break;
     }
@@ -205,6 +220,7 @@ void OBJViewerApp::checkGLError(const char *errMsg, const char *okMsg)
 
 void OBJViewerApp::init()
 {
+  glEnable(GL_DEPTH_TEST);
 }
 
 

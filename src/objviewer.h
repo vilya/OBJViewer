@@ -75,7 +75,7 @@ private:
     bool fullscreen;
     int mouseX, mouseY;
     float xRot, yRot;
-
+    bool polygons;
     Model *model;
 };
 
