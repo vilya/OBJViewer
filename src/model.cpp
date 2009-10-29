@@ -34,6 +34,7 @@ enum MTLFileLineType {
   MTL_LINETYPE_TF,
   MTL_LINETYPE_D,
   MTL_LINETYPE_NS,
+  MTL_LINETYPE_NI,
   MTL_LINETYPE_ILLUM,
   MTL_LINETYPE_MAP_KD,
   MTL_LINETYPE_COMMENT
@@ -49,6 +50,7 @@ enum OBJFileLineType {
   OBJ_LINETYPE_VN,
   OBJ_LINETYPE_F,
   OBJ_LINETYPE_G,
+  OBJ_LINETYPE_S,
   OBJ_LINETYPE_USEMTL,
   OBJ_LINETYPE_MTLLIB,
   OBJ_LINETYPE_COMMENT
@@ -225,6 +227,8 @@ MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
     return MTL_LINETYPE_D;
   else if (strncmp("Ns", line, len) == 0)
     return MTL_LINETYPE_NS;
+  else if (strncmp("Ni", line, len) == 0)
+    return MTL_LINETYPE_NI;
   else if (strncmp("illum", line, len) == 0)
     return MTL_LINETYPE_ILLUM;
   else if (strncmp("map_Kd", line, len) == 0)
@@ -325,6 +329,7 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
           if (material != NULL)
             material->Ns = mtlParseFloat(col, col);
           break;
+        case MTL_LINETYPE_NI:
         case MTL_LINETYPE_ILLUM:
         case MTL_LINETYPE_MAP_KD:
           // TODO: handle these.
@@ -383,6 +388,8 @@ OBJFileLineType objParseLineType(char* line, char*& col) throw(ParseException) {
     return OBJ_LINETYPE_F;
   else if (strncmp("g", line, len) == 0)
     return OBJ_LINETYPE_G;
+  else if (strncmp("s", line, len) == 0)
+    return OBJ_LINETYPE_S;
   else if (strncmp("usemtl", line, len) == 0)
     return OBJ_LINETYPE_USEMTL;
   else if (strncmp("mtllib", line, len) == 0)
@@ -457,10 +464,16 @@ Float4 objParseVN(char* line, char*& col) throw(ParseException) {
 Vertex objParseVertex(char *line, char*& col) throw(ParseException) {
   col = line;
   int v = parseInt(col, col) - 1;
-  eatChar('/', col);
-  int vt = (*col != '/') ? parseInt(col, col) - 1 : -1;
-  eatChar('/', col);
-  int vn = parseInt(col, col) - 1;
+  int vt = -1;
+  int vn = -1;
+  if (*col == '/') {
+    eatChar('/', col);
+    vt = (*col != '/') ? parseInt(col, col) - 1 : -1;
+    if (*col == '/') {
+      eatChar('/', col);
+      vn = parseInt(col, col) - 1;
+    }
+  }
   return Vertex(v, vt, vn);
 }
 
@@ -545,6 +558,11 @@ Model* loadModel(const char* path) throw(ParseException) {
           model->faces.push_back(objParseFace(col, col, activeMaterial));
           break;
         case OBJ_LINETYPE_G:
+          // TODO: handle this.
+          while (!isEnd(*col))
+            ++col;
+          break;
+        case OBJ_LINETYPE_S:
           // TODO: handle this.
           while (!isEnd(*col))
             ++col;

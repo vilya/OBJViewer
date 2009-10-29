@@ -109,6 +109,10 @@ void OBJViewerApp::renderScene()
                   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
                   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
                   //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
+                } else {
+                  float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+                  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+                  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
                 }
 
                 if (enable_textures && face[i].vt >= 0) {
@@ -116,8 +120,10 @@ void OBJViewerApp::renderScene()
                     glTexCoord3f(vt.x, vt.y, vt.z);
                 }
                 
-                Float4& vn = model->vn[face[i].vn];
-                glNormal3f(vn.x, vn.y, vn.z);
+                if (face[i].vn >= 0) {
+                  Float4& vn = model->vn[face[i].vn];
+                  glNormal3f(vn.x, vn.y, vn.z);
+                }
 
                 Float4& v = model->v[face[i].v];
                 glVertex4f(v.x, v.y, v.z, v.w);
