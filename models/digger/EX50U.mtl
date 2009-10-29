@@ -1,0 +1,101 @@
+# 
+# Wavefront material file
+# Converted by the DEEP Exploration  3.5.0.448
+# Right Hemisphere, LTD
+# http://www.righthemisphere.com/
+# 
+
+newmtl ZA_orange
+Ka 0 0 0
+Kd 0.929412 0.478431 0.0705882
+Ks 0.362471 0.186588 0.0275294
+illum 2
+Ns 8
+map_Kd HITACHIorange.jpg
+
+newmtl ZA_black_black
+Ka 0 0 0
+Kd 0.0509804 0.0509804 0.0509804
+Ks 0 0 0
+illum 2
+Ns 8
+
+newmtl ZA_black_semigloss
+Ka 0 0 0
+Kd 0.0611765 0.0658824 0.0705882
+Ks 0.0423137 0.0455686 0.0488235
+illum 2
+Ns 32
+
+newmtl ZA_leather
+Ka 0 0 0
+Kd 0.148235 0.148235 0.148235
+Ks 0.0494118 0.0494118 0.0494118
+illum 2
+Ns 22.6274
+
+newmtl ZA_blue
+Ka 0 0 0
+Kd 0.929412 0.478431 0.0705882
+Ks 0.362471 0.186588 0.0275294
+illum 2
+Ns 8
+map_Kd HITACHIblue.jpg
+
+newmtl ZA_black_matte
+Ka 0 0 0
+Kd 0.215686 0.215686 0.215686
+Ks 0.0215686 0.0215686 0.0215686
+illum 2
+Ns 5.65685
+
+newmtl ZA_grey
+Ka 0 0 0
+Kd 0.705882 0.709804 0.729412
+Ks 0.282353 0.283922 0.291765
+illum 2
+Ns 8
+
+newmtl ZA_chrome
+Ka 0 0 0
+Kd 0.282706 0.282706 0.282706
+Ks 0.691059 0.691059 0.691059
+illum 2
+Ns 2048
+
+newmtl ZA_black_metal_mate
+Ka 0 0 0
+Kd 0.112941 0.112941 0.112941
+Ks 0.169412 0.169412 0.169412
+illum 2
+Ns 9.18959
+
+newmtl ZA_grey_matte
+Ka 0 0 0
+Kd 0.364706 0.364706 0.364706
+Ks 0.145882 0.145882 0.145882
+illum 2
+Ns 8
+
+newmtl ZA_yellow_metal
+Ka 0 0 0
+Kd 0.274765 0.265235 0.231882
+Ks 0.671647 0.648353 0.566824
+illum 2
+Ns 16
+
+newmtl ZA_light_glassIN
+Ka 0 0 0
+Kd 0 0 0
+Ks 0.588235 0.588235 0.588235
+illum 2
+Ns 8
+d 0.05
+
+newmtl ZA_light_glass
+Ka 0 0 0
+Kd 0 0 0
+Ks 0.627451 0.627451 0.627451
+illum 2
+Ns 8
+d 0.1
