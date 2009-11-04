@@ -46,10 +46,11 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
     mouseX(0), mouseY(0),
     xRot(0.0f), yRot(0.0f),
     polygons(true),
-    model(NULL)
+    model(NULL),
+    modelDisplayList(0xFFFFFFFF)
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_SINGLE | GLUT_RGBA);
+    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowPosition(winX, winY);
     glutInitWindowSize(winWidth, winHeight);
     glutCreateWindow("Vil's OBJ Viewer");
@@ -75,20 +76,23 @@ OBJViewerApp::~OBJViewerApp()
 
 void OBJViewerApp::renderScene()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    float left = -0.5f;
-    float right = 0.5f;
-    float bottom = -0.5f;
-    float top = 0.5f;
+  float left = -0.5f;
+  float right = 0.5f;
+  float bottom = -0.5f;
+  float top = 0.5f;
 
-    float width = right - left;
-    float height = top - bottom;
+  float width = right - left;
+  float height = top - bottom;
 
-    glPushMatrix();
-    //glRotatef(xRot, 0, 1, 0);
-    //glRotatef(yRot, 1, 0, 0);
+  glPushMatrix();
+  //glRotatef(xRot, 0, 1, 0);
+  //glRotatef(yRot, 1, 0, 0);
 
+  if (modelDisplayList == 0xFFFFFFFF) {
+    modelDisplayList = glGenLists(1);
+    glNewList(modelDisplayList, GL_COMPILE_AND_EXECUTE);
     if (model == NULL) {
       if (polygons)
         glutSolidTeapot(fminf(width, height));
@@ -97,43 +101,47 @@ void OBJViewerApp::renderScene()
     } else {
         const bool enable_textures = false;
         for (unsigned int f = 0; f < model->faces.size(); ++f) {
-            Face& face = *model->faces[f];
-            if (polygons)
-              glBegin(GL_POLYGON);
-            else
-              glBegin(GL_LINE_LOOP);
-            for (unsigned int i = 0; i < face.size(); ++i) {
-                if (face.material != NULL) {
-                  //glColor3fv(face.material->Kd.data);
-                  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
-                  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
-                  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
-                  //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
-                } else {
-                  float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-                  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-                  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
-                }
-
-                if (enable_textures && face[i].vt >= 0) {
-                    Float4& vt = model->vt[face[i].vt];
-                    glTexCoord3f(vt.x, vt.y, vt.z);
-                }
-                
-                if (face[i].vn >= 0) {
-                  Float4& vn = model->vn[face[i].vn];
-                  glNormal3f(vn.x, vn.y, vn.z);
-                }
-
-                Float4& v = model->v[face[i].v];
-                glVertex4f(v.x, v.y, v.z, v.w);
+          Face& face = *model->faces[f];
+          if (polygons)
+            glBegin(GL_POLYGON);
+          else
+            glBegin(GL_LINE_LOOP);
+          for (unsigned int i = 0; i < face.size(); ++i) {
+            if (face.material != NULL) {
+              //glColor3fv(face.material->Kd.data);
+              glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
+              glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
+              glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
+              //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
+            } else {
+              float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+              glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+              glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
             }
-            glEnd();
+
+            if (enable_textures && face[i].vt >= 0) {
+              Float4& vt = model->vt[face[i].vt];
+              glTexCoord3f(vt.x, vt.y, vt.z);
+            }
+                
+            if (face[i].vn >= 0) {
+              Float4& vn = model->vn[face[i].vn];
+              glNormal3f(vn.x, vn.y, vn.z);
+            }
+
+            Float4& v = model->v[face[i].v];
+            glVertex4f(v.x, v.y, v.z, v.w);
+          }
+          glEnd();
         }
     }
+    glEndList();
+  } else {
+    glCallList(modelDisplayList);
+  }
 
-    glPopMatrix();
-    glFlush();
+  glPopMatrix();
+  glutSwapBuffers();
 }
 
 
@@ -239,6 +247,16 @@ void OBJViewerApp::init()
 
   float position[4] = { 0, 0, -10, 0 };
   glLightfv(GL_LIGHT0, GL_POSITION, position);
+
+  /*
+  if (model != NULL) {
+    glEnableClientState(GL_VERTEX_ARRAY);
+
+    glVertexPointer(4, GL_FLOAT, sizeof(Float4), &model->faces[0]);
+    glNormalPointer(GL_FLOAT, sizeof(Float4), &model->vn[0]);
+    glTexCoordPointer(4, GL_FLOAT, sizeof(Float4), &model->vt[0]);
+  }
+  */
 }
 
 

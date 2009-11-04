@@ -77,6 +77,7 @@ private:
     float xRot, yRot;
     bool polygons;
     Model *model;
+    unsigned int modelDisplayList;
 };
 
 
