@@ -31,10 +31,6 @@ public:
     void run();
 
 private:
-    //! Check for a GL error and report it if there was any. Can optionally report
-    //! the fact that there was no error as well.
-    void checkGLError(const char *errMsg = "GL error occurred", const char *okMsg = NULL);
-
     //! Compile the display lists for the model.
     void setupDisplayLists();
 
@@ -65,12 +61,6 @@ private:
     Model *model;
     unsigned int modelDisplayList, linesDisplayList;
 };
-
-
-//
-// FUNCTIONS
-//
-
 
 
 #endif // OBJViewer_objviewer_h

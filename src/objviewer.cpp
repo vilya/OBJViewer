@@ -57,7 +57,6 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
     glutCreateWindow("Vil's OBJ Viewer");
 
     processArgs(argc, argv);
-
     init();
     setupDisplayLists();
 
@@ -156,8 +155,6 @@ void OBJViewerApp::mouseDragged(int x, int y) {
     glRotatef(dx, 0, 1, 0);
     glRotatef(dy, 1, 0, 0);
 
-    //xRot += x - mouseX;
-    //yRot += y - mouseY;
     mouseY = y;
     mouseX = x;
     glutPostRedisplay();
@@ -167,17 +164,6 @@ void OBJViewerApp::mouseDragged(int x, int y) {
 void OBJViewerApp::run()
 {
     glutMainLoop();
-}
-
-
-void OBJViewerApp::checkGLError(const char *errMsg, const char *okMsg)
-{
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) {
-        fprintf(stderr, "%s: %d\n", errMsg, err);
-    } else if (okMsg != NULL) {
-        fprintf(stderr, "%s\n", okMsg);
-    }
 }
 
 
