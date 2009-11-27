@@ -287,7 +287,7 @@ Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseE
   eatSpace(col, true);
 
   std::string filename = resolvePath(baseDir, parseFilename(col, col));
-  Image* tex;
+  Image* tex = NULL;
   try {
     tex = new Image(filename.c_str());
   } catch (ImageException& ex) {

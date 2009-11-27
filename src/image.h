@@ -35,6 +35,9 @@ public:
     unsigned int getHeight() const { return _height; }
     unsigned char *getPixels() { return _pixels; }
 
+    unsigned int getTexID() const { return _texId; }
+    void setTexID(unsigned int texId) { _texId = texId; }
+
 private:
     void loadBMP(FILE *file) throw(ImageException);
     void loadTGA(FILE *file) throw(ImageException);
@@ -49,6 +52,7 @@ private:
 
 private:
     GLenum _type;
+    unsigned int _texId;
     unsigned int _bytesPerPixel;
     unsigned int _width;
     unsigned int _height;

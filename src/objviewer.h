@@ -37,11 +37,14 @@ private:
     //! Load and setup the shaders and images required to render the result.
     void init();
 
+    //! Load all textures for the model onto the GPU.
+    void loadTexturesForModel(Model* theModel);
+
     //! Draw the specified model as either filled polygons or lines.
     void drawModel(Model* theModel, bool filledPolygons);
 
     //! Load an image file onto the GPU as a texture
-    void loadTexture(const char *path, int texID);
+    void loadTexture(Image& tex, int texID);
 
     //! Prints help about the command line syntax and options to stderr.
     void usage(char *progname);

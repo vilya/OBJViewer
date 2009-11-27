@@ -49,7 +49,10 @@ struct Material {
   Image* mapKd; // Diffuse texture map.
   Image* mapKs; // Specular texture map.
 
-  Material() : Ka(), Kd(), Ks(), Tf(1, 1, 1), d(1.0), Ns(1.0) {}
+  Material() :
+      Ka(), Kd(), Ks(), Tf(1, 1, 1), d(1.0), Ns(1.0),
+      mapKa(NULL), mapKd(NULL), mapKs(NULL)
+  {}
 };
 
 

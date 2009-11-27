@@ -172,6 +172,7 @@ void OBJViewerApp::init()
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
+  glEnable(GL_TEXTURE_2D);
 
   float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
@@ -187,6 +188,8 @@ void OBJViewerApp::setupDisplayLists()
   modelDisplayList = glGenLists(2);
   linesDisplayList = modelDisplayList + 1;
 
+  loadTexturesForModel(model);
+
   glNewList(modelDisplayList, GL_COMPILE);
   drawModel(model, true);
   glEndList();
@@ -194,6 +197,35 @@ void OBJViewerApp::setupDisplayLists()
   glNewList(linesDisplayList, GL_COMPILE);
   drawModel(model, false);
   glEndList();
+}
+
+
+void OBJViewerApp::loadTexturesForModel(Model* theModel)
+{
+  if (theModel == NULL)
+    return;
+
+  unsigned int texId = 10;
+  std::map<std::string, Material>::iterator iter;
+  for (iter = theModel->materials.begin(); iter != theModel->materials.end(); ++iter) {
+    Image* tex = iter->second.mapKa;
+    if (tex != NULL) {
+      loadTexture(*tex, texId);
+      ++texId;
+    }
+
+    tex = iter->second.mapKd;
+    if (tex != NULL) {
+      loadTexture(*tex, texId);
+      ++texId;
+    }
+
+    tex = iter->second.mapKd;
+    if (tex != NULL) {
+      loadTexture(*tex, texId);
+      ++texId;
+    }
+  }
 }
 
 
@@ -207,48 +239,108 @@ void OBJViewerApp::drawModel(Model* theModel, bool filledPolygons)
   float width = right - left;
   float height = top - bottom;
 
-    if (theModel == NULL) {
+  if (theModel == NULL) {
+    if (filledPolygons)
+      glutSolidTeapot(fminf(width, height));
+    else
+      glutWireTeapot(fminf(width, height));
+  } else {
+    Image* currentKa = NULL;
+    Image* currentKd = NULL;
+    Image* currentKs = NULL;
+
+    for (unsigned int f = 0; f < theModel->faces.size(); ++f) {
+      Face& face = *theModel->faces[f];
       if (filledPolygons)
-        glutSolidTeapot(fminf(width, height));
+        glBegin(GL_POLYGON);
       else
-        glutWireTeapot(fminf(width, height));
-    } else {
-        const bool enable_textures = false;
-        for (unsigned int f = 0; f < theModel->faces.size(); ++f) {
-          Face& face = *theModel->faces[f];
-          if (filledPolygons)
-            glBegin(GL_POLYGON);
-          else
-            glBegin(GL_LINE_LOOP);
-          for (unsigned int i = 0; i < face.size(); ++i) {
-            if (face.material != NULL) {
-              //glColor3fv(face.material->Kd.data);
-              glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
-              glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
-              glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
-              //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
-            } else {
-              float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-              glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-              glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
-            }
+        glBegin(GL_LINE_LOOP);
 
-            if (enable_textures && face[i].vt >= 0) {
-              Float4& vt = theModel->vt[face[i].vt];
-              glTexCoord3f(vt.x, vt.y, vt.z);
-            }
-                
-            if (face[i].vn >= 0) {
-              Float4& vn = theModel->vn[face[i].vn];
-              glNormal3f(vn.x, vn.y, vn.z);
-            }
-
-            Float4& v = theModel->v[face[i].v];
-            glVertex4f(v.x, v.y, v.z, v.w);
-          }
-          glEnd();
+      if (face.material != NULL) {
+        if (face.material->mapKa != NULL && face.material->mapKa != currentKa) {
+          glActiveTexture(GL_TEXTURE0);
+          glBindTexture(GL_TEXTURE0, face.material->mapKa->getTexID());
+          currentKa = face.material->mapKa;
         }
+        if (face.material->mapKd != NULL && face.material->mapKd != currentKd) {
+          glActiveTexture(GL_TEXTURE1);
+          glBindTexture(GL_TEXTURE1, face.material->mapKd->getTexID());
+          currentKd = face.material->mapKd;
+        }
+        if (face.material->mapKs != NULL && face.material->mapKs != currentKs) {
+          glActiveTexture(GL_TEXTURE2);
+          glBindTexture(GL_TEXTURE2, face.material->mapKs->getTexID());
+          currentKs = face.material->mapKs;
+        }
+      }
+
+      for (unsigned int i = 0; i < face.size(); ++i) {
+        if (face.material != NULL) {
+          //glColor3fv(face.material->Kd.data);
+          glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
+          glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
+          glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
+          //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
+       } else {
+          float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+          glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+          glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
+        }
+
+        if (face[i].vt >= 0) {
+          Float4& vt = theModel->vt[face[i].vt];
+          if (face.material->mapKa != NULL)
+            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+          if (face.material->mapKd != NULL)
+            glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
+          if (face.material->mapKs != NULL)
+            glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
+        }
+                
+        if (face[i].vn >= 0) {
+          Float4& vn = theModel->vn[face[i].vn];
+          glNormal3f(vn.x, vn.y, vn.z);
+        }
+
+        Float4& v = theModel->v[face[i].v];
+        glVertex4f(v.x, v.y, v.z, v.w);
+      }
+      glEnd();
     }
+  }
+}
+
+
+void OBJViewerApp::loadTexture(Image& tex, int texID)
+{
+  GLenum targetType;
+  switch (tex.getBytesPerPixel()) {
+  case 1:
+    targetType = GL_ALPHA;
+    break;
+  case 3:
+    targetType = GL_RGB;
+    break;
+  case 4:
+    targetType = GL_RGBA;
+    break;
+  default:
+    targetType = GL_RGB;
+    break;
+  }
+
+  glEnable(GL_TEXTURE_2D);
+  glBindTexture(GL_TEXTURE_2D, texID);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex.getWidth(), tex.getHeight(), 0,
+               tex.getType(), GL_UNSIGNED_BYTE, tex.getPixels());
+
+  tex.setTexID(texID);
 }
 
 
@@ -329,6 +421,19 @@ void doMouseDragged(int x, int y)
 {
     app->mouseDragged(x, y);
 }
+
+
+/*
+void checkGLError(const char *errMsg, const char *okMsg)
+{
+  GLenum err = glGetError();
+  if (err != GL_NO_ERROR) {
+    fprintf(stderr, "%s: %d\n", errMsg, err);
+  } else if (okMsg != NULL) {
+    fprintf(stderr, "%s\n", okMsg);
+  }
+}
+*/
 
 
 int main(int argc, char **argv)

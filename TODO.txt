@@ -22,4 +22,5 @@ Render the axes.
 
 Render a line grid on y=0 plane.
 
+Allow lights to be placed arbitrarily.
 

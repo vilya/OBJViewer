@@ -11,10 +11,10 @@
 ImageException::ImageException(const char*msg_format...) :
     std::exception()
 {
-    va_list args;
-    va_start(args, msg_format);
-    vsnprintf(message, 4096, msg_format, args);
-    va_end(args);
+  va_list args;
+  va_start(args, msg_format);
+  vsnprintf(message, 4096, msg_format, args);
+  va_end(args);
 }
 
 
@@ -29,57 +29,60 @@ const char* ImageException::what() const throw()
 //
 
 Image::Image(const char *path) throw(ImageException) :
-    _type(GL_RGB),
-    _bytesPerPixel(0),
-    _width(0),
-    _height(0),
-    _pixels(NULL)
+  _type(GL_RGB),
+  _texId(0),
+  _bytesPerPixel(0),
+  _width(0),
+  _height(0),
+  _pixels(NULL)
 {
-    const char *filename = basename(const_cast<char *>(path));
-    if (filename == NULL)
-        throw ImageException("Invalid image filename: %s does not name a file.", filename);
+  const char *filename = basename(const_cast<char *>(path));
+  if (filename == NULL)
+    throw ImageException("Invalid image filename: %s does not name a file.", filename);
 
-    const char *ext = strrchr(filename, '.');
-    if (ext == NULL)
-        throw ImageException("Unknown image format.");
+  const char *ext = strrchr(filename, '.');
+  if (ext == NULL)
+    throw ImageException("Unknown image format.");
 
-    FILE *file = fopen(path, "rb");
-    if (file == NULL)
-        throw ImageException("File not found: %s.", filename);
-    try {
-        if (strcasecmp(ext, ".bmp") == 0)
-            loadBMP(file);
-        else if (strcasecmp(ext, ".tga") == 0)
-            loadTGA(file);
-        else
-            throw ImageException("Unknown image format: %s", ext);
-    } catch (ImageException& ex) {
-        fclose(file);
-        if (_pixels != NULL)
-            delete _pixels;
-        throw ex;
-    }
+  FILE *file = fopen(path, "rb");
+  if (file == NULL)
+    throw ImageException("File not found: %s.", filename);
+  try {
+    if (strcasecmp(ext, ".bmp") == 0)
+      loadBMP(file);
+    else if (strcasecmp(ext, ".tga") == 0)
+      loadTGA(file);
+    else
+      throw ImageException("Unknown image format: %s", ext);
+  } catch (ImageException& ex) {
+    fclose(file);
+    if (_pixels != NULL)
+      delete _pixels;
+    throw ex;
+  }
 }
 
 
 Image::Image(GLenum type, int bytesPerPixel, int width, int height) :
-    _type(type),
-    _bytesPerPixel(bytesPerPixel),
-    _width(width),
-    _height(height),
-    _pixels(NULL)
+  _type(type),
+  _texId(0),
+  _bytesPerPixel(bytesPerPixel),
+  _width(width),
+  _height(height),
+  _pixels(NULL)
 {
-    unsigned int size = _bytesPerPixel * _width * _height;
-    _pixels = new unsigned char[size];
+  unsigned int size = _bytesPerPixel * _width * _height;
+  _pixels = new unsigned char[size];
 }
 
 
 Image::Image(const Image& img) :
-    _type(img._type),
-    _bytesPerPixel(img._bytesPerPixel),
-    _width(img._width),
-    _height(img._height),
-    _pixels(NULL)
+  _type(img._type),
+  _texId(0),
+  _bytesPerPixel(img._bytesPerPixel),
+  _width(img._width),
+  _height(img._height),
+  _pixels(NULL)
 {
     unsigned int size = _bytesPerPixel * _width * _height;
     _pixels = new unsigned char[size];
@@ -89,8 +92,8 @@ Image::Image(const Image& img) :
 
 Image::~Image()
 {
-    if (_pixels != NULL)
-        delete[] _pixels;
+  if (_pixels != NULL)
+    delete[] _pixels;
 }
 
 
