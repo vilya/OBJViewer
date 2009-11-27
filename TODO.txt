@@ -1,0 +1,25 @@
+Get mouse rotation working properly.
+
+Object stays static, you control the camera:
+- Rotate -> left drag
+- Pan -> middle drag
+- Zoom -> right drag or mousewheel.
+- Dolly -> shift + right drag or shift + mousewheel
+
+Predefined camera positions:
+- Front (x=0, y=0, z=-10)
+- Back (x=0, y=0, z=10)
+- Left (x=-10, y=0, z=0)
+- Right (x=10, y=0, z=0)
+- Top (x=0, y=10, z=0)
+- Bottom (x=0, y=-10, z=0)
+
+Add support for additional texture image formats (.jpg, .ppm).
+
+Widgets to display (and edit?) model attributes.
+
+Render the axes.
+
+Render a line grid on y=0 plane.
+
+

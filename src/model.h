@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "image.h"
 
 const unsigned int _MAX_LINE_LEN = 2048;
 
@@ -16,6 +17,8 @@ public:
 
   ParseException(const char *msg_format...);
   virtual ~ParseException() throw() {}
+
+  virtual const char* what() const throw();
 };
 
 
@@ -41,6 +44,10 @@ struct Material {
   Float4 Tf; // Transmission filter.
   float d;   // Dissolve factor.
   float Ns;  // Specular exponent.
+
+  Image* mapKa; // Ambient texture map.
+  Image* mapKd; // Diffuse texture map.
+  Image* mapKs; // Specular texture map.
 
   Material() : Ka(), Kd(), Ks(), Tf(1, 1, 1), d(1.0), Ns(1.0) {}
 };

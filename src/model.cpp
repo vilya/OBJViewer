@@ -19,6 +19,11 @@ ParseException::ParseException(const char *msg_format...) :
 }
 
 
+const char* ParseException::what() const throw()
+{
+  return message;
+}
+
 
 //
 // CONSTANTS
@@ -36,7 +41,9 @@ enum MTLFileLineType {
   MTL_LINETYPE_NS,
   MTL_LINETYPE_NI,
   MTL_LINETYPE_ILLUM,
+  MTL_LINETYPE_MAP_KA,
   MTL_LINETYPE_MAP_KD,
+  MTL_LINETYPE_MAP_KS,
   MTL_LINETYPE_COMMENT
 };
 
@@ -49,6 +56,7 @@ enum OBJFileLineType {
   OBJ_LINETYPE_VP,
   OBJ_LINETYPE_VN,
   OBJ_LINETYPE_F,
+  OBJ_LINETYPE_FO,
   OBJ_LINETYPE_G,
   OBJ_LINETYPE_S,
   OBJ_LINETYPE_USEMTL,
@@ -163,7 +171,7 @@ int parseInt(char* line, char*& col) throw(ParseException) {
 
 std::string parseIdentifier(char* line, char*& col) throw(ParseException) {
   col = line;
-  while (*col == '_' || isLetter(*col) || isDigit(*col))
+  while (*col == '_' || *col == '-' || isLetter(*col) || isDigit(*col))
     ++col;
 
   if (col > line) {
@@ -207,7 +215,7 @@ std::string parseFilename(char* line, char*& col) throw(ParseException) {
 
 MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
   col = line;
-  while (isLetter(*col) || isDigit(*col))
+  while (*col == '_' || isLetter(*col) || isDigit(*col))
     ++col;
 
   int len = col - line;
@@ -231,8 +239,12 @@ MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
     return MTL_LINETYPE_NI;
   else if (strncmp("illum", line, len) == 0)
     return MTL_LINETYPE_ILLUM;
+  else if (strncmp("map_Ka", line, len) == 0)
+    return MTL_LINETYPE_MAP_KA;
   else if (strncmp("map_Kd", line, len) == 0)
     return MTL_LINETYPE_MAP_KD;
+  else if (strncmp("map_Ks", line, len) == 0)
+    return MTL_LINETYPE_MAP_KS;
   else if (strncmp("#", line, len) == 0)
     return MTL_LINETYPE_COMMENT;
   else
@@ -270,6 +282,21 @@ float mtlParseFloat(char *line, char*& col) throw(ParseException) {
 }
 
 
+Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseException) {
+  col = line;
+  eatSpace(col, true);
+
+  std::string filename = resolvePath(baseDir, parseFilename(col, col));
+  Image* tex;
+  try {
+    tex = new Image(filename.c_str());
+  } catch (ImageException& ex) {
+    throw ParseException("Error loading texture map: %s", ex.what());
+  }
+  return tex;
+}
+
+
 void loadMaterialLibrary(const char* path, std::map<std::string, Material>& materials) throw(ParseException) {
   FILE *f = fopen(path, "r");
   if (f == NULL)
@@ -278,6 +305,9 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
   char line[_MAX_LINE_LEN];
   char *col;
   unsigned int line_no = 0;
+
+  char baseDir[_MAX_LINE_LEN];
+  snprintf(baseDir, _MAX_LINE_LEN, "%s", dirname(const_cast<char*>(path)));
 
   std::string materialName;
   Material *material = NULL;
@@ -331,10 +361,21 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
           break;
         case MTL_LINETYPE_NI:
         case MTL_LINETYPE_ILLUM:
-        case MTL_LINETYPE_MAP_KD:
           // TODO: handle these.
           while (!isEnd(*col))
             ++col;
+          break;
+        case MTL_LINETYPE_MAP_KA:
+          if (material != NULL)
+            material->mapKa = mtlParseTexture(col, col, baseDir);
+          break;
+        case MTL_LINETYPE_MAP_KD:
+          if (material != NULL)
+            material->mapKd = mtlParseTexture(col, col, baseDir);
+          break;
+        case MTL_LINETYPE_MAP_KS:
+          if (material != NULL)
+            material->mapKs = mtlParseTexture(col, col, baseDir);
           break;
         case MTL_LINETYPE_BLANK:
         case MTL_LINETYPE_COMMENT:
@@ -386,6 +427,8 @@ OBJFileLineType objParseLineType(char* line, char*& col) throw(ParseException) {
     return OBJ_LINETYPE_VN;
   else if (strncmp("f", line, len) == 0)
     return OBJ_LINETYPE_F;
+  else if (strncmp("fo", line, len) == 0)
+    return OBJ_LINETYPE_FO;
   else if (strncmp("g", line, len) == 0)
     return OBJ_LINETYPE_G;
   else if (strncmp("s", line, len) == 0)
@@ -503,7 +546,6 @@ void objParseMTLLIB(char* line, char*& col, const char* baseDir, std::map<std::s
       std::string filename = resolvePath(baseDir, parseFilename(col, col));
       loadMaterialLibrary(filename.c_str(), materials);
     }
-
   }
 }
 
@@ -555,6 +597,7 @@ Model* loadModel(const char* path) throw(ParseException) {
           model->vn.push_back(objParseVN(col, col));
           break;
         case OBJ_LINETYPE_F:
+        case OBJ_LINETYPE_FO:
           model->faces.push_back(objParseFace(col, col, activeMaterial));
           break;
         case OBJ_LINETYPE_G:
