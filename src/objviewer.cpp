@@ -263,7 +263,7 @@ void OBJViewerApp::drawModel(Model* theModel, bool filledPolygons)
         currentKa = currentMat->mapKa;
       }
       if (currentMat->mapKd != NULL && currentMat->mapKd != currentKd) {
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE1);
         checkGLError("Couldn't activate diffuse texture");
         glBindTexture(GL_TEXTURE_2D, currentMat->mapKd->getTexID());
         GLenum err = glGetError();
