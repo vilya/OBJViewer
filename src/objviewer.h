@@ -31,9 +31,6 @@ public:
     void run();
 
 private:
-    //! Compile the display lists for the model.
-    void setupDisplayLists();
-
     //! Load and setup the shaders and images required to render the result.
     void init();
 

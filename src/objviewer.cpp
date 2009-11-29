@@ -35,6 +35,8 @@ void doKeyPressed(unsigned char key, int mouseX, int mouseY);
 void doMousePressed(int button, int state, int x, int y);
 void doMouseDragged(int x, int y);
 
+void checkGLError(const char *errMsg, const char *okMsg = NULL);
+
     
 //
 // OBJViewerApp METHODS
@@ -58,7 +60,6 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
 
     processArgs(argc, argv);
     init();
-    setupDisplayLists();
 
     glutDisplayFunc(doRender);
     glutReshapeFunc(doResize);
@@ -80,10 +81,13 @@ void OBJViewerApp::renderScene()
 
   glPushMatrix();
 
+  drawModel(model, polygons);
+  /*
   if (polygons)
     glCallList(modelDisplayList);
   else
     glCallList(linesDisplayList);
+  */
 
   glPopMatrix();
   glutSwapBuffers();
@@ -180,16 +184,13 @@ void OBJViewerApp::init()
 
   float position[4] = { 0, 0, -10, 0 };
   glLightfv(GL_LIGHT0, GL_POSITION, position);
-}
-
-
-void OBJViewerApp::setupDisplayLists()
-{
-  modelDisplayList = glGenLists(2);
-  linesDisplayList = modelDisplayList + 1;
 
   loadTexturesForModel(model);
 
+  //modelDisplayList = glGenLists(2);
+  //linesDisplayList = modelDisplayList + 1;
+
+  /*
   glNewList(modelDisplayList, GL_COMPILE);
   drawModel(model, true);
   glEndList();
@@ -197,6 +198,7 @@ void OBJViewerApp::setupDisplayLists()
   glNewList(linesDisplayList, GL_COMPILE);
   drawModel(model, false);
   glEndList();
+  */
 }
 
 
@@ -249,63 +251,90 @@ void OBJViewerApp::drawModel(Model* theModel, bool filledPolygons)
     Image* currentKd = NULL;
     Image* currentKs = NULL;
 
-    for (unsigned int f = 0; f < theModel->faces.size(); ++f) {
-      Face& face = *theModel->faces[f];
-      if (filledPolygons)
-        glBegin(GL_POLYGON);
-      else
-        glBegin(GL_LINE_LOOP);
+    std::map<std::string, Material>::iterator m;
+    for (m = theModel->materials.begin(); m != theModel->materials.end(); ++m) {
+      Material *currentMat = &m->second;
 
-      if (face.material != NULL) {
-        if (face.material->mapKa != NULL && face.material->mapKa != currentKa) {
-          glActiveTexture(GL_TEXTURE0);
-          glBindTexture(GL_TEXTURE0, face.material->mapKa->getTexID());
-          currentKa = face.material->mapKa;
-        }
-        if (face.material->mapKd != NULL && face.material->mapKd != currentKd) {
-          glActiveTexture(GL_TEXTURE1);
-          glBindTexture(GL_TEXTURE1, face.material->mapKd->getTexID());
-          currentKd = face.material->mapKd;
-        }
-        if (face.material->mapKs != NULL && face.material->mapKs != currentKs) {
-          glActiveTexture(GL_TEXTURE2);
-          glBindTexture(GL_TEXTURE2, face.material->mapKs->getTexID());
-          currentKs = face.material->mapKs;
-        }
+      if (currentMat->mapKa != NULL && currentMat->mapKa != currentKa) {
+        glActiveTexture(GL_TEXTURE0);
+        checkGLError("Couldn't activate ambient texture");
+        glBindTexture(GL_TEXTURE_2D, currentMat->mapKa->getTexID());
+        checkGLError("Couldn't bind Ka");
+        currentKa = currentMat->mapKa;
+      }
+      if (currentMat->mapKd != NULL && currentMat->mapKd != currentKd) {
+        glActiveTexture(GL_TEXTURE0);
+        checkGLError("Couldn't activate diffuse texture");
+        glBindTexture(GL_TEXTURE_2D, currentMat->mapKd->getTexID());
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR)
+          fprintf(stderr, "Unable to bind texture %d\n", currentMat->mapKd->getTexID());
+        else
+          fprintf(stderr, "Bound texture %d\n", currentMat->mapKd->getTexID());
+        //checkGLError("Couldn't bind Kd");
+        currentKd = currentMat->mapKd;
+      }
+      if (currentMat->mapKs != NULL && currentMat->mapKs != currentKs) {
+        glActiveTexture(GL_TEXTURE2);
+        checkGLError("Couldn't activate specular texture");
+        glBindTexture(GL_TEXTURE_2D, currentMat->mapKs->getTexID());
+        checkGLError("Couldn't bind Ks");
+        currentKs = currentMat->mapKs;
       }
 
-      for (unsigned int i = 0; i < face.size(); ++i) {
-        if (face.material != NULL) {
-          //glColor3fv(face.material->Kd.data);
-          glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
-          glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
-          glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
-          //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
-       } else {
-          float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-          glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-          glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
+      for (unsigned int f = 0; f < theModel->faces.size(); ++f) {
+        Face& face = *theModel->faces[f];
+        if (face.material != currentMat)
+          continue;
+
+        if (filledPolygons)
+          glBegin(GL_POLYGON);
+        else
+          glBegin(GL_LINE_LOOP);
+ 
+        for (unsigned int i = 0; i < face.size(); ++i) {
+          if (face.material != NULL) {
+            //glColor3fv(face.material->Kd.data);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
+            //glMaterialf(GL_FRONT, GL_SHININESS, face.material->Ns);
+          } else {
+            float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
+          }
+          checkGLError("material properties are buggered.");
+
+          if (face[i].vt >= 0) {
+            Float4& vt = theModel->vt[face[i].vt];
+            if (face.material->mapKa != NULL) {
+              glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+              checkGLError("mapKa");
+            }
+            if (face.material->mapKd != NULL) {
+              glTexCoord3f(vt.x, vt.y, vt.z);
+              checkGLError("mapKd");
+            }
+            if (face.material->mapKs != NULL) {
+              glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
+              checkGLError("mapKs");
+            }
+          }
+          
+          if (face[i].vn >= 0) {
+            Float4& vn = theModel->vn[face[i].vn];
+            glNormal3f(vn.x, vn.y, vn.z);
+            checkGLError("normals");
+          }
+
+          Float4& v = theModel->v[face[i].v];
+          glVertex4f(v.x, v.y, v.z, v.w);
+          checkGLError("vertexes");
         }
 
-        if (face[i].vt >= 0) {
-          Float4& vt = theModel->vt[face[i].vt];
-          if (face.material->mapKa != NULL)
-            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-          if (face.material->mapKd != NULL)
-            glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
-          if (face.material->mapKs != NULL)
-            glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
-        }
-                
-        if (face[i].vn >= 0) {
-          Float4& vn = theModel->vn[face[i].vn];
-          glNormal3f(vn.x, vn.y, vn.z);
-        }
-
-        Float4& v = theModel->v[face[i].v];
-        glVertex4f(v.x, v.y, v.z, v.w);
+        glEnd();
       }
-      glEnd();
     }
   }
 }
@@ -328,17 +357,24 @@ void OBJViewerApp::loadTexture(Image& tex, int texID)
     targetType = GL_RGB;
     break;
   }
+  checkGLError("Some GL error before loading texture.");
 
+  fprintf(stderr, "Loading texture %d\n", texID);
   glEnable(GL_TEXTURE_2D);
+  checkGLError("Textures not enabled.", "Textures enabled");
   glBindTexture(GL_TEXTURE_2D, texID);
+  checkGLError("Texture not bound.", "Texture bound.");
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  checkGLError("Pixel storage format not set.", "Pixel storage format set.");
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  checkGLError("Texture paramaters not set.", "Texture parameters set.");
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex.getWidth(), tex.getHeight(), 0,
                tex.getType(), GL_UNSIGNED_BYTE, tex.getPixels());
+  checkGLError("Texture failed to load.", "Texture loaded successfully.");
 
   tex.setTexID(texID);
 }
@@ -423,17 +459,15 @@ void doMouseDragged(int x, int y)
 }
 
 
-/*
 void checkGLError(const char *errMsg, const char *okMsg)
 {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
-    fprintf(stderr, "%s: %d\n", errMsg, err);
+    fprintf(stderr, "%s: %s (%d)\n", errMsg, gluErrorString(err), err);
   } else if (okMsg != NULL) {
     fprintf(stderr, "%s\n", okMsg);
   }
 }
-*/
 
 
 int main(int argc, char **argv)
