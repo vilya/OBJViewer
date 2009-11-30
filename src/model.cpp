@@ -308,6 +308,7 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
 
   char baseDir[_MAX_LINE_LEN];
   snprintf(baseDir, _MAX_LINE_LEN, "%s", dirname(const_cast<char*>(path)));
+  fprintf(stderr, "baseDir for MTLLIB is %s\n", baseDir);
 
   std::string materialName;
   Material *material = NULL;

@@ -41,7 +41,7 @@ private:
     void drawModel(Model* theModel, bool filledPolygons);
 
     //! Load an image file onto the GPU as a texture
-    void loadTexture(Image& tex, int texID);
+    void loadTexture(GLenum texUnit, int texID, Image& tex);
 
     //! Prints help about the command line syntax and options to stderr.
     void usage(char *progname);
