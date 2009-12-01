@@ -53,7 +53,7 @@ private:
     void cleanUp();
 
 private:
-    int winX, winY, winWidth, winHeight;
+    int winX, winY, winWidth, winHeight, currWidth, currHeight;
     bool fullscreen;
     int mouseX, mouseY;
     float xRot, yRot;

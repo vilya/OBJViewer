@@ -43,122 +43,141 @@ void checkGLError(const char *errMsg, const char *okMsg = NULL);
 //
 
 OBJViewerApp::OBJViewerApp(int argc, char **argv) :
-    winX(100), winY(100), winWidth(800), winHeight(600),
-    fullscreen(false),
-    mouseX(0), mouseY(0),
-    xRot(0.0f), yRot(0.0f),
-    polygons(true),
-    model(NULL),
-    modelDisplayList(0xFFFFFFFF),
-    linesDisplayList(0xFFFFFFFF)
+  winX(100), winY(100), winWidth(800), winHeight(600),
+  fullscreen(false),
+  mouseX(0), mouseY(0),
+  xRot(0.0f), yRot(0.0f),
+  polygons(true),
+  model(NULL),
+  modelDisplayList(0xFFFFFFFF),
+  linesDisplayList(0xFFFFFFFF)
 {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-    glutInitWindowPosition(winX, winY);
-    glutInitWindowSize(winWidth, winHeight);
-    glutCreateWindow("Vil's OBJ Viewer");
+  glutInit(&argc, argv);
+  glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+  glutInitWindowPosition(winX, winY);
+  glutInitWindowSize(winWidth, winHeight);
+  glutCreateWindow("Vil's OBJ Viewer");
 
-    processArgs(argc, argv);
-    init();
+  processArgs(argc, argv);
+  init();
 
-    glutDisplayFunc(doRender);
-    glutReshapeFunc(doResize);
-    glutKeyboardFunc(doKeyPressed);
-    glutMouseFunc(doMousePressed);
-    glutMotionFunc(doMouseDragged);
+  glutDisplayFunc(doRender);
+  glutReshapeFunc(doResize);
+  glutKeyboardFunc(doKeyPressed);
+  glutMouseFunc(doMousePressed);
+  glutMotionFunc(doMouseDragged);
 }
 
 
 OBJViewerApp::~OBJViewerApp()
 {
-    cleanUp();
+  cleanUp();
 }
 
 
 void OBJViewerApp::renderScene()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // Position the camera
+  glMatrixMode(GL_PROJECTION);
   glPushMatrix();
-  drawModel(model, polygons);
+  glLoadIdentity();
+  glViewport(0, 0, currWidth, currHeight); // Set the viewport to be the entire window
+
+  // Set up the camera position
+  gluPerspective(30, double(currWidth) / double(currHeight), 0.1, 100.0);
+  float camDist = 10.0f;
+  gluLookAt(
+      0, 0, camDist, // Camera position
+      0, 0, 0,       // target
+      0, 1, 0        // up
+  );
+  glRotatef(xRot, 0, 1, 0);
+  glRotatef(yRot, 1, 0, 0);
+
+  // Draw the scene.
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  // Put a light at the same position as the camera.
+  float light[3] = { 0, 0, camDist };
+  glPushMatrix();
+  glRotatef(xRot, 0, 1, 0);
+  glRotatef(yRot, 1, 0, 0);
+  glLightfv(GL_LIGHT0, GL_POSITION, light);
   glPopMatrix();
+
+  drawModel(model, polygons);
+
   glutSwapBuffers();
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
 }
 
 
 void OBJViewerApp::changeSize(int width, int height)
 {
-    if (!fullscreen) {
-        winWidth = width;
-        winHeight = height;
-    }
-
-    // Reset the coordinate system before modifying
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    
-    // Set the viewport to be the entire window
-    glViewport(0, 0, width, height);
-
-    // Set up the camera position
-    gluPerspective(30, double(winWidth) / double(winHeight), 0.1, 100.0);
-    gluLookAt(0, 0, -10, 0, 0, 0, 0, 1, 0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+  if (!fullscreen) {
+    winWidth = width;
+    winHeight = height;
+  }
+  currWidth = width;
+  currHeight = height;
 }
 
 
 void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 {
-    switch (key) {
-        case 27: // 27 is the ESC key.
-            cleanUp();
-            exit(0);
-            break;
-        case 'r':
-            cleanUp();
-            init();
-            renderScene();
-            break;
-        case 'f':
-            fullscreen = !fullscreen;
-            if (fullscreen)
-                glutFullScreen();
-            else
-                glutReshapeWindow(winWidth, winHeight);
-            break;
-        case 'p':
-            polygons = !polygons;
-            glutPostRedisplay();
-        default:
-            break;
+  switch (key) {
+    case 27: // 27 is the ESC key.
+      cleanUp();
+      exit(0);
+      break;
+    case 'r':
+      cleanUp();
+      init();
+      renderScene();
+      break;
+    case 'f':
+      fullscreen = !fullscreen;
+      if (fullscreen)
+        glutFullScreen();
+      else
+        glutReshapeWindow(winWidth, winHeight);
+      break;
+    case 'p':
+      polygons = !polygons;
+      glutPostRedisplay();
+    default:
+      break;
     }
 }
 
 
 void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
-    //fprintf(stderr, "MOUSE_PRESSED(button=%d, state=%d, x=%d, y=%d)\n", button, state, x, y);
-    mouseX = x;
-    mouseY = y;
+  mouseX = x;
+  mouseY = y;
 }
 
 
 void OBJViewerApp::mouseDragged(int x, int y) {
-    //fprintf(stderr, "MOUSE_DRAGGED(x=%d, y=%d)\n", x, y);
-    int dx = x - mouseX;
-    int dy = y - mouseY;
-    glRotatef(dx, 0, 1, 0);
-    glRotatef(dy, 1, 0, 0);
+  int dx = x - mouseX;
+  int dy = y - mouseY;
 
-    mouseY = y;
-    mouseX = x;
-    glutPostRedisplay();
+  xRot = fmodf(xRot + dx, 360.0f);
+  yRot = fmodf(yRot + dy, 360.0f);
+
+  mouseY = y;
+  mouseX = x;
+
+  glutPostRedisplay();
 }
 
 
 void OBJViewerApp::run()
 {
-    glutMainLoop();
+  glutMainLoop();
 }
 
 
@@ -219,7 +238,7 @@ void OBJViewerApp::drawModel(Model* theModel, bool filledPolygons)
     std::map<std::string, Material>::iterator m;
     for (m = theModel->materials.begin(); m != theModel->materials.end(); ++m) {
       Material *currentMat = &m->second;
-      fprintf(stderr, "material = 0x%x\n", currentMat);
+      //fprintf(stderr, "material = 0x%x\n", currentMat);
 
       if (currentMat->mapKd != currentKd) {
         glActiveTexture(GL_TEXTURE0);
@@ -343,33 +362,33 @@ void OBJViewerApp::usage(char *progname)
 
 void OBJViewerApp::processArgs(int argc, char **argv)
 {
-    const char *short_opts = "h";
-    struct option long_opts[] = {
-        { "help",               no_argument,        NULL, 'h' },
-        { NULL, 0, NULL, 0 }
-    };
-    int ch;
-    while ((ch = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
-        switch (ch) {
-            case 'h':
-                usage(argv[0]);
-                exit(0);
-                break;
-            default:
-                usage(argv[0]);
-                exit(1);
-                break;
-        }
+  const char *short_opts = "h";
+  struct option long_opts[] = {
+    { "help",               no_argument,        NULL, 'h' },
+    { NULL, 0, NULL, 0 }
+  };
+  int ch;
+  while ((ch = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
+    switch (ch) {
+    case 'h':
+      usage(argv[0]);
+      exit(0);
+      break;
+    default:
+      usage(argv[0]);
+      exit(1);
+      break;
     }
-    argc -= optind;
-    argv += optind;
-    if (argc > 0) {
-        try {
-            model = loadModel(argv[0]);
-        } catch (ParseException& e) {
-            fprintf(stderr, "Unable to load model. Continuing with default model.\n");
-        }
+  }
+  argc -= optind;
+  argv += optind;
+  if (argc > 0) {
+    try {
+      model = loadModel(argv[0]);
+    } catch (ParseException& e) {
+      fprintf(stderr, "Unable to load model. Continuing with default model.\n");
     }
+  }
 }
 
 
@@ -380,31 +399,31 @@ void OBJViewerApp::cleanUp()
 
 void doRender()
 {
-    app->renderScene();
+  app->renderScene();
 } 
 
 
 void doResize(int width, int height)
 {
-    app->changeSize(width, height);
+  app->changeSize(width, height);
 }
 
 
 void doKeyPressed(unsigned char key, int mouseX, int mouseY)
 {
-    app->keyPressed(key, mouseX, mouseY);
+  app->keyPressed(key, mouseX, mouseY);
 }
 
 
 void doMousePressed(int button, int state, int x, int y)
 {
-    app->mousePressed(button, state, x, y);
+  app->mousePressed(button, state, x, y);
 }
 
 
 void doMouseDragged(int x, int y)
 {
-    app->mouseDragged(x, y);
+  app->mouseDragged(x, y);
 }
 
 
@@ -421,9 +440,9 @@ void checkGLError(const char *errMsg, const char *okMsg)
 
 int main(int argc, char **argv)
 {
-    app = new OBJViewerApp(argc, argv);
-    app->run();
-    delete app;
-    return 0;
+  app = new OBJViewerApp(argc, argv);
+  app->run();
+  delete app;
+  return 0;
 }
 
