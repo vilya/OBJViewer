@@ -101,10 +101,10 @@ void OBJViewerApp::renderScene()
   glLoadIdentity();
 
   // Put a light at the same position as the camera.
-  float light[3] = { 0, 0, camDist };
+  float light[4] = { 0, 0, camDist, 1 };
   glPushMatrix();
-  glRotatef(xRot, 0, 1, 0);
-  glRotatef(yRot, 1, 0, 0);
+  glRotatef(-yRot, 1, 0, 0);
+  glRotatef(-xRot, 0, 1, 0);
   glLightfv(GL_LIGHT0, GL_POSITION, light);
   glPopMatrix();
 
@@ -234,11 +234,12 @@ void OBJViewerApp::drawModel(Model* theModel, bool filledPolygons)
       glutWireTeapot(fminf(width, height));
   } else {
     Image* currentKd = NULL;
+    glActiveTexture(GL_TEXTURE0);
+    glDisable(GL_TEXTURE_2D);
 
     std::map<std::string, Material>::iterator m;
     for (m = theModel->materials.begin(); m != theModel->materials.end(); ++m) {
       Material *currentMat = &m->second;
-      //fprintf(stderr, "material = 0x%x\n", currentMat);
 
       if (currentMat->mapKd != currentKd) {
         glActiveTexture(GL_TEXTURE0);
@@ -255,8 +256,6 @@ void OBJViewerApp::drawModel(Model* theModel, bool filledPolygons)
 
       for (unsigned int f = 0; f < theModel->faces.size(); ++f) {
         Face& face = *theModel->faces[f];
-        if (face.material == NULL)
-          fprintf(stderr, "We got one!\n");
         if (face.material != currentMat)
           continue;
 
