@@ -1,5 +1,3 @@
-Get mouse rotation working properly.
-
 Object stays static, you control the camera:
 - Rotate -> left drag
 - Pan -> middle drag
