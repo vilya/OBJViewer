@@ -1,3 +1,7 @@
+Factor out the rendering and window management code into separate files.
+
+Improve rendering speed on larger models (e.g. the digger).
+
 Object stays static, you control the camera:
 - Rotate -> left drag
 - Pan -> middle drag
@@ -12,7 +16,8 @@ Predefined camera positions:
 - Top (x=0, y=10, z=0)
 - Bottom (x=0, y=-10, z=0)
 
-Add support for additional texture image formats (.jpg, .ppm).
+Add support for additional texture image formats (.jpg, .tiff, .png).
+- Use the freely available libraries for these (e.g. libjpeg, libpng, libtiff).
 
 Widgets to display (and edit?) model attributes.
 

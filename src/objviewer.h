@@ -2,7 +2,9 @@
 #define OBJViewer_objviewer_h
 
 #include <map>
+#include "image.h"
 #include "model.h"
+#include "renderer.h"
 
 
 //
@@ -14,52 +16,26 @@ public:
     OBJViewerApp(int argc, char **argv);
     ~OBJViewerApp();
 
-    //! Renders the scene. This will reload and rebind the vertex and fragment
-    //! shaders, as well as re-binding all the texture images.
-    void renderScene();
-
-    //! The callback function used by Glut whenever the window changes size.
+    void redraw();
     void changeSize(int width, int height);
-
-    //! The callback function used by Glut whenever a key is pressed.
     void keyPressed(unsigned char key, int x, int y);
-
     void mousePressed(int button, int state, int x, int y);
     void mouseDragged(int x, int y);
-
-    //! Starts the main event processing loop.
     void run();
 
 private:
-    //! Load and setup the shaders and images required to render the result.
-    void init();
-
-    //! Load all textures for the model onto the GPU.
-    void loadTexturesForModel(Model* theModel);
-
-    //! Draw the specified model as either filled polygons or lines.
-    void drawModel(Model* theModel, bool filledPolygons);
-
-    //! Load an image file onto the GPU as a texture
-    void loadTexture(GLenum texUnit, int texID, Image& tex);
-
     //! Prints help about the command line syntax and options to stderr.
     void usage(char *progname);
 
     //! Process the command line arguments.
     void processArgs(int argc, char **argv);
 
-    //! Clears out the current shaders and textures.
-    void cleanUp();
-
 private:
     int winX, winY, winWidth, winHeight, currWidth, currHeight;
     bool fullscreen;
     int mouseX, mouseY;
-    float xRot, yRot;
-    bool polygons;
-    Model *model;
-    unsigned int modelDisplayList, linesDisplayList;
+    Renderer* _renderer;
+    Model *_model;
 };
 
 
