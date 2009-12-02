@@ -28,19 +28,23 @@ public:
     void render(int width, int height);
 
 private:
-    //! Load all textures for the model onto the GPU.
-    void loadTexturesForModel(Model* theModel);
+    void drawModel(Model* theModel);
+    void drawDefaultModel();
+    void setupMaterial(Material* material);
+    void setupTexture(GLenum texUnit, Image* texture, Image*& currentTexture);
+    void renderFacesForMaterial(Model* model, Material* material);
 
-    //! Draw the specified model as either filled polygons or lines.
-    void drawModel(Model* theModel, bool filledPolygons);
-
-    //! Load an image file onto the GPU as a texture
-    void loadTexture(GLenum texUnit, int texID, Image& tex);
+    void loadTexturesForModel(Model* model);
+    void loadTexture(GLenum texUnit, Image* tex);
 
 private:
     RenderStyle _style;
     Model *_model;
     float _camU, _camV, _camDist;
+
+    Image* _currentMapKa;
+    Image* _currentMapKd;
+    Image* _currentMapKs;
 };
 
 

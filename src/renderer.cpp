@@ -104,11 +104,125 @@ void Renderer::render(int width, int height)
   glLightfv(GL_LIGHT0, GL_POSITION, light);
   glPopMatrix();
 
-  drawModel(_model, _style == kPolygons);
+  if (_model != NULL)
+    drawModel(_model);
+  else
+    drawDefaultModel();
 
   glutSwapBuffers();
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
+}
+
+
+void Renderer::drawModel(Model* model)
+{
+  glActiveTexture(GL_TEXTURE1);
+  glDisable(GL_TEXTURE_2D);
+
+  _currentMapKa = NULL;
+  _currentMapKd = NULL;
+  _currentMapKs = NULL;
+
+  std::map<std::string, Material>::iterator m;
+  for (m = model->materials.begin(); m != model->materials.end(); ++m) {
+    Material *material = &m->second;
+    setupMaterial(material);
+    renderFacesForMaterial(model, material);
+  }
+}
+
+
+void Renderer::drawDefaultModel()
+{
+  switch (_style) {
+  case kLines:
+    glutWireTeapot(1.0f);
+    break;
+  case kPolygons:
+  default:
+    glutSolidTeapot(1.0f);
+    break;
+  }
+}
+
+
+void Renderer::setupMaterial(Material* material)
+{
+  setupTexture(GL_TEXTURE0, material->mapKa, _currentMapKa);
+  setupTexture(GL_TEXTURE1, material->mapKd, _currentMapKd);
+  setupTexture(GL_TEXTURE2, material->mapKs, _currentMapKs);
+}
+
+
+void Renderer::setupTexture(GLenum texUnit, Image* texture, Image*& currentTexture)
+{
+  if (texture != currentTexture) {
+    glActiveTexture(texUnit);
+    checkGLError("No luck activating texture");
+    if (texture != NULL) {
+      glBindTexture(GL_TEXTURE_2D, texture->getTexID());
+      checkGLError("Error setting up texture");
+    } else {
+      glDisable(GL_TEXTURE_2D);
+      checkGLError("Error disabling texture.");
+    }
+    currentTexture = texture;
+  }
+}
+
+
+void Renderer::renderFacesForMaterial(Model* model, Material* material)
+{
+  for (unsigned int f = 0; f < model->faces.size(); ++f) {
+    Face& face = *model->faces[f];
+    if (face.material != material)
+      continue;
+
+    switch (_style) {
+    case kLines:
+      glBegin(GL_LINE_LOOP);
+      break;
+    case kPolygons:
+    default:
+      glBegin(GL_POLYGON);
+      break;
+    }
+
+    for (unsigned int i = 0; i < face.size(); ++i) {
+      if (face.material != NULL) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
+        if (face[i].vt >= 0) {
+          Float4& vt = model->vt[face[i].vt];
+          if (face.material->mapKa != NULL) {
+            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+          }
+          if (face.material->mapKd != NULL && face[i].vt >= 0) {
+            Float4& vt = model->vt[face[i].vt];
+            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+          }
+        }
+      } else {
+        float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
+      }
+      
+      if (face[i].vn >= 0) {
+        Float4& vn = model->vn[face[i].vn];
+        glNormal3f(vn.x, vn.y, vn.z);
+      }
+
+      Float4& v = model->v[face[i].v];
+      glVertex4f(v.x, v.y, v.z, v.w);
+    }
+
+    glEnd();
+    checkGLError("Error while drawing face.");
+  }
 }
 
 
@@ -117,95 +231,22 @@ void Renderer::loadTexturesForModel(Model* model)
   if (model == NULL)
     return;
 
-  unsigned int texId = 10;
   std::map<std::string, Material>::iterator iter;
   for (iter = model->materials.begin(); iter != model->materials.end(); ++iter) {
-    Image* tex = iter->second.mapKd;
-    if (tex != NULL) {
-      loadTexture(GL_TEXTURE0, texId, *tex);
-      ++texId;
-    }
+    loadTexture(GL_TEXTURE0, iter->second.mapKa);
+    loadTexture(GL_TEXTURE1, iter->second.mapKd);
+    loadTexture(GL_TEXTURE2, iter->second.mapKs);
   }
 }
 
 
-void Renderer::drawModel(Model* theModel, bool filledPolygons)
+void Renderer::loadTexture(GLenum texUnit, Image* tex)
 {
-  if (theModel == NULL) {
-    if (filledPolygons)
-      glutSolidTeapot(1.0f);
-    else
-      glutWireTeapot(1.0f);
-  } else {
-    Image* currentKd = NULL;
-    glActiveTexture(GL_TEXTURE0);
-    glDisable(GL_TEXTURE_2D);
+  if (tex == NULL)
+    return;
 
-    std::map<std::string, Material>::iterator m;
-    for (m = theModel->materials.begin(); m != theModel->materials.end(); ++m) {
-      Material *currentMat = &m->second;
-
-      if (currentMat->mapKd != currentKd) {
-        glActiveTexture(GL_TEXTURE0);
-        checkGLError("No luck activating texture 0");
-        if (currentMat->mapKd != NULL) {
-          glBindTexture(GL_TEXTURE_2D, currentMat->mapKd->getTexID());
-          checkGLError("Error loading texture 0");
-        } else {
-          glDisable(GL_TEXTURE_2D);
-          checkGLError("Error disabling texture 0");
-        }
-        currentKd = currentMat->mapKd;
-      }
-
-      for (unsigned int f = 0; f < theModel->faces.size(); ++f) {
-        Face& face = *theModel->faces[f];
-        if (face.material != currentMat)
-          continue;
-
-        if (filledPolygons)
-          glBegin(GL_POLYGON);
-        else
-          glBegin(GL_LINE_LOOP);
- 
-        for (unsigned int i = 0; i < face.size(); ++i) {
-          if (face.material != NULL) {
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
-
-            if (face.material->mapKd != NULL && face[i].vt >= 0) {
-              Float4& vt = theModel->vt[face[i].vt];
-              glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-            }
-          } else {
-            float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
-          }
-          
-          if (face[i].vn >= 0) {
-            Float4& vn = theModel->vn[face[i].vn];
-            glNormal3f(vn.x, vn.y, vn.z);
-          }
-
-          Float4& v = theModel->v[face[i].v];
-          glVertex4f(v.x, v.y, v.z, v.w);
-        }
-
-        glEnd();
-        checkGLError("Error while drawing face.");
-      }
-    }
-  }
-}
-
-
-void Renderer::loadTexture(GLenum texUnit, int texID, Image& tex)
-{
   GLenum targetType;
-  switch (tex.getBytesPerPixel()) {
+  switch (tex->getBytesPerPixel()) {
   case 1:
     targetType = GL_ALPHA;
     break;
@@ -220,6 +261,9 @@ void Renderer::loadTexture(GLenum texUnit, int texID, Image& tex)
     break;
   }
   checkGLError("Some GL error before loading texture.");
+
+  GLuint texID;
+  glGenTextures(1, &texID);
 
   glActiveTexture(texUnit);
   checkGLError("Texture unit not active.");
@@ -243,11 +287,11 @@ void Renderer::loadTexture(GLenum texUnit, int texID, Image& tex)
   glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
   glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
   glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
-  glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex.getWidth(), tex.getHeight(), 0,
-               tex.getType(), GL_UNSIGNED_BYTE, tex.getPixels());
+  glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex->getWidth(), tex->getHeight(), 0,
+               tex->getType(), GL_UNSIGNED_BYTE, tex->getPixels());
   checkGLError("Texture failed to load.");
 
-  tex.setTexID(texID);
+  tex->setTexID(texID);
 }
 
 
