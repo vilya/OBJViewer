@@ -183,6 +183,7 @@ void OBJViewerApp::run()
 
 void OBJViewerApp::init()
 {
+  glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
@@ -192,9 +193,6 @@ void OBJViewerApp::init()
   float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
-
-  float position[4] = { 0, 0, -10, 0 };
-  glLightfv(GL_LIGHT0, GL_POSITION, position);
 
   loadTexturesForModel(model);
 }
