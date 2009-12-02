@@ -48,12 +48,16 @@ Image::Image(const char *path) throw(ImageException) :
   if (file == NULL)
     throw ImageException("File not found: %s.", filename);
   try {
-    if (strcasecmp(ext, ".bmp") == 0)
+    if (strcasecmp(ext, ".bmp") == 0) {
       loadBMP(file);
-    else if (strcasecmp(ext, ".tga") == 0)
+    } else if (strcasecmp(ext, ".tga") == 0) {
       loadTGA(file);
-    else
+    } else if (strcasecmp(ext, ".ppm") == 0) {
+      loadPPM(file);
+    } else {
       throw ImageException("Unknown image format: %s", ext);
+    }
+    fclose(file);
   } catch (ImageException& ex) {
     fclose(file);
     if (_pixels != NULL)
@@ -211,5 +215,56 @@ void Image::tgaLoadRLECompressed(FILE *file, unsigned int numPixels,
     }
     pixelsRead += pixelCount;
   }
+}
+
+
+void Image::loadPPM(FILE* file) throw(ImageException)
+{
+  int fileType = 0;
+  fscanf(file, "P%d", &fileType);
+  if (fileType != 3 && fileType != 6)
+    throw ImageException("Unsupported PPM subformat.");
+
+  _type = GL_RGB;
+  _bytesPerPixel = 3;
+  _width = ppmGetNextInt(file);
+  _height = ppmGetNextInt(file);
+
+  int maxValue = ppmGetNextInt(file);
+
+  unsigned int numBytes = _width * _height * _bytesPerPixel;
+  _pixels = new unsigned char[numBytes];
+  if (fileType == 3) {
+    for (long i = 0; i < numBytes; ++i)
+      _pixels[i] = ppmGetNextInt(file) * 255 / maxValue;
+  } else {
+    int ch = fgetc(file);
+    if (ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r')
+      ungetc(ch, file);
+
+    if (fread(_pixels, sizeof(unsigned char), numBytes, file) < numBytes)
+      throw ImageException("Invalid or missing texture data.");
+  }
+}
+
+
+int Image::ppmGetNextInt(FILE* file) throw(ImageException)
+{
+  int ch = fgetc(file);
+  bool comment = false;
+  while (ch != EOF) {
+    if ((ch >= '0' && ch <= '9') && !comment) {
+      int val;
+      ungetc(ch, file);
+      fscanf(file, "%d", &val);
+      return val;
+    } else if (ch == '#') {
+      comment = true;
+    } else if (ch == '\n') {
+      comment = false;
+    }
+    ch = fgetc(file);
+  }
+  throw ImageException("Incomplete PPM file.");
 }
 
