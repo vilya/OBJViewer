@@ -84,9 +84,9 @@ Image::Image(const Image& img) :
   _height(img._height),
   _pixels(NULL)
 {
-    unsigned int size = _bytesPerPixel * _width * _height;
-    _pixels = new unsigned char[size];
-    memcpy(_pixels, img._pixels, size);
+  unsigned int size = _bytesPerPixel * _width * _height;
+  _pixels = new unsigned char[size];
+  memcpy(_pixels, img._pixels, size);
 }
 
 
@@ -99,117 +99,117 @@ Image::~Image()
 
 void Image::loadBMP(FILE *file) throw(ImageException)
 {
-    // Read the header data.
-    unsigned char file_header[14];
-    unsigned char info_header[40];
-    if (fread(file_header, sizeof(unsigned char), 14, file) < 14)
-        throw ImageException("Invalid or missing texture data.");
-    if (fread(info_header, sizeof(unsigned char), 40, file) < 40)
-        throw ImageException("Invalid or missing texture data.");
+  // Read the header data.
+  unsigned char file_header[14];
+  unsigned char info_header[40];
+  if (fread(file_header, sizeof(unsigned char), 14, file) < 14)
+    throw ImageException("Invalid or missing texture data.");
+  if (fread(info_header, sizeof(unsigned char), 40, file) < 40)
+    throw ImageException("Invalid or missing texture data.");
 
-    // TODO: inspect the header data and return suitable errors for unsupported formats.
-    _type = GL_BGR;
-    _bytesPerPixel = 3;
-    _width = (unsigned int)info_header[4] |
-             (unsigned int)info_header[5] << 8 |
-             (unsigned int)info_header[6] << 16 |
-             (unsigned int)info_header[7] << 24;
-    _height = (unsigned int)info_header[8] |
-              (unsigned int)info_header[9] << 8 |
-              (unsigned int)info_header[10] << 16 |
-              (unsigned int)info_header[11] << 24;
+  // TODO: inspect the header data and return suitable errors for unsupported formats.
+  _type = GL_BGR;
+  _bytesPerPixel = 3;
+  _width = (unsigned int)info_header[4] |
+           (unsigned int)info_header[5] << 8 |
+           (unsigned int)info_header[6] << 16 |
+           (unsigned int)info_header[7] << 24;
+  _height = (unsigned int)info_header[8] |
+            (unsigned int)info_header[9] << 8 |
+            (unsigned int)info_header[10] << 16 |
+            (unsigned int)info_header[11] << 24;
 
-    // Read the texture data.
-    unsigned int numBytes = _width * _height * _bytesPerPixel;
-    _pixels = new unsigned char[numBytes];
-    if (fread(_pixels, sizeof(unsigned char), numBytes, file) < numBytes)
-        throw ImageException("Invalid or missing texture data.");
-    // Note that the data from the file is in BGR order.
+  // Read the texture data.
+  unsigned int numBytes = _width * _height * _bytesPerPixel;
+  _pixels = new unsigned char[numBytes];
+  if (fread(_pixels, sizeof(unsigned char), numBytes, file) < numBytes)
+    throw ImageException("Invalid or missing texture data.");
+  // Note that the data from the file is in BGR order.
 }
 
 
 void Image::loadTGA(FILE *file) throw(ImageException)
 {
-    unsigned char header[18];
-    fread(header, sizeof(unsigned char), 18, file);
-    if (header[1] != 0) // The colormap byte.
-        throw ImageException("Colormap TGA files aren't supported.");
+  unsigned char header[18];
+  fread(header, sizeof(unsigned char), 18, file);
+  if (header[1] != 0) // The colormap byte.
+    throw ImageException("Colormap TGA files aren't supported.");
 
-    _width = header[0xC] + header[0xD] * 256; 
-    _height = header[0xE] + header[0xF] * 256;
-    unsigned int bitDepth = header[0x10];
-    /* make sure we are loading a supported bit-depth */
-    if (bitDepth != 32 && bitDepth != 24 && bitDepth != 8)
-        throw ImageException("TGA files with a bit depth of %d aren't supported.", bitDepth);
+  _width = header[0xC] + header[0xD] * 256; 
+  _height = header[0xE] + header[0xF] * 256;
+  unsigned int bitDepth = header[0x10];
+  /* make sure we are loading a supported bit-depth */
+  if (bitDepth != 32 && bitDepth != 24 && bitDepth != 8)
+    throw ImageException("TGA files with a bit depth of %d aren't supported.", bitDepth);
 
-    unsigned int numPixels = _width * _height;
-    _bytesPerPixel = bitDepth / 8;
-    _pixels = new unsigned char[numPixels * _bytesPerPixel];
-    switch (header[2]) { // The image type byte
-        case 2: // TrueColor, uncompressed
-        case 3: // Monochrome, uncompressed
-            tgaLoadUncompressed(file, numPixels, _bytesPerPixel, _pixels);
-            break;
-        case 10: // TrueColor, RLE compressed
-        case 11: // Monochrome, RLE compressed
-            tgaLoadRLECompressed(file, numPixels, _bytesPerPixel, _pixels);
-            break;
-        // Unsupported image types.
-        default:
-            throw ImageException("Unknown TGA image type (type code: %d).", header[2]);
-    }
+  unsigned int numPixels = _width * _height;
+  _bytesPerPixel = bitDepth / 8;
+  _pixels = new unsigned char[numPixels * _bytesPerPixel];
+  switch (header[2]) { // The image type byte
+    case 2: // TrueColor, uncompressed
+    case 3: // Monochrome, uncompressed
+      tgaLoadUncompressed(file, numPixels, _bytesPerPixel, _pixels);
+      break;
+    case 10: // TrueColor, RLE compressed
+    case 11: // Monochrome, RLE compressed
+      tgaLoadRLECompressed(file, numPixels, _bytesPerPixel, _pixels);
+      break;
+    // Unsupported image types.
+    default:
+      throw ImageException("Unknown TGA image type (type code: %d).", header[2]);
+  }
 
-    if (bitDepth == 32)
-        _type = GL_BGRA;
-    else if (bitDepth == 24)
-        _type = GL_BGR;
-    else
-        _type = GL_ALPHA;
+  if (bitDepth == 32)
+    _type = GL_BGRA;
+  else if (bitDepth == 24)
+    _type = GL_BGR;
+  else
+    _type = GL_ALPHA;
 }
 
 
 void Image::tgaLoadUncompressed(FILE *file, unsigned int numPixels,
-        unsigned int bytesPerPixel, unsigned char *pixels)
-    throw(ImageException)
+    unsigned int bytesPerPixel, unsigned char *pixels)
+  throw(ImageException)
 {
-    unsigned int numBytes = numPixels * bytesPerPixel;
-    if (fread(pixels, sizeof(unsigned char), numBytes, file) < numBytes)
-        throw ImageException("Missing or invalid TGA image data.");
+  unsigned int numBytes = numPixels * bytesPerPixel;
+  if (fread(pixels, sizeof(unsigned char), numBytes, file) < numBytes)
+    throw ImageException("Missing or invalid TGA image data.");
 }
 
 
 void Image::tgaLoadRLECompressed(FILE *file, unsigned int numPixels,
-        unsigned int bytesPerPixel, unsigned char *pixels)
-    throw(ImageException)
+    unsigned int bytesPerPixel, unsigned char *pixels)
+  throw(ImageException)
 {
-    const int MAX_BYTES_PER_PIXEL = 4;
+  const int MAX_BYTES_PER_PIXEL = 4;
 
-    int pixelCount;
-    bool isEncoded;
+  int pixelCount;
+  bool isEncoded;
 
-    unsigned int pixelsRead = 0;
-    unsigned char pixel[MAX_BYTES_PER_PIXEL];
-    while (pixelsRead < numPixels) {
-        pixelCount = fgetc(file);
-        if (pixelCount == EOF)
-            throw ImageException("Missing or invalid TGA image data.");
+  unsigned int pixelsRead = 0;
+  unsigned char pixel[MAX_BYTES_PER_PIXEL];
+  while (pixelsRead < numPixels) {
+    pixelCount = fgetc(file);
+    if (pixelCount == EOF)
+      throw ImageException("Missing or invalid TGA image data.");
 
-        isEncoded = pixelCount > 127;
-        pixelCount = (pixelCount & 0x7F) + 1;
-        if (isEncoded) {
-            if (fread(pixel, sizeof(unsigned char), bytesPerPixel, file) < bytesPerPixel)
-                throw ImageException("Missing or invalid TGA image data.");
-            for (int i = 0; i < pixelCount; ++i) {
-                memcpy(pixels, pixel, bytesPerPixel);
-                pixels += bytesPerPixel;
-            }
-        } else {
-            unsigned int numBytes = pixelCount * bytesPerPixel;
-            if (fread(pixels, sizeof(unsigned char), numBytes, file) < numBytes)
-                throw ImageException("Missing or invalid TGA image data.");
-            pixels += numBytes;
-        }
-        pixelsRead += pixelCount;
+    isEncoded = pixelCount > 127;
+    pixelCount = (pixelCount & 0x7F) + 1;
+    if (isEncoded) {
+      if (fread(pixel, sizeof(unsigned char), bytesPerPixel, file) < bytesPerPixel)
+        throw ImageException("Missing or invalid TGA image data.");
+      for (int i = 0; i < pixelCount; ++i) {
+        memcpy(pixels, pixel, bytesPerPixel);
+        pixels += bytesPerPixel;
+      }
+    } else {
+      unsigned int numBytes = pixelCount * bytesPerPixel;
+      if (fread(pixels, sizeof(unsigned char), numBytes, file) < numBytes)
+        throw ImageException("Missing or invalid TGA image data.");
+      pixels += numBytes;
     }
+    pixelsRead += pixelCount;
+  }
 }
 
