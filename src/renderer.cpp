@@ -149,7 +149,7 @@ void Renderer::drawModel(Model* theModel, bool filledPolygons)
         glActiveTexture(GL_TEXTURE0);
         checkGLError("No luck activating texture 0");
         if (currentMat->mapKd != NULL) {
-          loadTexture(GL_TEXTURE0, currentMat->mapKd->getTexID(), *currentMat->mapKd);
+          glBindTexture(GL_TEXTURE_2D, currentMat->mapKd->getTexID());
           checkGLError("Error loading texture 0");
         } else {
           glDisable(GL_TEXTURE_2D);
