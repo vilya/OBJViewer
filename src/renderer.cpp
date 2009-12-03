@@ -41,7 +41,12 @@ Renderer::Renderer(Model* model) :
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
 
-  loadTexturesForModel(_model);
+  if (_model != NULL) {
+    _model->displayListStart = glGenLists(2);
+    loadTexturesForModel(_model);
+    drawModel(_model, _model->displayListStart, kLines);
+    drawModel(_model, _model->displayListStart + 1, kPolygons);
+  }
 }
 
 
@@ -105,9 +110,9 @@ void Renderer::render(int width, int height)
   glPopMatrix();
 
   if (_model != NULL)
-    drawModel(_model);
+    glCallList(_model->displayListStart + (unsigned int)_style);
   else
-    drawDefaultModel();
+    drawDefaultModel(_style);
 
   glutSwapBuffers();
   glMatrixMode(GL_PROJECTION);
@@ -115,7 +120,7 @@ void Renderer::render(int width, int height)
 }
 
 
-void Renderer::drawModel(Model* model)
+void Renderer::drawModel(Model* model, unsigned int displayList, RenderStyle style)
 {
   glActiveTexture(GL_TEXTURE1);
   glDisable(GL_TEXTURE_2D);
@@ -124,18 +129,20 @@ void Renderer::drawModel(Model* model)
   _currentMapKd = NULL;
   _currentMapKs = NULL;
 
+  glNewList(displayList, GL_COMPILE);
   std::map<std::string, Material>::iterator m;
   for (m = model->materials.begin(); m != model->materials.end(); ++m) {
     Material *material = &m->second;
     setupMaterial(material);
-    renderFacesForMaterial(model, material);
+    renderFacesForMaterial(model, material, style);
   }
+  glEndList();
 }
 
 
-void Renderer::drawDefaultModel()
+void Renderer::drawDefaultModel(RenderStyle style)
 {
-  switch (_style) {
+  switch (style) {
   case kLines:
     glutWireTeapot(1.0f);
     break;
@@ -172,14 +179,15 @@ void Renderer::setupTexture(GLenum texUnit, Image* texture, Image*& currentTextu
 }
 
 
-void Renderer::renderFacesForMaterial(Model* model, Material* material)
+void Renderer::renderFacesForMaterial(Model* model,
+    Material* material, RenderStyle style)
 {
   for (unsigned int f = 0; f < model->faces.size(); ++f) {
     Face& face = *model->faces[f];
     if (face.material != material)
       continue;
 
-    switch (_style) {
+    switch (style) {
     case kLines:
       glBegin(GL_LINE_LOOP);
       break;
@@ -194,15 +202,12 @@ void Renderer::renderFacesForMaterial(Model* model, Material* material)
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
-        if (face[i].vt >= 0) {
+        if (face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
           Float4& vt = model->vt[face[i].vt];
-          if (face.material->mapKa != NULL) {
+          if (face.material->mapKa != NULL)
             glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-          }
-          if (face.material->mapKd != NULL && face[i].vt >= 0) {
-            Float4& vt = model->vt[face[i].vt];
+          if (face.material->mapKd != NULL)
             glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-          }
         }
       } else {
         float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -211,7 +216,7 @@ void Renderer::renderFacesForMaterial(Model* model, Material* material)
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
       }
       
-      if (face[i].vn >= 0) {
+      if (face[i].vn >= 0 && (unsigned int)face[i].vn < model->vn.size()) {
         Float4& vn = model->vn[face[i].vn];
         glNormal3f(vn.x, vn.y, vn.z);
       }

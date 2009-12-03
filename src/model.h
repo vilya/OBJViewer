@@ -48,6 +48,8 @@ struct Material {
   Image* mapKa; // Ambient texture map.
   Image* mapKd; // Diffuse texture map.
   Image* mapKs; // Specular texture map.
+  Image* mapD;  // Dissolve texture map.
+  Image* mapBump; // Bump map.
 
   Material() :
       Ka(), Kd(), Ks(), Tf(1, 1, 1), d(1.0), Ns(1.0),
@@ -84,7 +86,7 @@ struct Model {
   std::vector<Face*> faces;
 
   std::map<std::string, Material> materials;
-
+  unsigned int displayListStart;
 
   Model() : v(), vt(), vp(), vn(), faces(), materials() {}
   ~Model() { for (unsigned int i = 0; i < faces.size(); ++i) delete faces[i]; }

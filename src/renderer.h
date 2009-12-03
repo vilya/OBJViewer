@@ -28,11 +28,11 @@ public:
     void render(int width, int height);
 
 private:
-    void drawModel(Model* theModel);
-    void drawDefaultModel();
+    void drawModel(Model* theModel, unsigned int displayList, RenderStyle style);
+    void drawDefaultModel(RenderStyle style);
     void setupMaterial(Material* material);
     void setupTexture(GLenum texUnit, Image* texture, Image*& currentTexture);
-    void renderFacesForMaterial(Model* model, Material* material);
+    void renderFacesForMaterial(Model* model, Material* material, RenderStyle style);
 
     void loadTexturesForModel(Model* model);
     void loadTexture(GLenum texUnit, Image* tex);

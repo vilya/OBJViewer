@@ -44,6 +44,8 @@ enum MTLFileLineType {
   MTL_LINETYPE_MAP_KA,
   MTL_LINETYPE_MAP_KD,
   MTL_LINETYPE_MAP_KS,
+  MTL_LINETYPE_MAP_D,
+  MTL_LINETYPE_MAP_BUMP,
   MTL_LINETYPE_COMMENT
 };
 
@@ -245,6 +247,10 @@ MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
     return MTL_LINETYPE_MAP_KD;
   else if (strncmp("map_Ks", line, len) == 0)
     return MTL_LINETYPE_MAP_KS;
+  else if (strncmp("map_D", line, len) == 0)
+    return MTL_LINETYPE_MAP_KD;
+  else if (strncmp("map_Bump", line, len) == 0)
+    return MTL_LINETYPE_MAP_BUMP;
   else if (strncmp("#", line, len) == 0)
     return MTL_LINETYPE_COMMENT;
   else
@@ -377,6 +383,14 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
         case MTL_LINETYPE_MAP_KS:
           if (material != NULL)
             material->mapKs = mtlParseTexture(col, col, baseDir);
+          break;
+        case MTL_LINETYPE_MAP_D:
+          if (material != NULL)
+            material->mapD = mtlParseTexture(col, col, baseDir);
+          break;
+        case MTL_LINETYPE_MAP_BUMP:
+          if (material != NULL)
+            material->mapBump = mtlParseTexture(col, col, baseDir);
           break;
         case MTL_LINETYPE_BLANK:
         case MTL_LINETYPE_COMMENT:
