@@ -1,7 +1,3 @@
-Factor out the rendering and window management code into separate files.
-
-Improve rendering speed on larger models (e.g. the digger).
-
 Object stays static, you control the camera:
 - Rotate -> left drag
 - Pan -> middle drag
@@ -27,3 +23,6 @@ Render a line grid on y=0 plane.
 
 Allow lights to be placed arbitrarily.
 
+Automatically calculate a good initial camera position based on the bounding box of the model.
+
+Playback of baked animations.

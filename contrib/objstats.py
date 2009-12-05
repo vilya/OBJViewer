@@ -14,7 +14,7 @@ def main():
 
   with open(sys.argv[1]) as f:
     for line in f:
-      if line.startswith('f '):
+      if line.startswith('f ') or line.startswith('fo '):
         faces += 1
       elif line.startswith('v '):
         vertexes += 1

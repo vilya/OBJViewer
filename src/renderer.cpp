@@ -28,7 +28,10 @@ Renderer::Renderer(Model* model) :
   _model(model),
   _camU(0),
   _camV(0),
-  _camDist(10)
+  _camDist(10),
+  _currentMapKa(NULL),
+  _currentMapKd(NULL),
+  _currentMapKs(NULL)
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
@@ -202,12 +205,15 @@ void Renderer::renderFacesForMaterial(Model* model,
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
+
         if (face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
           Float4& vt = model->vt[face[i].vt];
           if (face.material->mapKa != NULL)
             glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
           if (face.material->mapKd != NULL)
-            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+            glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
+          if (face.material->mapKs != NULL)
+            glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
         }
       } else {
         float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -238,14 +244,14 @@ void Renderer::loadTexturesForModel(Model* model)
 
   std::map<std::string, Material>::iterator iter;
   for (iter = model->materials.begin(); iter != model->materials.end(); ++iter) {
-    loadTexture(GL_TEXTURE0, iter->second.mapKa);
-    loadTexture(GL_TEXTURE1, iter->second.mapKd);
-    loadTexture(GL_TEXTURE2, iter->second.mapKs);
+    loadTexture(iter->second.mapKa);
+    loadTexture(iter->second.mapKd);
+    loadTexture(iter->second.mapKs);
   }
 }
 
 
-void Renderer::loadTexture(GLenum texUnit, Image* tex)
+void Renderer::loadTexture(Image* tex)
 {
   if (tex == NULL)
     return;
@@ -270,10 +276,10 @@ void Renderer::loadTexture(GLenum texUnit, Image* tex)
   GLuint texID;
   glGenTextures(1, &texID);
 
-  glActiveTexture(texUnit);
-  checkGLError("Texture unit not active.");
-  glEnable(GL_TEXTURE_2D);
-  checkGLError("Textures not enabled.");
+  //glActiveTexture(texUnit);
+  //checkGLError("Texture unit not active.");
+  //glEnable(GL_TEXTURE_2D);
+  //checkGLError("Textures not enabled.");
   glBindTexture(GL_TEXTURE_2D, texID);
   checkGLError("Texture not bound.");
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

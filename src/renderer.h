@@ -35,7 +35,7 @@ private:
     void renderFacesForMaterial(Model* model, Material* material, RenderStyle style);
 
     void loadTexturesForModel(Model* model);
-    void loadTexture(GLenum texUnit, Image* tex);
+    void loadTexture(Image* tex);
 
 private:
     RenderStyle _style;
