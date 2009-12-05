@@ -91,7 +91,7 @@ void Renderer::render(int width, int height)
   glViewport(0, 0, width, height); // Set the viewport to be the entire window
 
   // Set up the camera position
-  gluPerspective(30, double(width) / double(height), 0.1, 100.0);
+  gluPerspective(30, double(width) / double(height), 0.1, 5000.0);
   gluLookAt(
       0, 0, _camDist, // Camera position
       0, 0, 0,        // target
@@ -171,6 +171,7 @@ void Renderer::setupTexture(GLenum texUnit, Image* texture, Image*& currentTextu
     glActiveTexture(texUnit);
     checkGLError("No luck activating texture");
     if (texture != NULL) {
+      glEnable(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, texture->getTexID());
       checkGLError("Error setting up texture");
     } else {
