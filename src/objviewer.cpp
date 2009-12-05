@@ -112,6 +112,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       _renderer->setStyle(kLines);
       glutPostRedisplay();
     default:
+      printf("Key pressed: '%c' (0x%x)\n", key, key);
       break;
     }
 }
@@ -120,11 +121,26 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
   mouseX = x;
   mouseY = y;
+  mouseModifiers = glutGetModifiers();
 }
 
 
 void OBJViewerApp::mouseDragged(int x, int y) {
-  _renderer->moveCameraBy(x - mouseX, y - mouseY, 0);
+  int dx = x - mouseX;
+  int dy = y - mouseY;
+
+  bool shiftPressed = (mouseModifiers & GLUT_ACTIVE_SHIFT) != 0;
+  //bool ctrlPressed = (mouseModifiers & GLUT_ACTIVE_CTRL) != 0;
+  //bool altPressed = (mouseModifiers & GLUT_ACTIVE_ALT) != 0;
+
+  if (shiftPressed) {
+    if (abs(dx) >= abs(dy))
+      _renderer->moveCameraBy(0, 0, dx / 2.0f);
+    else
+      _renderer->moveCameraBy(0, 0, dy / 2.0f);
+  } else {
+    _renderer->moveCameraBy(x - mouseX, y - mouseY, 0);
+  }
   mouseY = y;
   mouseX = x;
   glutPostRedisplay();
