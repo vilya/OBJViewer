@@ -78,22 +78,29 @@ struct Face {
 };
 
 
-struct Model {
+struct Frame {
   std::vector<Float4> v;
   std::vector<Float4> vt;
   std::vector<Float4> vp;
   std::vector<Float4> vn;
   std::vector<Face*> faces;
 
-  std::map<std::string, Material> materials;
-  unsigned int displayListStart;
-
-  Model() : v(), vt(), vp(), vn(), faces(), materials() {}
-  ~Model() { for (unsigned int i = 0; i < faces.size(); ++i) delete faces[i]; }
+  Frame() : v(), vt(), vp(), vn(), faces() {}
+  ~Frame() { for (unsigned int i = 0; i < faces.size(); ++i) delete faces[i]; }
 };
 
 
-Model* loadModel(const char* path) throw(ParseException);
+struct Model {
+  std::vector<Frame> frames;
+  std::map<std::string, Material> materials;
+  unsigned int displayListStart;
+
+  Model() : frames(), materials() {}
+};
+
+
+Model* loadModel(const char* path,
+    unsigned int startFrame, unsigned int endFrame) throw(ParseException);
 
 #endif // OBJViewer_model_h
 

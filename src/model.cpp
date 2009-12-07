@@ -303,7 +303,9 @@ Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseE
 }
 
 
-void loadMaterialLibrary(const char* path, std::map<std::string, Material>& materials) throw(ParseException) {
+void loadMaterialLibrary(const char* path,
+    std::map<std::string, Material>& materials) throw(ParseException)
+{
   FILE *f = fopen(path, "r");
   if (f == NULL)
     throw ParseException("Unable to open mtl file %s.\n", path);
@@ -314,7 +316,7 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
 
   char baseDir[_MAX_LINE_LEN];
   snprintf(baseDir, _MAX_LINE_LEN, "%s", dirname(const_cast<char*>(path)));
-  fprintf(stderr, "baseDir for MTLLIB is %s\n", baseDir);
+  //fprintf(stderr, "baseDir for MTLLIB is %s\n", baseDir);
 
   std::string materialName;
   Material *material = NULL;
@@ -322,6 +324,7 @@ void loadMaterialLibrary(const char* path, std::map<std::string, Material>& mate
     while (!feof(f)) {
       ++line_no;
 
+      memset(line, 0, _MAX_LINE_LEN);
       if (fgets(line, _MAX_LINE_LEN, f) == NULL) {
         if (ferror(f))
           throw ParseException("Error reading from file: %s", strerror(ferror(f)));
@@ -574,7 +577,8 @@ Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material>
 }
 
 
-Model* loadModel(const char* path) throw(ParseException) {
+void loadFrame(Model* model, const char* path) throw(ParseException)
+{
   FILE *f = fopen(path, "r");
   if (f == NULL)
     throw ParseException("Unable to open model file %s.\n", path);
@@ -583,9 +587,11 @@ Model* loadModel(const char* path) throw(ParseException) {
   char *col;
   unsigned int line_no = 0;
 
-  Model *model = new Model();
   Material *activeMaterial = NULL;
   try {
+    model->frames.push_back(Frame());
+    Frame& frame = model->frames.back();
+
     while (!feof(f)) {
       ++line_no;
 
@@ -600,20 +606,20 @@ Model* loadModel(const char* path) throw(ParseException) {
       eatSpace(col);
       switch (objParseLineType(col, col)) {
         case OBJ_LINETYPE_V:
-          model->v.push_back(objParseV(col, col));
+          frame.v.push_back(objParseV(col, col));
           break;
         case OBJ_LINETYPE_VT:
-          model->vt.push_back(objParseVT(col, col));
+          frame.vt.push_back(objParseVT(col, col));
           break;
         case OBJ_LINETYPE_VP:
-          model->vp.push_back(objParseVP(col, col));
+          frame.vp.push_back(objParseVP(col, col));
           break;
         case OBJ_LINETYPE_VN:
-          model->vn.push_back(objParseVN(col, col));
+          frame.vn.push_back(objParseVN(col, col));
           break;
         case OBJ_LINETYPE_F:
         case OBJ_LINETYPE_FO:
-          model->faces.push_back(objParseFace(col, col, activeMaterial));
+          frame.faces.push_back(objParseFace(col, col, activeMaterial));
           break;
         case OBJ_LINETYPE_G:
           // TODO: handle this.
@@ -644,10 +650,34 @@ Model* loadModel(const char* path) throw(ParseException) {
     }
   } catch (ParseException& ex) {
     fclose(f);
+    fprintf(stderr, "[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
+    throw ex;
+  }
+}
+
+
+Model* loadModel(const char* path,
+    unsigned int startFrame, unsigned int endFrame) throw(ParseException)
+{
+  char framePath[_MAX_LINE_LEN];
+  
+  Model *model = new Model();
+  try {
+    if (strchr(path, '#') != NULL) {
+      for (unsigned int frameNum = startFrame; frameNum <= endFrame; ++frameNum) {
+        sprintf(framePath, path, frameNum);
+        fprintf(stderr, "Loading frame %s...\n", framePath);
+        loadFrame(model, framePath);
+      }
+    } else {
+      fprintf(stderr, "Loading frame %s...\n", path);
+      loadFrame(model, path);
+    }
+  } catch (ParseException& ex) {
     if (model != NULL)
       delete model;
-    fprintf(stderr, "[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
     throw ex;
   }
   return model;
 }
+

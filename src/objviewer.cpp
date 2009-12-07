@@ -156,7 +156,7 @@ void OBJViewerApp::run()
 void OBJViewerApp::usage(char *progname)
 {
     fprintf(stderr,
-"Usage: %s [options] <objfile>\n"
+"Usage: %s [options] <objfile> <startFrame> <endFrame>\n"
 "\n"
 "Where [options] can be any combination of:\n"
 "  -v,--verbose                 Print out some extra information.\n"
@@ -167,6 +167,9 @@ void OBJViewerApp::usage(char *progname)
 
 void OBJViewerApp::processArgs(int argc, char **argv)
 {
+  unsigned int startFrame = 0;
+  unsigned int endFrame = 0;
+
   const char *short_opts = "h";
   struct option long_opts[] = {
     { "help",               no_argument,        NULL, 'h' },
@@ -188,8 +191,15 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   argc -= optind;
   argv += optind;
   if (argc > 0) {
+    if (argc > 1) {
+      startFrame = (unsigned int)atoi(argv[1]);
+      endFrame = startFrame;
+    }
+    if (argc > 2)
+      endFrame = (unsigned int)atoi(argv[2]);
+
     try {
-      _model = loadModel(argv[0]);
+      _model = loadModel(argv[0], startFrame, endFrame);
     } catch (ParseException& e) {
       fprintf(stderr, "Unable to load model. Continuing with default model.\n");
     }

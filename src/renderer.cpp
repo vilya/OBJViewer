@@ -47,8 +47,8 @@ Renderer::Renderer(Model* model) :
   if (_model != NULL) {
     _model->displayListStart = glGenLists(2);
     loadTexturesForModel(_model);
-    drawModel(_model, _model->displayListStart, kLines);
-    drawModel(_model, _model->displayListStart + 1, kPolygons);
+    drawModel(_model, 0, _model->displayListStart, kLines);
+    drawModel(_model, 0, _model->displayListStart + 1, kPolygons);
   }
 }
 
@@ -123,7 +123,8 @@ void Renderer::render(int width, int height)
 }
 
 
-void Renderer::drawModel(Model* model, unsigned int displayList, RenderStyle style)
+void Renderer::drawModel(Model* model, unsigned int frameNum,
+    unsigned int displayList, RenderStyle style)
 {
   glActiveTexture(GL_TEXTURE1);
   glDisable(GL_TEXTURE_2D);
@@ -137,7 +138,7 @@ void Renderer::drawModel(Model* model, unsigned int displayList, RenderStyle sty
   for (m = model->materials.begin(); m != model->materials.end(); ++m) {
     Material *material = &m->second;
     setupMaterial(material);
-    renderFacesForMaterial(model, material, style);
+    renderFacesForMaterial(model, frameNum, material, style);
   }
   glEndList();
 }
@@ -183,11 +184,12 @@ void Renderer::setupTexture(GLenum texUnit, Image* texture, Image*& currentTextu
 }
 
 
-void Renderer::renderFacesForMaterial(Model* model,
+void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
     Material* material, RenderStyle style)
 {
-  for (unsigned int f = 0; f < model->faces.size(); ++f) {
-    Face& face = *model->faces[f];
+  Frame& frame = model->frames[frameNum];
+  for (unsigned int f = 0; f < frame.faces.size(); ++f) {
+    Face& face = *frame.faces[f];
     if (face.material != material)
       continue;
 
@@ -207,8 +209,8 @@ void Renderer::renderFacesForMaterial(Model* model,
         glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
 
-        if (face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
-          Float4& vt = model->vt[face[i].vt];
+        if (face[i].vt >= 0 && (unsigned int)face[i].vt < frame.vt.size()) {
+          Float4& vt = frame.vt[face[i].vt];
           if (face.material->mapKa != NULL)
             glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
           if (face.material->mapKd != NULL)
@@ -223,12 +225,12 @@ void Renderer::renderFacesForMaterial(Model* model,
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
       }
       
-      if (face[i].vn >= 0 && (unsigned int)face[i].vn < model->vn.size()) {
-        Float4& vn = model->vn[face[i].vn];
+      if (face[i].vn >= 0 && (unsigned int)face[i].vn < frame.vn.size()) {
+        Float4& vn = frame.vn[face[i].vn];
         glNormal3f(vn.x, vn.y, vn.z);
       }
 
-      Float4& v = model->v[face[i].v];
+      Float4& v = frame.v[face[i].v];
       glVertex4f(v.x, v.y, v.z, v.w);
     }
 
@@ -277,10 +279,6 @@ void Renderer::loadTexture(Image* tex)
   GLuint texID;
   glGenTextures(1, &texID);
 
-  //glActiveTexture(texUnit);
-  //checkGLError("Texture unit not active.");
-  //glEnable(GL_TEXTURE_2D);
-  //checkGLError("Textures not enabled.");
   glBindTexture(GL_TEXTURE_2D, texID);
   checkGLError("Texture not bound.");
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
