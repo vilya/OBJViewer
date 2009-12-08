@@ -7,7 +7,7 @@ CXX        := g++
 CXXFLAGS   := -g -Wall -fmessage-length=0
 LDFLAGS    := 
 
-OBJS       := $(OBJ)/objviewer.o $(OBJ)/model.o $(OBJ)/image.o $(OBJ)/renderer.o
+OBJS       := $(OBJ)/objviewer.o $(OBJ)/model.o $(OBJ)/image.o $(OBJ)/renderer.o $(OBJ)/math3d.o
 TARGET     := $(BIN)/objviewer
 
 INCLUDE	   := 

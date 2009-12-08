@@ -7,6 +7,7 @@
 #include <string>
 
 #include "image.h"
+#include "math3d.h"
 
 const unsigned int _MAX_LINE_LEN = 2048;
 
@@ -19,21 +20,6 @@ public:
   virtual ~ParseException() throw() {}
 
   virtual const char* what() const throw();
-};
-
-
-struct Float4 {
-  union {
-    struct { float x, y, z, w; };
-    float data[4];
-  };
-
-  Float4() : x(0), y(0), z(0), w(1) {}
-  Float4(float _x, float _y, float _z, float _w = 1.0) : x(_x), y(_y), z(_z), w(_w) {}
-  Float4(const Float4& vec): x(vec.x), y(vec.y), z(vec.z), w(vec.w) {}
-
-  float operator [] (int index) const { return data[index]; }
-  float& operator [] (int index) { return data[index]; }
 };
 
 
