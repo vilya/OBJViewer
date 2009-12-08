@@ -74,11 +74,13 @@ void Camera::moveBy(float x, float y, float z)
 
 void Camera::rotateByU(float angle)
 {
+  _position = _position * Matrix4::rotateY(angle);
 }
 
 
 void Camera::rotateByV(float angle)
 {
+  _position = _position * Matrix4::rotateX(angle);
 }
 
 

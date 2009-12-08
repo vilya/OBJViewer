@@ -18,5 +18,26 @@ struct Float4 {
 };
 
 
+struct Matrix4 {
+  union {
+    struct { float a00, a01, a02, a03,
+                   a10, a11, a12, a13,
+                   a20, a21, a22, a23,
+                   a30, a31, a32, a33; };
+    float data[4][4];
+  };
+
+  Matrix4();
+
+  static Matrix4 identity();
+  static Matrix4 rotateX(float degrees);
+  static Matrix4 rotateY(float degrees);
+  static Matrix4 rotateZ(float degrees);
+};
+
+
+Float4 operator * (const Float4& v, const Matrix4& m);
+Float4 operator * (const Float4& m, const Matrix4& v);
+
 #endif // OBJViewer_math3d_h
 

@@ -63,7 +63,6 @@ public:
   Renderer(Model* model);
   ~Renderer();
 
-  //void moveCameraBy(float u, float v, float distance);
   Camera* currentCamera();
 
   void setStyle(RenderStyle style);
