@@ -341,6 +341,8 @@ void Renderer::loadTexture(Image* tex)
 
 void Renderer::drawFPSCounter(int width, int height, float fps)
 {
+  glDisable(GL_LIGHTING);
+
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
@@ -359,6 +361,8 @@ void Renderer::drawFPSCounter(int width, int height, float fps)
 
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
+
+  glEnable(GL_LIGHTING);
 }
 
 
