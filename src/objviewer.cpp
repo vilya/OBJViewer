@@ -134,13 +134,14 @@ void OBJViewerApp::mouseDragged(int x, int y) {
   //bool ctrlPressed = (mouseModifiers & GLUT_ACTIVE_CTRL) != 0;
   //bool altPressed = (mouseModifiers & GLUT_ACTIVE_ALT) != 0;
 
+  Camera* camera = _renderer->currentCamera();
   if (shiftPressed) {
     if (abs(dx) >= abs(dy))
-      _renderer->moveCameraBy(0, 0, dx / 2.0f);
+      camera->moveBy(0, 0, dx / 2.0f);
     else
-      _renderer->moveCameraBy(0, 0, dy / 2.0f);
+      camera->moveBy(0, 0, dy / 2.0f);
   } else {
-    _renderer->moveCameraBy(x - mouseX, y - mouseY, 0);
+    camera->moveBy(dx, dy, 0);
   }
   mouseY = y;
   mouseX = x;

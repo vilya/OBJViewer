@@ -48,7 +48,94 @@ float FramesPerSecond::fps() const
   return _fps;
 }
 
-    
+
+//
+// Camera METHODS
+//
+
+Camera::Camera() :
+  _position(0, 0, -10),
+  _up(0, 1, 0),
+  _target(0, 0, 0),
+  _fieldOfViewY(30),
+  _nearClip(0.1),
+  _farClip(5000)
+{
+}
+
+
+void Camera::moveBy(float x, float y, float z)
+{
+  _position.x += x;
+  _position.y += y;
+  _position.z += z;
+}
+
+
+void Camera::rotateByU(float angle)
+{
+}
+
+
+void Camera::rotateByV(float angle)
+{
+}
+
+
+Float4 Camera::getPosition() const
+{
+  return _position;
+}
+
+
+Float4 Camera::getUp() const
+{
+  return _up;
+}
+
+
+Float4 Camera::getTarget() const
+{
+  return _target;
+}
+
+
+float Camera::getFieldOfViewY() const
+{
+  return _fieldOfViewY;
+}
+
+
+float Camera::getNearClip() const
+{
+  return _nearClip;
+}
+
+
+float Camera::getFarClip() const
+{
+  return _farClip;
+}
+
+
+void Camera::apply(int width, int height)
+{
+  // Position the camera
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  glViewport(0, 0, width, height); // Set the viewport to be the entire window
+
+  // Set up the camera position
+  gluPerspective(_fieldOfViewY, double(width) / double(height), _nearClip, _farClip);
+  gluLookAt(
+      _position.x, _position.y, _position.z,
+      _target.x, _target.y, _target.z,
+      _up.x, _up.y, _up.z
+  );
+}
+
+
 //
 // Renderer METHODS
 //
@@ -56,9 +143,7 @@ float FramesPerSecond::fps() const
 Renderer::Renderer(Model* model) :
   _style(kPolygons),
   _model(model),
-  _camU(0),
-  _camV(0),
-  _camDist(10),
+  _camera(new Camera()),
   _currentMapKa(NULL),
   _currentMapKd(NULL),
   _currentMapKs(NULL),
@@ -86,22 +171,14 @@ Renderer::Renderer(Model* model) :
 
 Renderer::~Renderer()
 {
+  if (_camera != NULL)
+    delete _camera;
 }
 
 
-void Renderer::moveCameraBy(float u, float v, float distance)
+Camera* Renderer::currentCamera()
 {
-  _camU = fmodf(_camU + u, 360.0f);
-  _camV = fmodf(_camV + v, 360.0f);
-  _camDist += distance;
-}
-
-
-void Renderer::moveCameraTo(float u, float v, float distance)
-{
-  _camU = fmodf(u, 360.0f);
-  _camV = fmodf(v, 360.0f);;
-  _camDist = distance;
+  return _camera;
 }
 
 
@@ -115,33 +192,16 @@ void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // Position the camera
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
-  glViewport(0, 0, width, height); // Set the viewport to be the entire window
-
-  // Set up the camera position
-  gluPerspective(30, double(width) / double(height), 0.1, 5000.0);
-  gluLookAt(
-      0, 0, _camDist, // Camera position
-      0, 0, 0,        // target
-      0, 1, 0         // up
-  );
-  glRotatef(_camU, 0, 1, 0);
-  glRotatef(_camV, 1, 0, 0);
+  // Apply the camera settings.
+  _camera->apply(width, height);
 
   // Draw the scene.
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
   // Put a light at the same position as the camera.
-  float light[4] = { 0, 0, _camDist, 1 };
-  glPushMatrix();
-  glRotatef(-_camV, 1, 0, 0);
-  glRotatef(-_camU, 0, 1, 0);
-  glLightfv(GL_LIGHT0, GL_POSITION, light);
-  glPopMatrix();
+  Float4 light = _camera->getPosition();
+  glLightfv(GL_LIGHT0, GL_POSITION, light.data);
 
   if (_model != NULL)
     glCallList(_model->displayListStart + (unsigned int)_style);

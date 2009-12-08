@@ -2,7 +2,9 @@
 #define OBJViewer_renderer_h
 
 #include <map>
+
 #include "image.h"
+#include "math3d.h"
 #include "model.h"
 
 
@@ -29,13 +31,40 @@ private:
 };
 
 
+class Camera {
+public:
+  Camera();
+
+  void moveBy(float x, float y, float z);
+  void rotateByU(float angle);
+  void rotateByV(float angle);
+
+  Float4 getPosition() const;
+  Float4 getUp() const;
+  Float4 getTarget() const;
+  float getFieldOfViewY() const;
+  float getNearClip() const;
+  float getFarClip() const;
+
+  void apply(int width, int height);
+
+private:
+  Float4 _position;
+  Float4 _up;
+  Float4 _target;
+  float _fieldOfViewY;
+  float _nearClip;
+  float _farClip;
+};
+
+
 class Renderer {
 public:
   Renderer(Model* model);
   ~Renderer();
 
-  void moveCameraBy(float u, float v, float distance);
-  void moveCameraTo(float u, float v, float distance);
+  //void moveCameraBy(float u, float v, float distance);
+  Camera* currentCamera();
 
   void setStyle(RenderStyle style);
 
@@ -57,8 +86,8 @@ private:
 
 private:
   RenderStyle _style;
-  Model *_model;
-  float _camU, _camV, _camDist;
+  Model* _model;
+  Camera* _camera;
 
   Image* _currentMapKa;
   Image* _currentMapKd;
@@ -69,3 +98,4 @@ private:
 
 
 #endif // OBJViewer_renderer_h
+
