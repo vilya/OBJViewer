@@ -61,6 +61,7 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutKeyboardFunc(doKeyPressed);
   glutMouseFunc(doMousePressed);
   glutMotionFunc(doMouseDragged);
+  glutIdleFunc(doRender);
 }
 
 

@@ -1,8 +1,10 @@
 #ifdef linux
 #include <GL/gl.h>
+#include <GL/glu.h>
 #include <GL/glut.h>
 #else
 #include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #include <GLUT/glut.h>
 #endif
 
@@ -18,6 +20,34 @@
 
 void checkGLError(const char *errMsg, const char *okMsg = NULL);
 
+
+//
+// FramesPerSecond METHODS
+//
+
+FramesPerSecond::FramesPerSecond() : _framesDrawn(0), _since(0), _fps(0.0)
+{
+}
+
+
+void FramesPerSecond::increment()
+{
+  ++_framesDrawn;
+
+  int now = glutGet(GLUT_ELAPSED_TIME);
+  if (now - _since > 1000) {
+    _fps = _framesDrawn * 1000.0 / (now - _since);
+    _framesDrawn = 0;
+    _since = now;
+  }
+}
+
+
+float FramesPerSecond::fps() const
+{
+  return _fps;
+}
+
     
 //
 // Renderer METHODS
@@ -31,7 +61,8 @@ Renderer::Renderer(Model* model) :
   _camDist(10),
   _currentMapKa(NULL),
   _currentMapKd(NULL),
-  _currentMapKs(NULL)
+  _currentMapKs(NULL),
+  _fps()
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
@@ -116,10 +147,13 @@ void Renderer::render(int width, int height)
     glCallList(_model->displayListStart + (unsigned int)_style);
   else
     drawDefaultModel(_style);
+  drawFPSCounter(width, height, _fps.fps());
 
   glutSwapBuffers();
   glMatrixMode(GL_PROJECTION);
   glPopMatrix();
+
+  _fps.increment();
 }
 
 
@@ -302,6 +336,40 @@ void Renderer::loadTexture(Image* tex)
   checkGLError("Texture failed to load.");
 
   tex->setTexID(texID);
+}
+
+
+void Renderer::drawFPSCounter(int width, int height, float fps)
+{
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+  glOrtho(0, width, 0, height, -1, 1);
+
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+  glColor4f(1.0f, 0.0f, 0.0f, 1.0);
+
+  char buf[20];
+  memset(buf, 0, sizeof(buf));
+  sprintf(buf, "%5.2f fps", fps);
+
+  drawBitmapString(10, 10, GLUT_BITMAP_8_BY_13, buf);
+  glPopMatrix();
+
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix();
+}
+
+
+void Renderer::drawBitmapString(float x, float y, void* font, char* str)
+{
+  float xPos = x;
+  for (char* ch = str; *ch != '\0'; ++ch) {
+    glRasterPos2f(xPos, y);
+    glutBitmapCharacter(font, *ch);
+    xPos += glutBitmapWidth(font, *ch);
+  }
 }
 
 
