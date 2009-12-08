@@ -280,7 +280,8 @@ Float4 mtlParseColor(char* line, char*& col) throw(ParseException) {
 }
 
 
-float mtlParseFloat(char *line, char*& col) throw(ParseException) {
+float mtlParseFloat(char *line, char*& col) throw(ParseException)
+{
   col = line;
   eatSpace(col, true);
   float val = parseFloat(col, col);
@@ -288,17 +289,22 @@ float mtlParseFloat(char *line, char*& col) throw(ParseException) {
 }
 
 
-Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseException) {
+Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseException)
+{
   col = line;
   eatSpace(col, true);
 
   std::string filename = resolvePath(baseDir, parseFilename(col, col));
+  fprintf(stderr, "Loading texture %s...\n", filename.c_str());
+
   Image* tex = NULL;
   try {
     tex = new Image(filename.c_str());
   } catch (ImageException& ex) {
     throw ParseException("Error loading texture map: %s", ex.what());
   }
+
+  fprintf(stderr, "Finished loading texture %s\n", filename.c_str());
   return tex;
 }
 
@@ -306,6 +312,8 @@ Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseE
 void loadMaterialLibrary(const char* path,
     std::map<std::string, Material>& materials) throw(ParseException)
 {
+  fprintf(stderr, "Loading mtllib %s...\n", path);
+
   FILE *f = fopen(path, "r");
   if (f == NULL)
     throw ParseException("Unable to open mtl file %s.\n", path);
@@ -419,6 +427,8 @@ void loadMaterialLibrary(const char* path,
     fprintf(stderr, "[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
     throw ex;
   }
+
+  fprintf(stderr, "Finished parsing mtllib %s\n", path);
 }
 
 
@@ -579,9 +589,11 @@ Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material>
 
 void loadFrame(Model* model, const char* path) throw(ParseException)
 {
+  fprintf(stderr, "Loading frame %s...\n", path);
+
   FILE *f = fopen(path, "r");
   if (f == NULL)
-    throw ParseException("Unable to open model file %s.\n", path);
+    throw ParseException("Unable to open file %s.\n", path);
   
   char line[_MAX_LINE_LEN];
   char *col;
@@ -597,7 +609,7 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
 
       if (fgets(line, _MAX_LINE_LEN, f) == NULL) {
         if (ferror(f))
-          throw ParseException("Error reading from file: %s", strerror(ferror(f)));
+          throw ParseException("Error reading from file %s", strerror(ferror(f)));
         else
           break;
       }
@@ -641,7 +653,7 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
         case OBJ_LINETYPE_COMMENT:
           break;
         default:
-          throw ParseException("Unknown line type: %s", line);
+          throw ParseException("Unknown line type %s", line);
       }
 
       eatSpace(col);
@@ -653,6 +665,8 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
     fprintf(stderr, "[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
     throw ex;
   }
+
+  fprintf(stderr, "Finished loading frame %s\n", path);
 }
 
 
@@ -666,11 +680,9 @@ Model* loadModel(const char* path,
     if (strchr(path, '#') != NULL) {
       for (unsigned int frameNum = startFrame; frameNum <= endFrame; ++frameNum) {
         sprintf(framePath, path, frameNum);
-        fprintf(stderr, "Loading frame %s...\n", framePath);
         loadFrame(model, framePath);
       }
     } else {
-      fprintf(stderr, "Loading frame %s...\n", path);
       loadFrame(model, path);
     }
   } catch (ParseException& ex) {
