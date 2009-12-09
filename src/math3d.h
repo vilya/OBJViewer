@@ -17,6 +17,9 @@ struct Float4 {
   float& operator [] (int index);
 };
 
+Float4 operator + (const Float4& a, const Float4& b);
+Float4 operator - (const Float4& a, const Float4& b);
+
 
 struct Matrix4 {
   union {
@@ -37,7 +40,7 @@ struct Matrix4 {
 
 
 Float4 operator * (const Float4& v, const Matrix4& m);
-Float4 operator * (const Float4& m, const Matrix4& v);
+Float4 operator * (const Matrix4& m, const Float4& v);
 
 #endif // OBJViewer_math3d_h
 

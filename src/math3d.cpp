@@ -38,6 +38,18 @@ float& Float4::operator [] (int index)
 }
 
 
+Float4 operator + (const Float4& a, const Float4& b)
+{
+  return Float4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+
+Float4 operator - (const Float4& a, const Float4& b)
+{
+  return Float4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+
+
 //
 // Matrix4 METHODS
 //
@@ -108,10 +120,10 @@ Matrix4 Matrix4::rotateZ(float degrees)
 Float4 operator * (const Float4& v, const Matrix4& m)
 {
   Float4 r;
-  r.x = v.x * m.a00 + v.y * m.a01 + v.z * m.a02 + v.w * m.a03;
-  r.y = v.x * m.a10 + v.y * m.a11 + v.z * m.a12 + v.w * m.a13;
-  r.z = v.x * m.a20 + v.y * m.a21 + v.z * m.a22 + v.w * m.a23;
-  r.w = v.x * m.a30 + v.y * m.a31 + v.z * m.a32 + v.w * m.a33;
+  r.x = v.x * m.a00 + v.y * m.a10 + v.z * m.a20 + v.w * m.a30;
+  r.y = v.x * m.a01 + v.y * m.a11 + v.z * m.a21 + v.w * m.a31;
+  r.z = v.x * m.a02 + v.y * m.a12 + v.z * m.a22 + v.w * m.a32;
+  r.w = v.x * m.a03 + v.y * m.a13 + v.z * m.a23 + v.w * m.a33;
   return r;
 }
 
@@ -119,10 +131,10 @@ Float4 operator * (const Float4& v, const Matrix4& m)
 Float4 operator * (const Matrix4& m, const Float4& v)
 {
   Float4 r;
-  r.x = v.x * m.a00 + v.y * m.a10 + v.z * m.a20 + v.w * m.a30;
-  r.y = v.x * m.a01 + v.y * m.a11 + v.z * m.a21 + v.w * m.a31;
-  r.z = v.x * m.a02 + v.y * m.a12 + v.z * m.a22 + v.w * m.a32;
-  r.w = v.x * m.a03 + v.y * m.a13 + v.z * m.a23 + v.w * m.a33;
+  r.x = v.x * m.a00 + v.y * m.a01 + v.z * m.a02 + v.w * m.a03;
+  r.y = v.x * m.a10 + v.y * m.a11 + v.z * m.a12 + v.w * m.a13;
+  r.z = v.x * m.a20 + v.y * m.a21 + v.z * m.a22 + v.w * m.a23;
+  r.w = v.x * m.a30 + v.y * m.a31 + v.z * m.a32 + v.w * m.a33;
   return r;
 }
 
