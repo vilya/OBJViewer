@@ -1,13 +1,20 @@
 SRC        := src
-DEP        := build/dep
 OBJ        := build/obj
 BIN        := bin
+
+TESTSRC    := test
+TESTBIN    := build/test
 
 CXX        := g++
 CXXFLAGS   := -g -Wall -fmessage-length=0 
 LDFLAGS    := -framework OpenGL -framework GLUT
 
-OBJS       := $(OBJ)/objviewer.o $(OBJ)/model.o $(OBJ)/image.o $(OBJ)/renderer.o $(OBJ)/math3d.o
+OBJS       := $(OBJ)/objviewer.o \
+							$(OBJ)/model.o \
+							$(OBJ)/image.o \
+							$(OBJ)/renderer.o \
+							$(OBJ)/math3d.o
+
 TARGET     := $(BIN)/objviewer
 
 INCLUDE	   := 
@@ -18,16 +25,21 @@ LIBS       := -lm
 all: $(TARGET)
 
 
+.PHONY: test
+test: $(TESTBIN)/math3dtest
+	$(TESTBIN)/math3dtest
+
+
 .PHONY: clean
 clean:
-	rm -f $(BIN)/* $(OBJ)/* *.linkinfo
+	rm -rf $(BIN)/* $(OBJ)/* $(TESTBIN)/* *.linkinfo
 
 
 .PHONY: dirs
 dirs:
-	mkdir build
-	mkdir build/obj
-	mkdir bin
+	mkdir -p $(OBJ)
+	mkdir -p $(BIN)
+	mkdir -p $(TESTBIN)
 
 
 $(TARGET): $(OBJS)
@@ -37,4 +49,7 @@ $(TARGET): $(OBJS)
 $(OBJ)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 
+
+$(TESTBIN)/math3dtest: $(TESTSRC)/math3dtest.cpp $(OBJ)/math3d.o
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -I$(SRC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
