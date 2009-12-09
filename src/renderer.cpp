@@ -69,18 +69,34 @@ void Camera::moveBy(float x, float y, float z)
   _position.x += x;
   _position.y += y;
   _position.z += z;
+
+  _target.x += x;
+  _target.y += y;
+  _target.z += z;
+}
+
+
+void Camera::zoomBy(float amount)
+{
+  _position.x *= amount;
+  _position.y *= amount;
+  _position.z *= amount;
 }
 
 
 void Camera::rotateByU(float angle)
 {
-  _position = _position * Matrix4::rotateY(angle);
+  Float4 direction = _position - _target;
+  direction = Matrix4::rotateY(angle) * direction;
+  _position = direction + _target;
 }
 
 
 void Camera::rotateByV(float angle)
 {
-  _position = _position * Matrix4::rotateX(angle);
+  Float4 direction = _position - _target;
+  direction = Matrix4::rotateX(angle) * direction;
+  _position = direction + _target;
 }
 
 

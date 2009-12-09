@@ -1,8 +1,6 @@
-Object stays static, you control the camera:
-- Rotate -> left drag
-- Pan -> middle drag
-- Zoom -> right drag or mousewheel.
-- Dolly -> shift + right drag or shift + mousewheel
+Sort out the remaining camera issues:
+- Translations are still performed in world space, should be in camera space.
+- Adjust the size of the translations based on the distance from the target.
 
 Predefined camera positions:
 - Front (x=0, y=0, z=-10)
@@ -17,12 +15,24 @@ Add support for additional texture image formats (.jpg, .tiff, .png).
 
 Widgets to display (and edit?) model attributes.
 
-Render the axes.
-
-Render a line grid on y=0 plane.
+Decorations for the display:
+- Render the axes.
+- Render a line grid on y=0 plane.
+- Render the bounding box of the object.
+- Display object statistics (number of faces/verts/etc., dimensions of bounding
+  box, and so on).
 
 Allow lights to be placed arbitrarily.
 
-Automatically calculate a good initial camera position based on the bounding box of the model.
+Automatically calculate a good initial camera position based on the bounding
+box of the model.
+
+Dynamically adjust the clipping planes to make sure that they always bound the
+object as tightly as possible.
 
 Playback of baked animations.
+- Assume that only the vertex coords, texture coords and normals change between
+  frames.
+- Face data stays the same
+- Material data stays the same.
+

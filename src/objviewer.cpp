@@ -137,9 +137,9 @@ void OBJViewerApp::mouseDragged(int x, int y) {
   Camera* camera = _renderer->currentCamera();
   if (shiftPressed) {
     if (abs(dx) >= abs(dy))
-      camera->moveBy(0, 0, dx / 2.0f);
+      camera->zoomBy(powf(1.1, dx / 2.0f));
     else
-      camera->moveBy(0, 0, dy / 2.0f);
+      camera->zoomBy(powf(1.1, dy / 2.0f));
   } else if (ctrlPressed) {
     camera->rotateByU(dx);
     camera->rotateByV(dy);

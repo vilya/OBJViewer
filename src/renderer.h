@@ -36,6 +36,7 @@ public:
   Camera();
 
   void moveBy(float x, float y, float z);
+  void zoomBy(float amount);
   void rotateByU(float angle);
   void rotateByV(float angle);
 
