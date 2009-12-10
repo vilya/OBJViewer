@@ -49,6 +49,8 @@ public:
 
   void apply(int width, int height);
 
+  void frontView(Model* model, unsigned int frameNum = 0);
+
 private:
   Float4 _position;
   Float4 _up;

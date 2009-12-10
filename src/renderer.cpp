@@ -154,6 +154,28 @@ void Camera::apply(int width, int height)
 }
 
 
+void Camera::frontView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
+
+  Float4 size = frame.high - frame.low;
+  _position.x = size.x / 2.0 + frame.low.x;
+  _position.y = size.y / 2.0 + frame.low.y;
+
+  float opposite = fmaxf(size.x, size.y) / 2.0;
+  float angle = (_fieldOfViewY / 2.0) * M_PI / 180.0;
+  _position.z = (opposite / tanf(angle)) + frame.high.z;
+
+  _up = Float4(0, 1, 0);
+  _target = (frame.high + frame.low) / 2;
+
+  fprintf(stderr, "Camera at:\n");
+  fprintf(stderr, "pos    = { %f, %f, %f }\n", _position.x, _position.y, _position.z);
+  fprintf(stderr, "up     = { %f, %f, %f }\n", _up.x, _up.y, _up.z);
+  fprintf(stderr, "target = { %f, %f, %f }\n", _target.x, _target.y, _target.z);
+}
+
+
 //
 // Renderer METHODS
 //
@@ -179,6 +201,7 @@ Renderer::Renderer(Model* model) :
   glShadeModel(GL_SMOOTH);
 
   if (_model != NULL) {
+    _camera->frontView(_model);
     _model->displayListStart = glGenLists(2);
     loadTexturesForModel(_model);
     drawModel(_model, 0, _model->displayListStart, kLines);

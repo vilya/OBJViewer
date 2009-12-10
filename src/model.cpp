@@ -59,7 +59,10 @@ unsigned int Face::size() const
 // Frame METHODS
 //
 
-Frame::Frame() : v(), vt(), vp(), vn(), faces()
+Frame::Frame() :
+    v(), vt(), vp(), vn(), faces(),
+    low(10000, 10000, 10000),
+    high(-10000, -10000, -10000)
 {
 }
 
@@ -68,6 +71,18 @@ Frame::~Frame()
 {
   for (unsigned int i = 0; i < faces.size(); ++i)
     delete faces[i];
+}
+
+
+void Frame::addV(const Float4& newV)
+{
+  v.push_back(newV);
+  for (unsigned int i = 0; i < 3; ++i) {
+    if (newV[i] < low[i])
+      low[i] = newV[i];
+    if (newV[i] > high[i])
+      high[i] = newV[i];
+  }
 }
 
 

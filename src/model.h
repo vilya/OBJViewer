@@ -53,8 +53,13 @@ struct Frame {
   std::vector<Float4> vn;
   std::vector<Face*> faces;
 
+  Float4 low;
+  Float4 high;
+
   Frame();
   ~Frame();
+
+  void addV(const Float4& newV);
 };
 
 

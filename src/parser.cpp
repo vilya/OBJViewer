@@ -619,7 +619,7 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
       eatSpace(col);
       switch (objParseLineType(col, col)) {
         case OBJ_LINETYPE_V:
-          frame.v.push_back(objParseV(col, col));
+          frame.addV(objParseV(col, col));
           break;
         case OBJ_LINETYPE_VT:
           frame.vt.push_back(objParseVT(col, col));
