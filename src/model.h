@@ -3,24 +3,9 @@
 
 #include <map>
 #include <vector>
-#include <stdexcept>
-#include <string>
 
 #include "image.h"
 #include "math3d.h"
-
-const unsigned int _MAX_LINE_LEN = 2048;
-
-
-class ParseException : public virtual std::exception {
-public:
-  char message[_MAX_LINE_LEN];
-
-  ParseException(const char *msg_format...);
-  virtual ~ParseException() throw() {}
-
-  virtual const char* what() const throw();
-};
 
 
 struct Material {
@@ -37,17 +22,14 @@ struct Material {
   Image* mapD;  // Dissolve texture map.
   Image* mapBump; // Bump map.
 
-  Material() :
-      Ka(), Kd(), Ks(), Tf(1, 1, 1), d(1.0), Ns(1.0),
-      mapKa(NULL), mapKd(NULL), mapKs(NULL)
-  {}
+  Material();
 };
 
 
 struct Vertex {
   int v, vt, vn;
 
-  Vertex(int _v, int _vt, int _vn) : v(_v), vt(_vt), vn(_vn) {}
+  Vertex(int _v, int _vt, int _vn);
 };
 
 
@@ -55,12 +37,12 @@ struct Face {
   Material *material;
   std::vector<Vertex> vertexes;
 
-  Face(Material *m = NULL) : material(m), vertexes() {}
+  Face(Material *m = NULL);
 
-  const Vertex& operator [] (unsigned int index) const { return vertexes[index]; }
-  Vertex& operator [] (unsigned int index) { return vertexes[index]; }
+  const Vertex& operator [] (unsigned int index) const;
+  Vertex& operator [] (unsigned int index);
 
-  unsigned int size() const { return vertexes.size(); }
+  unsigned int size() const;
 };
 
 
@@ -71,8 +53,8 @@ struct Frame {
   std::vector<Float4> vn;
   std::vector<Face*> faces;
 
-  Frame() : v(), vt(), vp(), vn(), faces() {}
-  ~Frame() { for (unsigned int i = 0; i < faces.size(); ++i) delete faces[i]; }
+  Frame();
+  ~Frame();
 };
 
 
@@ -81,12 +63,9 @@ struct Model {
   std::map<std::string, Material> materials;
   unsigned int displayListStart;
 
-  Model() : frames(), materials() {}
+  Model();
 };
 
-
-Model* loadModel(const char* path,
-    unsigned int startFrame, unsigned int endFrame) throw(ParseException);
 
 #endif // OBJViewer_model_h
 

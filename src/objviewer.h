@@ -1,8 +1,6 @@
 #ifndef OBJViewer_objviewer_h
 #define OBJViewer_objviewer_h
 
-#include <map>
-#include "image.h"
 #include "model.h"
 #include "renderer.h"
 

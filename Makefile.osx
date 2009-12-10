@@ -13,7 +13,8 @@ OBJS       := $(OBJ)/objviewer.o \
 							$(OBJ)/model.o \
 							$(OBJ)/image.o \
 							$(OBJ)/renderer.o \
-							$(OBJ)/math3d.o
+							$(OBJ)/math3d.o \
+							$(OBJ)/parser.o
 
 TARGET     := $(BIN)/objviewer
 

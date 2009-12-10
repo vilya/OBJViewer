@@ -16,6 +16,7 @@
 #include <string>
 
 #include "objviewer.h"
+#include "parser.h"
 
 
 //
