@@ -50,6 +50,11 @@ public:
   void apply(int width, int height);
 
   void frontView(Model* model, unsigned int frameNum = 0);
+  void backView(Model* model, unsigned int frameNum = 0);
+  void leftView(Model* model, unsigned int frameNum = 0);
+  void rightView(Model* model, unsigned int frameNum = 0);
+  void topView(Model* model, unsigned int frameNum = 0);
+  void bottomView(Model* model, unsigned int frameNum = 0);
 
 private:
   Float4 _position;
@@ -58,6 +63,9 @@ private:
   float _fieldOfViewY;
   float _nearClip;
   float _farClip;
+
+  float distanceFrom(float highU, float lowU, float highV, float lowV) const;
+  void printCameraInfo() const;
 };
 
 

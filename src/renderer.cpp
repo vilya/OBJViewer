@@ -158,17 +158,103 @@ void Camera::frontView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  Float4 size = frame.high - frame.low;
-  _position.x = size.x / 2.0 + frame.low.x;
-  _position.y = size.y / 2.0 + frame.low.y;
+  _up = Float4(0, 1, 0);
+  _target = (frame.high + frame.low) / 2;
+  _position = _target;
 
-  float opposite = fmaxf(size.x, size.y) / 2.0;
-  float angle = (_fieldOfViewY / 2.0) * M_PI / 180.0;
-  _position.z = (opposite / tanf(angle)) + frame.high.z;
+  _position.z = frame.high.z +
+      distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
+
+  printCameraInfo();
+}
+
+
+void Camera::backView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
 
   _up = Float4(0, 1, 0);
   _target = (frame.high + frame.low) / 2;
+  _position = _target;
 
+  _position.z = frame.low.z -
+      distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
+
+  printCameraInfo();
+}
+
+
+void Camera::leftView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
+
+  _up = Float4(0, 1, 0);
+  _target = (frame.high + frame.low) / 2;
+  _position = _target;
+
+  _position.x = frame.low.x -
+      distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
+
+  printCameraInfo();
+}
+
+
+void Camera::rightView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
+
+  _up = Float4(0, 1, 0);
+  _target = (frame.high + frame.low) / 2;
+  _position = _target;
+
+  _position.x = frame.high.x +
+      distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
+
+  printCameraInfo();
+}
+
+
+void Camera::topView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
+
+  _up = Float4(0, 0, -1);
+  _target = (frame.high + frame.low) / 2;
+  _position = _target;
+
+  _position.y = frame.high.y +
+      distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
+
+  printCameraInfo();
+}
+
+
+void Camera::bottomView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
+
+  _up = Float4(0, 0, 1);
+  _target = (frame.high + frame.low) / 2;
+  _position = _target;
+
+  _position.y = frame.low.y -
+      distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
+
+  printCameraInfo();
+}
+
+
+float Camera::distanceFrom(float highU, float lowU, float highV, float lowV) const
+{
+  float opposite = fmaxf(highU - lowU, highV - lowV) / 2.0;
+  float angle = (_fieldOfViewY / 2.0) * M_PI / 180.0;
+  float adjacent = (opposite / tanf(angle));
+  return adjacent;
+}
+
+
+void Camera::printCameraInfo() const
+{
   fprintf(stderr, "Camera at:\n");
   fprintf(stderr, "pos    = { %f, %f, %f }\n", _position.x, _position.y, _position.z);
   fprintf(stderr, "up     = { %f, %f, %f }\n", _up.x, _up.y, _up.z);

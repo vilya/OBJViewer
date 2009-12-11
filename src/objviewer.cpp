@@ -113,6 +113,24 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'l':
       _renderer->setStyle(kLines);
       glutPostRedisplay();
+    case '1': // Front view.
+      _renderer->currentCamera()->frontView(_model, 0);
+      break;
+    case '2': // Back view.
+      _renderer->currentCamera()->backView(_model, 0);
+      break;
+    case '3': // Left view.
+      _renderer->currentCamera()->leftView(_model, 0);
+      break;
+    case '4': // Right view.
+      _renderer->currentCamera()->rightView(_model, 0);
+      break;
+    case '5': // Top view.
+      _renderer->currentCamera()->topView(_model, 0);
+      break;
+    case '6': // Bottom view.
+      _renderer->currentCamera()->bottomView(_model, 0);
+      break;
     default:
       printf("Key pressed: '%c' (0x%x)\n", key, key);
       break;
