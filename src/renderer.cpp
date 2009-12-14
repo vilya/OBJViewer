@@ -164,8 +164,6 @@ void Camera::frontView(Model* model, unsigned int frameNum)
 
   _position.z = frame.high.z +
       distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
-
-  printCameraInfo();
 }
 
 
@@ -179,8 +177,6 @@ void Camera::backView(Model* model, unsigned int frameNum)
 
   _position.z = frame.low.z -
       distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
-
-  printCameraInfo();
 }
 
 
@@ -194,8 +190,6 @@ void Camera::leftView(Model* model, unsigned int frameNum)
 
   _position.x = frame.low.x -
       distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
-
-  printCameraInfo();
 }
 
 
@@ -209,8 +203,6 @@ void Camera::rightView(Model* model, unsigned int frameNum)
 
   _position.x = frame.high.x +
       distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
-
-  printCameraInfo();
 }
 
 
@@ -224,8 +216,6 @@ void Camera::topView(Model* model, unsigned int frameNum)
 
   _position.y = frame.high.y +
       distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
-
-  printCameraInfo();
 }
 
 
@@ -239,8 +229,6 @@ void Camera::bottomView(Model* model, unsigned int frameNum)
 
   _position.y = frame.low.y -
       distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
-
-  printCameraInfo();
 }
 
 
