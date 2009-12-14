@@ -33,27 +33,33 @@ const char* ParseException::what() const throw()
 enum MTLFileLineType {
   MTL_LINETYPE_UNKNOWN,
   MTL_LINETYPE_BLANK,
+  MTL_LINETYPE_COMMENT,
   MTL_LINETYPE_NEWMTL,
   MTL_LINETYPE_KA,
   MTL_LINETYPE_KD,
+  MTL_LINETYPE_KE,
+  MTL_LINETYPE_KM,
   MTL_LINETYPE_KS,
   MTL_LINETYPE_TF,
+  MTL_LINETYPE_TR,
   MTL_LINETYPE_D,
   MTL_LINETYPE_NS,
   MTL_LINETYPE_NI,
   MTL_LINETYPE_ILLUM,
   MTL_LINETYPE_MAP_KA,
   MTL_LINETYPE_MAP_KD,
+  MTL_LINETYPE_MAP_KE,
+  MTL_LINETYPE_MAP_KM,
   MTL_LINETYPE_MAP_KS,
   MTL_LINETYPE_MAP_D,
-  MTL_LINETYPE_MAP_BUMP,
-  MTL_LINETYPE_COMMENT
+  MTL_LINETYPE_MAP_BUMP 
 };
 
 
 enum OBJFileLineType {
   OBJ_LINETYPE_UNKNOWN,
   OBJ_LINETYPE_BLANK,
+  OBJ_LINETYPE_COMMENT,
   OBJ_LINETYPE_V,
   OBJ_LINETYPE_VT,
   OBJ_LINETYPE_VP,
@@ -64,7 +70,7 @@ enum OBJFileLineType {
   OBJ_LINETYPE_S,
   OBJ_LINETYPE_USEMTL,
   OBJ_LINETYPE_MTLLIB,
-  OBJ_LINETYPE_COMMENT
+  OBJ_LINETYPE_O
 };
 
 
@@ -217,45 +223,47 @@ std::string parseFilename(char* line, char*& col) throw(ParseException) {
 //
 
 MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
+  static const struct {
+    const char* token;
+    MTLFileLineType lineType;
+  } LINE_TYPES[] = {
+    { "newmtl", MTL_LINETYPE_NEWMTL },
+    { "Ka", MTL_LINETYPE_KA },
+    { "Kd", MTL_LINETYPE_KD },
+    { "Ke", MTL_LINETYPE_KE },
+    { "Km", MTL_LINETYPE_KM },
+    { "Ks", MTL_LINETYPE_KS },
+    { "Tf", MTL_LINETYPE_TF },
+    { "Tr", MTL_LINETYPE_TR },
+    { "d", MTL_LINETYPE_D },
+    { "Ns", MTL_LINETYPE_NS },
+    { "Ni", MTL_LINETYPE_NI },
+    { "illum", MTL_LINETYPE_ILLUM },
+    { "map_Ka", MTL_LINETYPE_MAP_KA },
+    { "map_Kd", MTL_LINETYPE_MAP_KD },
+    { "map_Ke", MTL_LINETYPE_MAP_KE },
+    { "map_Km", MTL_LINETYPE_MAP_KM },
+    { "map_Ks", MTL_LINETYPE_MAP_KS },
+    { "map_D", MTL_LINETYPE_MAP_D },
+    { "map_Bump", MTL_LINETYPE_MAP_BUMP },
+    { "#", MTL_LINETYPE_COMMENT },
+    { NULL, MTL_LINETYPE_UNKNOWN }
+  };
+
   col = line;
   while (*col == '_' || isLetter(*col) || isDigit(*col))
     ++col;
 
   int len = col - line;
-  if (len == 0)
+  if (len == 0) {
     return MTL_LINETYPE_BLANK;
-  else if (strncmp("newmtl", line, len) == 0)
-    return MTL_LINETYPE_NEWMTL;
-  else if (strncmp("Ka", line, len) == 0)
-    return MTL_LINETYPE_KA;
-  else if (strncmp("Kd", line, len) == 0)
-    return MTL_LINETYPE_KD;
-  else if (strncmp("Ks", line, len) == 0)
-    return MTL_LINETYPE_KS;
-  else if (strncmp("Tf", line, len) == 0)
-    return MTL_LINETYPE_TF;
-  else if (strncmp("d", line, len) == 0)
-    return MTL_LINETYPE_D;
-  else if (strncmp("Ns", line, len) == 0)
-    return MTL_LINETYPE_NS;
-  else if (strncmp("Ni", line, len) == 0)
-    return MTL_LINETYPE_NI;
-  else if (strncmp("illum", line, len) == 0)
-    return MTL_LINETYPE_ILLUM;
-  else if (strncmp("map_Ka", line, len) == 0)
-    return MTL_LINETYPE_MAP_KA;
-  else if (strncmp("map_Kd", line, len) == 0)
-    return MTL_LINETYPE_MAP_KD;
-  else if (strncmp("map_Ks", line, len) == 0)
-    return MTL_LINETYPE_MAP_KS;
-  else if (strncmp("map_D", line, len) == 0)
-    return MTL_LINETYPE_MAP_KD;
-  else if (strncmp("map_Bump", line, len) == 0)
-    return MTL_LINETYPE_MAP_BUMP;
-  else if (strncmp("#", line, len) == 0)
-    return MTL_LINETYPE_COMMENT;
-  else
+  } else {
+    for (unsigned int i = 0; LINE_TYPES[i].token != NULL; ++i) {
+      if (strncmp(LINE_TYPES[i].token, line, len) == 0)
+        return LINE_TYPES[i].lineType;
+    }
     return MTL_LINETYPE_UNKNOWN;
+  }
 }
 
 
@@ -378,12 +386,6 @@ void loadMaterialLibrary(const char* path,
           if (material != NULL)
             material->Ns = mtlParseFloat(col, col);
           break;
-        case MTL_LINETYPE_NI:
-        case MTL_LINETYPE_ILLUM:
-          // TODO: handle these.
-          while (!isEnd(*col))
-            ++col;
-          break;
         case MTL_LINETYPE_MAP_KA:
           if (material != NULL)
             material->mapKa = mtlParseTexture(col, col, baseDir);
@@ -404,8 +406,20 @@ void loadMaterialLibrary(const char* path,
           if (material != NULL)
             material->mapBump = mtlParseTexture(col, col, baseDir);
           break;
+        case MTL_LINETYPE_KE:
+        case MTL_LINETYPE_KM:
+        case MTL_LINETYPE_MAP_KE:
+        case MTL_LINETYPE_MAP_KM:
+        case MTL_LINETYPE_NI:
+        case MTL_LINETYPE_ILLUM:
+        case MTL_LINETYPE_TR:
+          // TODO: handle these.
+          while (!isEnd(*col))
+            ++col;
+          break;
         case MTL_LINETYPE_BLANK:
         case MTL_LINETYPE_COMMENT:
+          // Ignore these types of line.
           break;
         default:
           throw ParseException("Unknown line type: %s", line);
@@ -439,37 +453,39 @@ void loadMaterialLibrary(const char* path,
 //
 
 OBJFileLineType objParseLineType(char* line, char*& col) throw(ParseException) {
+  static const struct {
+    const char* token;
+    OBJFileLineType lineType;
+  } LINE_TYPES[] = {
+    { "#", OBJ_LINETYPE_COMMENT },
+    { "v", OBJ_LINETYPE_V },
+    { "vt", OBJ_LINETYPE_VT },
+    { "vp", OBJ_LINETYPE_VP },
+    { "vn", OBJ_LINETYPE_VN },
+    { "f", OBJ_LINETYPE_F },
+    { "fo", OBJ_LINETYPE_FO },
+    { "g", OBJ_LINETYPE_G },
+    { "s", OBJ_LINETYPE_S },
+    { "usemtl", OBJ_LINETYPE_USEMTL },
+    { "mtllib", OBJ_LINETYPE_MTLLIB },
+    { "o", OBJ_LINETYPE_O },
+    { NULL, OBJ_LINETYPE_UNKNOWN }
+  };
+
   col = line;
   while (isLetter(*col) || isDigit(*col))
     ++col;
 
   int len = col - line;
-  if (len == 0)
+  if (len == 0) {
     return OBJ_LINETYPE_BLANK;
-  else if (strncmp("v", line, len) == 0)
-    return OBJ_LINETYPE_V;
-  else if (strncmp("vt", line, len) == 0)
-    return OBJ_LINETYPE_VT;
-  else if (strncmp("vp", line, len) == 0)
-    return OBJ_LINETYPE_VP;
-  else if (strncmp("vn", line, len) == 0)
-    return OBJ_LINETYPE_VN;
-  else if (strncmp("f", line, len) == 0)
-    return OBJ_LINETYPE_F;
-  else if (strncmp("fo", line, len) == 0)
-    return OBJ_LINETYPE_FO;
-  else if (strncmp("g", line, len) == 0)
-    return OBJ_LINETYPE_G;
-  else if (strncmp("s", line, len) == 0)
-    return OBJ_LINETYPE_S;
-  else if (strncmp("usemtl", line, len) == 0)
-    return OBJ_LINETYPE_USEMTL;
-  else if (strncmp("mtllib", line, len) == 0)
-    return OBJ_LINETYPE_MTLLIB;
-  else if (strncmp("#", line, len) == 0)
-    return OBJ_LINETYPE_COMMENT;
-  else
+  } else {
+    for (unsigned int i = 0; LINE_TYPES[i].token != NULL; ++i) {
+      if (strncmp(LINE_TYPES[i].token, line, len) == 0)
+        return LINE_TYPES[i].lineType;
+    }
     return OBJ_LINETYPE_UNKNOWN;
+  };
 }
 
 
@@ -634,24 +650,22 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
         case OBJ_LINETYPE_FO:
           frame.faces.push_back(objParseFace(col, col, activeMaterial));
           break;
-        case OBJ_LINETYPE_G:
-          // TODO: handle this.
-          while (!isEnd(*col))
-            ++col;
-          break;
-        case OBJ_LINETYPE_S:
-          // TODO: handle this.
-          while (!isEnd(*col))
-            ++col;
-          break;
         case OBJ_LINETYPE_USEMTL:
           activeMaterial = objParseUSEMTL(col, col, model->materials);
           break;
         case OBJ_LINETYPE_MTLLIB:
           objParseMTLLIB(col, col, dirname(const_cast<char*>(path)), model->materials);
           break;
+        case OBJ_LINETYPE_G:
+        case OBJ_LINETYPE_S:
+        case OBJ_LINETYPE_O:
+          // TODO: handle this.
+          while (!isEnd(*col))
+            ++col;
+          break;
         case OBJ_LINETYPE_BLANK:
         case OBJ_LINETYPE_COMMENT:
+          // Ignore these types of lines.
           break;
         default:
           throw ParseException("Unknown line type %s", line);

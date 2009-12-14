@@ -25,3 +25,4 @@ Playback of baked animations.
 - Face data stays the same
 - Material data stays the same.
 
+Add support for .fbx using the FBX SDK?

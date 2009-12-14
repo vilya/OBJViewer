@@ -7,7 +7,7 @@
 #include "model.h"
 
 
-const unsigned int _MAX_LINE_LEN = 2048;
+const unsigned int _MAX_LINE_LEN = 4096;
 
 
 class ParseException : public virtual std::exception {
