@@ -44,7 +44,7 @@ void doMouseDragged(int x, int y);
 OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   winX(100), winY(100), winWidth(800), winHeight(600),
   fullscreen(false),
-  mouseX(0), mouseY(0),
+  mouseX(0), mouseY(0), mouseButton(0), mouseModifiers(0),
   _renderer(NULL),
   _model(NULL)
 {
@@ -139,9 +139,30 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 
 
 void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
-  mouseX = x;
-  mouseY = y;
-  mouseModifiers = glutGetModifiers();
+  if (state == GLUT_DOWN) {
+    mouseX = x;
+    mouseY = y;
+    mouseButton = button;
+
+    // Careful here - on the MacBook, Ctrl+LeftMouse appears as RightMouse
+    // with no modifiers...
+    //mouseModifiers = glutGetModifiers();
+
+    switch (mouseButton) {
+      case GLUT_LEFT_BUTTON:
+        fprintf(stderr, "Left.\n");
+        break;
+      case GLUT_MIDDLE_BUTTON:
+        fprintf(stderr, "Middle.\n");
+        break;
+      case GLUT_RIGHT_BUTTON:
+        fprintf(stderr, "Right.\n");
+        break;
+      default:
+        fprintf(stderr, "Not sure.\n");
+        break;
+    }
+  }
 }
 
 
@@ -149,21 +170,25 @@ void OBJViewerApp::mouseDragged(int x, int y) {
   int dx = x - mouseX;
   int dy = y - mouseY;
 
-  bool shiftPressed = (mouseModifiers & GLUT_ACTIVE_SHIFT) != 0;
-  bool ctrlPressed = (mouseModifiers & GLUT_ACTIVE_CTRL) != 0;
+  //bool shiftPressed = (mouseModifiers & GLUT_ACTIVE_SHIFT) != 0;
+  //bool ctrlPressed = (mouseModifiers & GLUT_ACTIVE_CTRL) != 0;
   //bool altPressed = (mouseModifiers & GLUT_ACTIVE_ALT) != 0;
 
   Camera* camera = _renderer->currentCamera();
-  if (shiftPressed) {
+  switch (mouseButton) {
+  case GLUT_LEFT_BUTTON:
+    camera->rotateByU(dx);
+    camera->rotateByV(dy);
+    break;
+  case GLUT_MIDDLE_BUTTON:
     if (abs(dx) >= abs(dy))
       camera->zoomBy(powf(1.1, dx / 2.0f));
     else
       camera->zoomBy(powf(1.1, dy / 2.0f));
-  } else if (ctrlPressed) {
-    camera->rotateByU(dx);
-    camera->rotateByV(dy);
-  } else {
+    break;
+  case GLUT_RIGHT_BUTTON:
     camera->moveBy(dx, dy, 0);
+    break;
   }
   mouseY = y;
   mouseX = x;

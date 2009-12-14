@@ -31,7 +31,7 @@ private:
 private:
     int winX, winY, winWidth, winHeight, currWidth, currHeight;
     bool fullscreen;
-    int mouseX, mouseY, mouseModifiers;
+    int mouseX, mouseY, mouseButton, mouseModifiers;
     Renderer* _renderer;
     Model *_model;
 };
