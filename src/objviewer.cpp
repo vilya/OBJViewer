@@ -147,21 +147,6 @@ void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
     // Careful here - on the MacBook, Ctrl+LeftMouse appears as RightMouse
     // with no modifiers...
     //mouseModifiers = glutGetModifiers();
-
-    switch (mouseButton) {
-      case GLUT_LEFT_BUTTON:
-        fprintf(stderr, "Left.\n");
-        break;
-      case GLUT_MIDDLE_BUTTON:
-        fprintf(stderr, "Middle.\n");
-        break;
-      case GLUT_RIGHT_BUTTON:
-        fprintf(stderr, "Right.\n");
-        break;
-      default:
-        fprintf(stderr, "Not sure.\n");
-        break;
-    }
   }
 }
 
