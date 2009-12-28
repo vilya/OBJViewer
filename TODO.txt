@@ -30,3 +30,5 @@ Add support for .fbx using the FBX SDK?
 Calculate normals when the model doesn't provide them itself.
 
 Make it as quick as the OpenCTM viewer.
+
+Shader support.

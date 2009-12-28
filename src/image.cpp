@@ -235,8 +235,12 @@ void Image::loadPPM(FILE* file) throw(ImageException)
   unsigned int numBytes = _width * _height * _bytesPerPixel;
   _pixels = new unsigned char[numBytes];
   if (fileType == 3) {
-    for (long i = 0; i < numBytes; ++i)
-      _pixels[i] = ppmGetNextInt(file) * 255 / maxValue;
+    for (int row = _height - 1; row >= 0; --row) {
+      long start = row * _width * _bytesPerPixel;
+      long end = start + _width * _bytesPerPixel;
+      for (long i = start; i < end; ++i)
+        _pixels[i] = ppmGetNextInt(file) * 255 / maxValue;
+    }
   } else {
     int ch = fgetc(file);
     if (ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r')
