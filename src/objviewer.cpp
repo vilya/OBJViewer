@@ -113,6 +113,10 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'l':
       _renderer->setStyle(kLines);
       glutPostRedisplay();
+      break;
+    case 'i':
+      _renderer->toggleDrawLights();
+      break;
     case '1': // Front view.
       _renderer->currentCamera()->frontView(_model, 0);
       break;

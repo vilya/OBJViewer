@@ -256,6 +256,7 @@ void Camera::printCameraInfo() const
 
 Renderer::Renderer(Model* model) :
   _style(kPolygons),
+  _drawLights(false),
   _model(model),
   _camera(new Camera()),
   _currentMapKa(NULL),
@@ -303,6 +304,12 @@ void Renderer::setStyle(RenderStyle style)
 }
 
 
+void Renderer::toggleDrawLights()
+{
+  _drawLights = !_drawLights;
+}
+
+
 void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -317,6 +324,8 @@ void Renderer::render(int width, int height)
   // Put a light at the same position as the camera.
   Float4 light = _camera->getPosition();
   glLightfv(GL_LIGHT0, GL_POSITION, light.data);
+  if (_drawLights)
+    drawLight(light);
 
   if (_model != NULL)
     glCallList(_model->displayListStart + (unsigned int)_style);
@@ -511,6 +520,21 @@ void Renderer::loadTexture(Image* tex)
   checkGLError("Texture failed to load.");
 
   tex->setTexID(texID);
+}
+
+
+void Renderer::drawLight(const Float4& pos)
+{
+  glBegin(GL_LINES);
+  glVertex3f(pos.x - 0.5, pos.y, pos.z);
+  glVertex3f(pos.x + 0.5, pos.y, pos.z);
+
+  glVertex3f(pos.x, pos.y - 0.5, pos.z);
+  glVertex3f(pos.x, pos.y + 0.5, pos.z);
+  
+  glVertex3f(pos.x, pos.y, pos.z - 0.5);
+  glVertex3f(pos.x, pos.y, pos.z + 0.5);
+  glEnd();
 }
 
 

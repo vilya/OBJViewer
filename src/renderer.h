@@ -77,6 +77,7 @@ public:
   Camera* currentCamera();
 
   void setStyle(RenderStyle style);
+  void toggleDrawLights();
 
   void render(int width, int height);
 
@@ -91,11 +92,13 @@ private:
 
   void loadTexturesForModel(Model* model);
   void loadTexture(Image* tex);
+  void drawLight(const Float4& pos);
   void drawFPSCounter(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
 
 private:
   RenderStyle _style;
+  bool _drawLights;
   Model* _model;
   Camera* _camera;
 
