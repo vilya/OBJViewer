@@ -147,10 +147,6 @@ void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
     mouseX = x;
     mouseY = y;
     mouseButton = button;
-
-    // Careful here - on the MacBook, Ctrl+LeftMouse appears as RightMouse
-    // with no modifiers...
-    //mouseModifiers = glutGetModifiers();
   }
 }
 
@@ -158,10 +154,6 @@ void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
 void OBJViewerApp::mouseDragged(int x, int y) {
   int dx = x - mouseX;
   int dy = y - mouseY;
-
-  //bool shiftPressed = (mouseModifiers & GLUT_ACTIVE_SHIFT) != 0;
-  //bool ctrlPressed = (mouseModifiers & GLUT_ACTIVE_CTRL) != 0;
-  //bool altPressed = (mouseModifiers & GLUT_ACTIVE_ALT) != 0;
 
   Camera* camera = _renderer->currentCamera();
   switch (mouseButton) {
