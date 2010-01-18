@@ -138,7 +138,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     default:
       printf("Key pressed: '%c' (0x%x)\n", key, key);
       break;
-    }
+  }
 }
 
 
