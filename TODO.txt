@@ -1,3 +1,10 @@
+Core technology improvements:
+- Get the viewer using vertex and fragment shaders.
+- Use VBOs for the geometry data.
+- Multiple render passes:
+  - Diffuse pass
+  - Specular pass
+
 Sort out the remaining camera issues:
 - Translations are still performed in world space, should be in camera space.
 - Adjust the size of the translations based on the distance from the target.

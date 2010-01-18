@@ -392,6 +392,9 @@ void Renderer::setupTexture(GLenum texUnit, Image* texture, Image*& currentTextu
     if (texture != NULL) {
       glEnable(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, texture->getTexID());
+      gluBuild2DMipmaps(GL_TEXTURE_2D, texture->getType(),
+          texture->getWidth(), texture->getHeight(),
+          texture->getType(), GL_UNSIGNED_BYTE, texture->getPixels());
       checkGLError("Error setting up texture");
     } else {
       glDisable(GL_TEXTURE_2D);
