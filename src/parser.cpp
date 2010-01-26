@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <libgen.h>
 
+#include <imagelib.h>
 #include "model.h"
 #include "parser.h"
 
@@ -72,6 +73,13 @@ enum OBJFileLineType {
   OBJ_LINETYPE_MTLLIB,
   OBJ_LINETYPE_O
 };
+
+
+//
+// GLOBAL VARIABLES
+//
+
+std::map<std::string, RawImage*> gTextures;
 
 
 //
@@ -180,7 +188,7 @@ int parseInt(char* line, char*& col) throw(ParseException) {
 
 std::string parseIdentifier(char* line, char*& col) throw(ParseException) {
   col = line;
-  while (*col == '_' || *col == '-' || isLetter(*col) || isDigit(*col))
+  while (*col == '_' || *col == '-' || *col == '(' || *col == ')' || isLetter(*col) || isDigit(*col))
     ++col;
 
   if (col > line) {
@@ -298,22 +306,27 @@ float mtlParseFloat(char *line, char*& col) throw(ParseException)
 }
 
 
-Image* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseException)
+RawImage* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(ParseException)
 {
   col = line;
   eatSpace(col, true);
 
   std::string filename = resolvePath(baseDir, parseFilename(col, col));
-  fprintf(stderr, "Loading texture %s...\n", filename.c_str());
+  std::map<std::string, RawImage*>::const_iterator texIter = gTextures.find(filename);
+  if (texIter != gTextures.end())
+    return texIter->second;
 
-  Image* tex = NULL;
+  fprintf(stderr, "Loading texture %s...", filename.c_str());
+
+  RawImage* tex = NULL;
   try {
-    tex = new Image(filename.c_str());
+    tex = new RawImage(filename.c_str());
+    gTextures[filename] = tex;
   } catch (ImageException& ex) {
     throw ParseException("Error loading texture map: %s", ex.what());
   }
 
-  fprintf(stderr, "Finished loading texture %s\n", filename.c_str());
+  fprintf(stderr, " %dx%d pixels.\n", tex->getWidth(), tex->getHeight());
   return tex;
 }
 

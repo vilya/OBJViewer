@@ -5,21 +5,23 @@ BIN        := bin
 TESTSRC    := test
 TESTBIN    := build/test
 
+IMAGELIB	 := /users/vilya/Code/ImageLib/dist
+
 CXX        := g++
-CXXFLAGS   := -g -Wall -fmessage-length=0 
-LDFLAGS    := -framework OpenGL -framework GLUT
+CXXFLAGS   := -g -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
+LD				 := g++
+LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64
 
 OBJS       := $(OBJ)/objviewer.o \
 							$(OBJ)/model.o \
-							$(OBJ)/image.o \
 							$(OBJ)/renderer.o \
 							$(OBJ)/math3d.o \
 							$(OBJ)/parser.o
 
 TARGET     := $(BIN)/objviewer
 
-INCLUDE	   := 
-LIBS       := -lm 
+INCLUDE	   := -I$(IMAGELIB)/include
+LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
 
 
 .PHONY: all

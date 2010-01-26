@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "image.h"
+#include <imagelib.h>
 #include "math3d.h"
 
 
@@ -16,11 +16,11 @@ struct Material {
   float d;   // Dissolve factor.
   float Ns;  // Specular exponent.
 
-  Image* mapKa; // Ambient texture map.
-  Image* mapKd; // Diffuse texture map.
-  Image* mapKs; // Specular texture map.
-  Image* mapD;  // Dissolve texture map.
-  Image* mapBump; // Bump map.
+  RawImage* mapKa; // Ambient texture map.
+  RawImage* mapKd; // Diffuse texture map.
+  RawImage* mapKs; // Specular texture map.
+  RawImage* mapD;  // Dissolve texture map.
+  RawImage* mapBump; // Bump map.
 
   Material();
 };

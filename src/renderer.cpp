@@ -54,6 +54,7 @@ float FramesPerSecond::fps() const
 //
 
 Camera::Camera() :
+
   _position(0, 0, -10),
   _up(0, 1, 0),
   _target(0, 0, 0),
@@ -384,7 +385,7 @@ void Renderer::setupMaterial(Material* material)
 }
 
 
-void Renderer::setupTexture(GLenum texUnit, Image* texture, Image*& currentTexture)
+void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture)
 {
   if (texture != currentTexture) {
     glActiveTexture(texUnit);
@@ -475,9 +476,9 @@ void Renderer::loadTexturesForModel(Model* model)
 }
 
 
-void Renderer::loadTexture(Image* tex)
+void Renderer::loadTexture(RawImage* tex)
 {
-  if (tex == NULL)
+  if (tex == NULL || tex->getTexID() != (unsigned int)-1)
     return;
 
   GLenum targetType;

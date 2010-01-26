@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "image.h"
+#include <imagelib.h>
 #include "math3d.h"
 #include "model.h"
 
@@ -86,12 +86,12 @@ private:
       unsigned int displayList, RenderStyle style);
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
-  void setupTexture(GLenum texUnit, Image* texture, Image*& currentTexture);
+  void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
   void renderFacesForMaterial(Model* model, unsigned int frameNum,
       Material* material, RenderStyle style);
 
   void loadTexturesForModel(Model* model);
-  void loadTexture(Image* tex);
+  void loadTexture(RawImage* tex);
   void drawLight(const Float4& pos);
   void drawFPSCounter(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
@@ -102,9 +102,9 @@ private:
   Model* _model;
   Camera* _camera;
 
-  Image* _currentMapKa;
-  Image* _currentMapKd;
-  Image* _currentMapKs;
+  RawImage* _currentMapKa;
+  RawImage* _currentMapKd;
+  RawImage* _currentMapKs;
 
   FramesPerSecond _fps;
 };
