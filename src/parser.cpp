@@ -267,7 +267,7 @@ MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
     return MTL_LINETYPE_BLANK;
   } else {
     for (unsigned int i = 0; LINE_TYPES[i].token != NULL; ++i) {
-      if (strncmp(LINE_TYPES[i].token, line, len) == 0)
+      if (strncasecmp(LINE_TYPES[i].token, line, len) == 0)
         return LINE_TYPES[i].lineType;
     }
     return MTL_LINETYPE_UNKNOWN;
