@@ -144,3 +144,18 @@ Float4 operator * (const Matrix4& m, const Float4& v)
   return r;
 }
 
+
+Matrix4 operator * (const Matrix4& m, const Matrix4& n)
+{
+  Matrix4 out;
+  for (int r = 0; r < 4; ++r) {
+    for (int c = 0; c < 4; ++c) {
+      out.data[r][c] = m.data[r][0] * n.data[0][c] +
+                       m.data[r][1] * n.data[1][c] +
+                       m.data[r][2] * n.data[2][c] +
+                       m.data[r][3] * n.data[3][c];
+    }
+  }
+  return out;
+}
+

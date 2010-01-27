@@ -43,6 +43,8 @@ struct Matrix4 {
 
 Float4 operator * (const Float4& v, const Matrix4& m);
 Float4 operator * (const Matrix4& m, const Float4& v);
+Matrix4 operator * (const Matrix4& m, const Matrix4& n);
+
 
 #endif // OBJViewer_math3d_h
 
