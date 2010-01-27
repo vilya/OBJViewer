@@ -17,6 +17,7 @@ Rendering improvements:
   - Diffuse pass
   - Specular pass
 - Calculate normals when the model doesn't provide them itself.
+- Bump-mapping
 - Transparency
 - Shadows
 - Atmospheric effects (fog, etc.)
