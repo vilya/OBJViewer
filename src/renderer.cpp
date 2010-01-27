@@ -278,10 +278,10 @@ Renderer::Renderer(Model* model) :
 
   if (_model != NULL) {
     _camera->frontView(_model);
-    _model->displayListStart = glGenLists(2);
+    _model->displayListStart = glGenLists(_model->materials.size() * 2);
     loadTexturesForModel(_model);
-    drawModel(_model, 0, _model->displayListStart, kLines);
-    drawModel(_model, 0, _model->displayListStart + 1, kPolygons);
+    drawModel(_model, 0, kLines);
+    drawModel(_model, 0, kPolygons);
   }
 }
 
@@ -328,10 +328,19 @@ void Renderer::render(int width, int height)
   if (_drawLights)
     drawLight(light);
 
-  if (_model != NULL)
-    glCallList(_model->displayListStart + (unsigned int)_style);
-  else
+  if (_model != NULL) {
+    std::map<std::string, Material>::iterator m;
+    unsigned int displayListID = _model->displayListStart +
+      _model->materials.size() * (unsigned int)_style;
+    for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
+      Material* material = &m->second;
+      setupMaterial(material);
+      glCallList(displayListID);
+      ++displayListID;
+    }
+  } else {
     drawDefaultModel(_style);
+  }
   drawFPSCounter(width, height, _fps.fps());
 
   glutSwapBuffers();
@@ -342,8 +351,7 @@ void Renderer::render(int width, int height)
 }
 
 
-void Renderer::drawModel(Model* model, unsigned int frameNum,
-    unsigned int displayList, RenderStyle style)
+void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style)
 {
   glActiveTexture(GL_TEXTURE1);
   glDisable(GL_TEXTURE_2D);
@@ -352,14 +360,17 @@ void Renderer::drawModel(Model* model, unsigned int frameNum,
   _currentMapKd = NULL;
   _currentMapKs = NULL;
 
-  glNewList(displayList, GL_COMPILE);
+  unsigned int displayListID = model->displayListStart + model->materials.size() * (unsigned int)style;
+
   std::map<std::string, Material>::iterator m;
   for (m = model->materials.begin(); m != model->materials.end(); ++m) {
     Material *material = &m->second;
     setupMaterial(material);
+    glNewList(displayListID, GL_COMPILE);
     renderFacesForMaterial(model, frameNum, material, style);
+    glEndList();
+    ++displayListID;
   }
-  glEndList();
 }
 
 
@@ -393,9 +404,11 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
     if (texture != NULL) {
       glEnable(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, texture->getTexID());
+      /* Disabled for now because it kills things when you have a couple of large (4k) textures:
       gluBuild2DMipmaps(GL_TEXTURE_2D, texture->getType(),
           texture->getWidth(), texture->getHeight(),
           texture->getType(), GL_UNSIGNED_BYTE, texture->getPixels());
+      */
       checkGLError("Error setting up texture");
     } else {
       glDisable(GL_TEXTURE_2D);
@@ -478,22 +491,20 @@ void Renderer::loadTexturesForModel(Model* model)
 
 void Renderer::loadTexture(RawImage* tex)
 {
+  // If tex is null, or tex is already loaded.
   if (tex == NULL || tex->getTexID() != (unsigned int)-1)
     return;
 
   GLenum targetType;
-  switch (tex->getBytesPerPixel()) {
-  case 1:
-    targetType = GL_ALPHA;
-    break;
-  case 3:
+  switch (tex->getType()) {
+  case GL_BGR:
     targetType = GL_RGB;
     break;
-  case 4:
+  case GL_BGRA:
     targetType = GL_RGBA;
     break;
   default:
-    targetType = GL_RGB;
+    targetType = tex->getType();
     break;
   }
   checkGLError("Some GL error before loading texture.");

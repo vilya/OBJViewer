@@ -82,8 +82,7 @@ public:
   void render(int width, int height);
 
 private:
-  void drawModel(Model* theModel, unsigned int frameNum,
-      unsigned int displayList, RenderStyle style);
+  void drawModel(Model* theModel, unsigned int frameNum, RenderStyle style);
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
   void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
