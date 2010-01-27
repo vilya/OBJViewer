@@ -9,7 +9,7 @@ IMAGELIB	 := /users/vilya/Code/ImageLib/dist
 
 CXX        := g++
 CXXFLAGS   := -g -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
-LD				 := g++
+LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64
 
 OBJS       := $(OBJ)/objviewer.o \
@@ -46,7 +46,7 @@ dirs:
 
 
 $(TARGET): $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 
 $(OBJ)/%.o: $(SRC)/%.cpp

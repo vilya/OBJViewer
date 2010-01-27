@@ -5,21 +5,23 @@ BIN        := bin
 TESTSRC    := test
 TESTBIN    := build/test
 
+IMAGELIB	 := /home/vilya/ImageLib/dist
+
 CXX        := g++
-CXXFLAGS   := -g -Wall -fmessage-length=0
-LDFLAGS    := 
+CXXFLAGS   := -g -Wall -fmessage-length=0 -m64
+LD         := g++
+LDFLAGS    := -m64
 
 OBJS       := $(OBJ)/objviewer.o \
 							$(OBJ)/model.o \
-							$(OBJ)/image.o \
 							$(OBJ)/renderer.o \
 							$(OBJ)/math3d.o \
 							$(OBJ)/parser.o
 
 TARGET     := $(BIN)/objviewer
 
-INCLUDE	   := 
-LIBS       := -lm -lglut -lpthread
+INCLUDE	   := -I$(IMAGELIB)/include
+LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
 
 
 .PHONY: all
@@ -44,7 +46,7 @@ dirs:
 
 
 $(TARGET): $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 
 $(OBJ)/%.o: $(SRC)/%.cpp
