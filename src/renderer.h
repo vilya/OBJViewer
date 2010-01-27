@@ -40,13 +40,12 @@ public:
   void rotateByU(float angle);
   void rotateByV(float angle);
 
-  Float4 getPosition() const;
-  Float4 getUp() const;
   Float4 getTarget() const;
   float getFieldOfViewY() const;
   float getNearClip() const;
   float getFarClip() const;
 
+  void positionAt();
   void apply(int width, int height);
 
   void frontView(Model* model, unsigned int frameNum = 0);
@@ -56,16 +55,17 @@ public:
   void topView(Model* model, unsigned int frameNum = 0);
   void bottomView(Model* model, unsigned int frameNum = 0);
 
+  void printCameraInfo() const;
+
 private:
-  Float4 _position;
-  Float4 _up;
   Float4 _target;
+  Float4 _rotation; // x,y,z are rotations around that axis; w is the distance.
+
   float _fieldOfViewY;
   float _nearClip;
   float _farClip;
 
   float distanceFrom(float highU, float lowU, float highV, float lowV) const;
-  void printCameraInfo() const;
 };
 
 

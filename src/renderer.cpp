@@ -54,12 +54,10 @@ float FramesPerSecond::fps() const
 //
 
 Camera::Camera() :
-
-  _position(0, 0, -10),
-  _up(0, 1, 0),
   _target(0, 0, 0),
+  _rotation(0, 0, 0, 10),
   _fieldOfViewY(30),
-  _nearClip(0.1),
+  _nearClip(0.01),
   _farClip(5000)
 {
 }
@@ -67,10 +65,6 @@ Camera::Camera() :
 
 void Camera::moveBy(float x, float y, float z)
 {
-  _position.x += x;
-  _position.y += y;
-  _position.z += z;
-
   _target.x += x;
   _target.y += y;
   _target.z += z;
@@ -79,37 +73,19 @@ void Camera::moveBy(float x, float y, float z)
 
 void Camera::zoomBy(float amount)
 {
-  _position.x *= amount;
-  _position.y *= amount;
-  _position.z *= amount;
+  _rotation.w *= amount;
 }
 
 
 void Camera::rotateByU(float angle)
 {
-  Float4 direction = _position - _target;
-  direction = Matrix4::rotateY(angle) * direction;
-  _position = direction + _target;
+  _rotation.x += angle;
 }
 
 
 void Camera::rotateByV(float angle)
 {
-  Float4 direction = _position - _target;
-  direction = Matrix4::rotateX(angle) * direction;
-  _position = direction + _target;
-}
-
-
-Float4 Camera::getPosition() const
-{
-  return _position;
-}
-
-
-Float4 Camera::getUp() const
-{
-  return _up;
+  _rotation.y += angle;
 }
 
 
@@ -137,21 +113,24 @@ float Camera::getFarClip() const
 }
 
 
+void Camera::positionAt()
+{
+  glTranslatef(-_target.x, -_target.y, -_target.z - _rotation.w);
+  glRotatef(_rotation.x, 1, 0, 0);
+  glRotatef(_rotation.y, 0, 1, 0);
+  glRotatef(_rotation.z, 0, 0, 1);
+}
+
+
 void Camera::apply(int width, int height)
 {
-  // Position the camera
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
+
   glLoadIdentity();
   glViewport(0, 0, width, height); // Set the viewport to be the entire window
-
-  // Set up the camera position
   gluPerspective(_fieldOfViewY, double(width) / double(height), _nearClip, _farClip);
-  gluLookAt(
-      _position.x, _position.y, _position.z,
-      _target.x, _target.y, _target.z,
-      _up.x, _up.y, _up.z
-  );
+  positionAt();
 }
 
 
@@ -159,12 +138,10 @@ void Camera::frontView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  _up = Float4(0, 1, 0);
   _target = (frame.high + frame.low) / 2;
-  _position = _target;
-
-  _position.z = frame.high.z +
+  float distance = (frame.high.z - frame.low.z) / 2 +
       distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
+  _rotation = Float4(0, 0, 0, distance);
 }
 
 
@@ -172,12 +149,10 @@ void Camera::backView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  _up = Float4(0, 1, 0);
   _target = (frame.high + frame.low) / 2;
-  _position = _target;
-
-  _position.z = frame.low.z -
+  float distance = (frame.high.z - frame.low.z) / 2 +
       distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
+  _rotation = Float4(0, 180, 0, distance);
 }
 
 
@@ -185,12 +160,10 @@ void Camera::leftView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  _up = Float4(0, 1, 0);
   _target = (frame.high + frame.low) / 2;
-  _position = _target;
-
-  _position.x = frame.low.x -
+  float distance = (frame.high.x - frame.low.x) / 2 +
       distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
+  _rotation = Float4(0, 270, 0, distance);
 }
 
 
@@ -198,12 +171,10 @@ void Camera::rightView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  _up = Float4(0, 1, 0);
   _target = (frame.high + frame.low) / 2;
-  _position = _target;
-
-  _position.x = frame.high.x +
+  float distance = (frame.high.x - frame.low.x) / 2 +
       distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
+  _rotation = Float4(0, 90, 0, distance);
 }
 
 
@@ -211,12 +182,10 @@ void Camera::topView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  _up = Float4(0, 0, -1);
   _target = (frame.high + frame.low) / 2;
-  _position = _target;
-
-  _position.y = frame.high.y +
+  float distance = (frame.high.y - frame.low.y) +
       distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
+  _rotation = Float4(90, 0, 0, distance);
 }
 
 
@@ -224,12 +193,10 @@ void Camera::bottomView(Model* model, unsigned int frameNum)
 {
   Frame& frame = model->frames[frameNum];
 
-  _up = Float4(0, 0, 1);
   _target = (frame.high + frame.low) / 2;
-  _position = _target;
-
-  _position.y = frame.low.y -
+  float distance = (frame.high.y - frame.low.y) +
       distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
+  _rotation = Float4(270, 0, 0, distance);
 }
 
 
@@ -245,9 +212,9 @@ float Camera::distanceFrom(float highU, float lowU, float highV, float lowV) con
 void Camera::printCameraInfo() const
 {
   fprintf(stderr, "Camera at:\n");
-  fprintf(stderr, "pos    = { %f, %f, %f }\n", _position.x, _position.y, _position.z);
-  fprintf(stderr, "up     = { %f, %f, %f }\n", _up.x, _up.y, _up.z);
   fprintf(stderr, "target = { %f, %f, %f }\n", _target.x, _target.y, _target.z);
+  fprintf(stderr, "rotation = { %f, %f, %f, %f }\n",
+                  _rotation.x, _rotation.y, _rotation.z, _rotation.w);
 }
 
 
@@ -323,10 +290,13 @@ void Renderer::render(int width, int height)
   glLoadIdentity();
 
   // Put a light at the same position as the camera.
-  Float4 light = _camera->getPosition();
-  glLightfv(GL_LIGHT0, GL_POSITION, light.data);
+  glPushMatrix();
+  _camera->positionAt();
+  Float4 relativePosition(0, 0, 0);
+  glLightfv(GL_LIGHT0, GL_POSITION, relativePosition.data);
   if (_drawLights)
-    drawLight(light);
+    drawLight(relativePosition);
+  glPopMatrix();
 
   if (_model != NULL) {
     std::map<std::string, Material>::iterator m;

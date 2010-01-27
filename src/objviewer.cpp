@@ -135,6 +135,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case '6': // Bottom view.
       _renderer->currentCamera()->bottomView(_model, 0);
       break;
+    case 'c':
+      _renderer->currentCamera()->printCameraInfo();
+      break;
     default:
       printf("Key pressed: '%c' (0x%x)\n", key, key);
       break;
@@ -147,6 +150,12 @@ void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
     mouseX = x;
     mouseY = y;
     mouseButton = button;
+
+    Camera* camera = _renderer->currentCamera();
+    if (mouseButton == 3) // Mouse wheel up
+      camera->zoomBy(1.0 / 1.1);
+    else if (mouseButton == 4)  // Mouse wheel down
+      camera->zoomBy(1.1);
   }
 }
 
@@ -158,8 +167,8 @@ void OBJViewerApp::mouseDragged(int x, int y) {
   Camera* camera = _renderer->currentCamera();
   switch (mouseButton) {
   case GLUT_LEFT_BUTTON:
-    camera->rotateByU(dx);
-    camera->rotateByV(dy);
+    camera->rotateByU(dy);
+    camera->rotateByV(dx);
     break;
   case GLUT_MIDDLE_BUTTON:
     if (abs(dx) >= abs(dy))
