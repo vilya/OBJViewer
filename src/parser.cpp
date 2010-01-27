@@ -326,7 +326,8 @@ RawImage* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(Par
     throw ParseException("Error loading texture map: %s", ex.what());
   }
 
-  fprintf(stderr, " %dx%d pixels.\n", tex->getWidth(), tex->getHeight());
+  if (tex != NULL)
+    fprintf(stderr, " %dx%d pixels.\n", tex->getWidth(), tex->getHeight());
   return tex;
 }
 
