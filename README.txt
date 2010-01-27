@@ -18,6 +18,7 @@ Pre-requisites
 ==============
 - MacOS X or Linux (tested on MacOS X 10.6).
 - Glut
+- ImageLib -- see http://github.com/vilya/ImageLib
 
 
 Compiling
