@@ -116,6 +116,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       break;
     case 'i':
       _renderer->toggleDrawLights();
+      glutPostRedisplay();
       break;
     case '1': // Front view.
       _renderer->currentCamera()->frontView(_model, 0);

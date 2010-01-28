@@ -292,7 +292,7 @@ void Renderer::render(int width, int height)
   // Put a light at the same position as the camera.
   glPushMatrix();
   _camera->positionAt();
-  Float4 relativePosition(0, 0, 0);
+  Float4 relativePosition(0, 0, 0, 1);
   glLightfv(GL_LIGHT0, GL_POSITION, relativePosition.data);
   if (_drawLights)
     drawLight(relativePosition);
@@ -511,14 +511,14 @@ void Renderer::loadTexture(RawImage* tex)
 void Renderer::drawLight(const Float4& pos)
 {
   glBegin(GL_LINES);
-  glVertex3f(pos.x - 0.5, pos.y, pos.z);
-  glVertex3f(pos.x + 0.5, pos.y, pos.z);
+  glVertex3f(pos.x - 10.5, pos.y, pos.z);
+  glVertex3f(pos.x + 10.5, pos.y, pos.z);
 
-  glVertex3f(pos.x, pos.y - 0.5, pos.z);
-  glVertex3f(pos.x, pos.y + 0.5, pos.z);
+  glVertex3f(pos.x, pos.y - 10.5, pos.z);
+  glVertex3f(pos.x, pos.y + 10.5, pos.z);
   
-  glVertex3f(pos.x, pos.y, pos.z - 0.5);
-  glVertex3f(pos.x, pos.y, pos.z + 0.5);
+  glVertex3f(pos.x, pos.y, pos.z - 10.5);
+  glVertex3f(pos.x, pos.y, pos.z + 10.5);
   glEnd();
 }
 
