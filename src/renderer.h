@@ -16,6 +16,10 @@ enum RenderStyle {
   kLines, kPolygons
 };
 
+enum LightType {
+  kDirectional, kSpotlight
+};
+
 
 class FramesPerSecond {
 public:
@@ -78,6 +82,7 @@ public:
 
   void setStyle(RenderStyle style);
   void toggleDrawLights();
+  void toggleHeadlightType();
   void printGLInfo();
 
   void render(int width, int height);
@@ -92,7 +97,7 @@ private:
 
   void loadTexturesForModel(Model* model);
   void loadTexture(RawImage* tex);
-  void headlight(GLenum light, const Float4& pos, const Float4& color);
+  void headlight(GLenum light, const Float4& color);
   void drawFPSCounter(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
 
@@ -100,6 +105,7 @@ private:
 
 private:
   RenderStyle _style;
+  LightType _headlightType;
   bool _drawLights;
   Model* _model;
   Camera* _camera;

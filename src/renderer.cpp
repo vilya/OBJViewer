@@ -132,7 +132,7 @@ void Camera::apply(int width, int height)
   glLoadIdentity();
   glViewport(0, 0, width, height); // Set the viewport to be the entire window
   gluPerspective(_fieldOfViewY, double(width) / double(height), _nearClip, _farClip);
-  transformTo();
+  //transformTo();
 }
 
 
@@ -226,6 +226,7 @@ void Camera::printCameraInfo() const
 
 Renderer::Renderer(Model* model) :
   _style(kPolygons),
+  _headlightType(kDirectional),
   _drawLights(false),
   _model(model),
   _camera(new Camera()),
@@ -281,6 +282,15 @@ void Renderer::toggleDrawLights()
 }
 
 
+void Renderer::toggleHeadlightType()
+{
+  if (_headlightType == kSpotlight)
+    _headlightType = kDirectional;
+  else
+    _headlightType = kSpotlight;
+}
+
+
 void Renderer::printGLInfo()
 {
   fprintf(stderr, "GL_MAX_COMBINED_TEXTURE_UNITS = %d\n",
@@ -310,8 +320,9 @@ void Renderer::render(int width, int height)
   glLoadIdentity();
 
   // Put a light at the same position as the camera.
-  headlight(GL_LIGHT0, Float4(0, 0, 0, 1), Float4(1, 1, 1, 1));
+  headlight(GL_LIGHT0, Float4(1, 1, 1, 1));
 
+  _camera->transformTo();
   if (_model != NULL) {
     std::map<std::string, Material>::iterator m;
     unsigned int displayListID = _model->displayListStart +
@@ -510,17 +521,20 @@ void Renderer::loadTexture(RawImage* tex)
 }
 
 
-void Renderer::headlight(GLenum light, const Float4& pos, const Float4& color)
+void Renderer::headlight(GLenum light, const Float4& color)
 {
+  Float4 pos(0, 0, 0, 1); // Relative to camera position.
   Float4 direction(0, 0, -1, 1);
 
   glPushMatrix();
   glLoadIdentity();
-  _camera->transformTo();
 
   //glLighti(light, GL_SPOT_EXPONENT, 30);
-  //glLighti(light, GL_SPOT_CUTOFF, 15);
-  //glLightfv(light, GL_SPOT_DIRECTION, direction.data);
+  if (_headlightType == kSpotlight)
+    glLighti(light, GL_SPOT_CUTOFF, 15);
+  else
+    glLighti(light, GL_SPOT_CUTOFF, 180);
+  glLightfv(light, GL_SPOT_DIRECTION, direction.data);
   glLightfv(light, GL_POSITION, pos.data);
   glLightfv(light, GL_DIFFUSE, color.data);
 

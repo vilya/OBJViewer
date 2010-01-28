@@ -142,8 +142,28 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'g':
       _renderer->printGLInfo();
       break;
+    case 'h':
+      _renderer->toggleHeadlightType();
+      break;
+    case '?':
+      printf("Esc   Exit the program.\n");
+      printf("r     Force a redraw.\n");
+      printf("f     Toggle fullscreen mode on/off.\n");
+      printf("p     Display model as polygons.\n");
+      printf("l     Display model as lines.\n");
+      printf("i     Draw markers to show the positions of lights.\n");
+      printf("1     Front view.\n");
+      printf("2     Back view.\n");
+      printf("3     Left view.\n");
+      printf("4     Right view.\n");
+      printf("5     Top view.\n");
+      printf("6     Bottom view.\n");
+      printf("c     Print current camera info.\n");
+      printf("g     Print OpenGL info.\n");
+      printf("h     Toggle the type of headlight between directional and spot.\n");
+      printf("\n");
+      break;
     default:
-      printf("Key pressed: '%c' (0x%x)\n", key, key);
       break;
   }
 }
