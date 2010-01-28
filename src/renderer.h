@@ -45,7 +45,7 @@ public:
   float getNearClip() const;
   float getFarClip() const;
 
-  void positionAt();
+  void transformTo();
   void apply(int width, int height);
 
   void frontView(Model* model, unsigned int frameNum = 0);
@@ -78,6 +78,7 @@ public:
 
   void setStyle(RenderStyle style);
   void toggleDrawLights();
+  void printGLInfo();
 
   void render(int width, int height);
 
@@ -91,9 +92,11 @@ private:
 
   void loadTexturesForModel(Model* model);
   void loadTexture(RawImage* tex);
-  void drawLight(const Float4& pos);
+  void headlight(GLenum light, const Float4& pos, const Float4& color);
   void drawFPSCounter(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
+
+  GLint glGet(GLenum what);
 
 private:
   RenderStyle _style;

@@ -139,6 +139,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'c':
       _renderer->currentCamera()->printCameraInfo();
       break;
+    case 'g':
+      _renderer->printGLInfo();
+      break;
     default:
       printf("Key pressed: '%c' (0x%x)\n", key, key);
       break;

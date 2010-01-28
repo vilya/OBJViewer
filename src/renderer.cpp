@@ -2,10 +2,12 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+#include <GL/glext.h>
 #else
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
+#include <OpenGL/glext.h>
 #endif
 
 #include <cmath>
@@ -113,7 +115,7 @@ float Camera::getFarClip() const
 }
 
 
-void Camera::positionAt()
+void Camera::transformTo()
 {
   glTranslatef(-_target.x, -_target.y, -_target.z - _rotation.w);
   glRotatef(_rotation.x, 1, 0, 0);
@@ -130,7 +132,7 @@ void Camera::apply(int width, int height)
   glLoadIdentity();
   glViewport(0, 0, width, height); // Set the viewport to be the entire window
   gluPerspective(_fieldOfViewY, double(width) / double(height), _nearClip, _farClip);
-  positionAt();
+  transformTo();
 }
 
 
@@ -250,6 +252,7 @@ Renderer::Renderer(Model* model) :
     drawModel(_model, 0, kLines);
     drawModel(_model, 0, kPolygons);
   }
+  checkGLError("Error during initialisation.");
 }
 
 
@@ -278,6 +281,23 @@ void Renderer::toggleDrawLights()
 }
 
 
+void Renderer::printGLInfo()
+{
+  fprintf(stderr, "GL_MAX_COMBINED_TEXTURE_UNITS = %d\n",
+    glGet(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+  fprintf(stderr, "GL_MAX_TEXTURE_COORDS = %d\n",
+    glGet(GL_MAX_TEXTURE_COORDS));
+}
+
+
+GLint Renderer::glGet(GLenum what)
+{
+  GLint val;
+  glGetIntegerv(what, &val);
+  return val;
+}
+
+
 void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -290,13 +310,7 @@ void Renderer::render(int width, int height)
   glLoadIdentity();
 
   // Put a light at the same position as the camera.
-  glPushMatrix();
-  _camera->positionAt();
-  Float4 relativePosition(0, 0, 0, 1);
-  glLightfv(GL_LIGHT0, GL_POSITION, relativePosition.data);
-  if (_drawLights)
-    drawLight(relativePosition);
-  glPopMatrix();
+  headlight(GL_LIGHT0, Float4(0, 0, 0, 1), Float4(1, 1, 1, 1));
 
   if (_model != NULL) {
     std::map<std::string, Material>::iterator m;
@@ -323,7 +337,6 @@ void Renderer::render(int width, int height)
 
 void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style)
 {
-  glActiveTexture(GL_TEXTURE1);
   glDisable(GL_TEXTURE_2D);
 
   _currentMapKa = NULL;
@@ -370,7 +383,6 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
 {
   if (texture != currentTexture) {
     glActiveTexture(texUnit);
-    checkGLError("No luck activating texture");
     if (texture != NULL) {
       glEnable(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, texture->getTexID());
@@ -382,7 +394,6 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
       checkGLError("Error setting up texture");
     } else {
       glDisable(GL_TEXTURE_2D);
-      checkGLError("Error disabling texture.");
     }
     currentTexture = texture;
   }
@@ -398,15 +409,7 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
     if (face.material != material)
       continue;
 
-    switch (style) {
-    case kLines:
-      glBegin(GL_LINE_LOOP);
-      break;
-    case kPolygons:
-    default:
-      glBegin(GL_POLYGON);
-      break;
-    }
+    glBegin( (style == kLines) ? GL_LINE_LOOP : GL_POLYGON );
 
     for (unsigned int i = 0; i < face.size(); ++i) {
       if (face.material != NULL) {
@@ -440,7 +443,6 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
     }
 
     glEnd();
-    checkGLError("Error while drawing face.");
   }
 }
 
@@ -508,18 +510,33 @@ void Renderer::loadTexture(RawImage* tex)
 }
 
 
-void Renderer::drawLight(const Float4& pos)
+void Renderer::headlight(GLenum light, const Float4& pos, const Float4& color)
 {
-  glBegin(GL_LINES);
-  glVertex3f(pos.x - 10.5, pos.y, pos.z);
-  glVertex3f(pos.x + 10.5, pos.y, pos.z);
+  Float4 direction(0, 0, -1, 1);
 
-  glVertex3f(pos.x, pos.y - 10.5, pos.z);
-  glVertex3f(pos.x, pos.y + 10.5, pos.z);
+  glPushMatrix();
+  glLoadIdentity();
+  _camera->transformTo();
+
+  //glLighti(light, GL_SPOT_EXPONENT, 30);
+  //glLighti(light, GL_SPOT_CUTOFF, 15);
+  //glLightfv(light, GL_SPOT_DIRECTION, direction.data);
+  glLightfv(light, GL_POSITION, pos.data);
+  glLightfv(light, GL_DIFFUSE, color.data);
+
+  if (_drawLights) {
+    glBegin(GL_LINES);
+    glVertex3f(pos.x - 10.5, pos.y, pos.z);
+    glVertex3f(pos.x + 10.5, pos.y, pos.z);
+
+    glVertex3f(pos.x, pos.y - 10.5, pos.z);
+    glVertex3f(pos.x, pos.y + 10.5, pos.z);
   
-  glVertex3f(pos.x, pos.y, pos.z - 10.5);
-  glVertex3f(pos.x, pos.y, pos.z + 10.5);
-  glEnd();
+    glVertex3f(pos.x, pos.y, pos.z - 10.5);
+    glVertex3f(pos.x, pos.y, pos.z + 10.5);
+    glEnd();
+  }
+  glPopMatrix();
 }
 
 
@@ -530,7 +547,7 @@ void Renderer::drawFPSCounter(int width, int height, float fps)
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
-  glOrtho(0, width, 0, height, -1, 1);
+  glOrtho(1, width - 1, 1, height - 1, 1, -1);
 
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
