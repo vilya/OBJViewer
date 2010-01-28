@@ -561,10 +561,11 @@ void Renderer::drawFPSCounter(int width, int height, float fps)
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
-  glOrtho(1, width - 1, 1, height - 1, 1, -1);
+  glOrtho(1, width - 1, 1, height - 1, -1, 1);
 
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
+  glLoadIdentity();
   glColor4f(1.0f, 0.0f, 0.0f, 1.0);
 
   char buf[20];
