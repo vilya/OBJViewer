@@ -97,6 +97,12 @@ Float4 Camera::getTarget() const
 }
 
 
+float Camera::getDistance() const
+{
+  return _rotation.w;
+}
+
+
 float Camera::getFieldOfViewY() const
 {
   return _fieldOfViewY;

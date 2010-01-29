@@ -176,6 +176,8 @@ void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
     mouseButton = button;
 
     Camera* camera = _renderer->currentCamera();
+    // This bit doesn't work on OS X - no mouse wheel events are received (at
+    // least by this method).
     if (mouseButton == 3) // Mouse wheel up
       camera->zoomBy(1.0 / 1.1);
     else if (mouseButton == 4)  // Mouse wheel down
@@ -189,6 +191,7 @@ void OBJViewerApp::mouseDragged(int x, int y) {
   int dy = y - mouseY;
 
   Camera* camera = _renderer->currentCamera();
+
   switch (mouseButton) {
   case GLUT_LEFT_BUTTON:
     camera->rotateByU(dy);
@@ -201,7 +204,8 @@ void OBJViewerApp::mouseDragged(int x, int y) {
       camera->zoomBy(powf(1.1, dy / 2.0f));
     break;
   case GLUT_RIGHT_BUTTON:
-    camera->moveBy(dx, dy, 0);
+    camera->moveBy(-dx * camera->getDistance() / winWidth,
+                   dy * camera->getDistance() / winHeight, 0);
     break;
   }
   mouseY = y;

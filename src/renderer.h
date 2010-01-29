@@ -45,6 +45,7 @@ public:
   void rotateByV(float angle);
 
   Float4 getTarget() const;
+  float getDistance() const;
   float getFieldOfViewY() const;
   float getNearClip() const;
   float getFarClip() const;

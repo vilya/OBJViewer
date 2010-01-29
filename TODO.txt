@@ -1,13 +1,11 @@
 Camera:
 - DONE: Have a view mode, which rotates around a center point
+- DONE: Translations are still performed in world space, should be in camera space.
+- DONE: Adjust the size of the translations based on the distance from the target.
 - Have a fly mode, which has a position and direction
-- Translations are still performed in world space, should be in camera space.
-- Adjust the size of the translations based on the distance from the target.
 
 Lighting:
-- The headlight isn't always positioned correctly.
-  - Currently works correctly on the Miku model
-  - Fails dramatically on the FairyForest model
+- FIXED: The headlight isn't always positioned correctly.
 - Allow additional lights to be added by the user.
   - Predefined locations (as per the camera)
   - Arbitrary locations
@@ -48,5 +46,6 @@ Animation:
 - Material data stays the same.
 
 Additional model formats:
+- .ply
 - .fbx (via the FBX SDK)
 
