@@ -2,3 +2,4 @@ bin
 build
 Makefile
 contrib/vbo
+dist
