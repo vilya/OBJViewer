@@ -1,16 +1,15 @@
 Camera:
-- DONE: Have a view mode, which rotates around a center point
-- DONE: Translations are still performed in world space, should be in camera space.
-- DONE: Adjust the size of the translations based on the distance from the target.
 - Have a fly mode, which has a position and direction
 
 Lighting:
-- FIXED: The headlight isn't always positioned correctly.
 - Allow additional lights to be added by the user.
   - Predefined locations (as per the camera)
   - Arbitrary locations
 
 Rendering improvements:
+- Fix the texturing bugs on the ATI Radeon 4870 X2.
+  - I think it's related to texture size - only the FairyForest scene, with
+    it's 4000x4000 textures, seems to be affected.
 - Get the viewer using vertex and fragment shaders.
 - Use VBOs for the geometry data.
 - Multiple render passes:
@@ -21,8 +20,7 @@ Rendering improvements:
 - Transparency
 - Shadows
 - Atmospheric effects (fog, etc.)
-- Dynamically adjust the clipping planes to make sure that they always bound
-  the object as tightly as possible.
+- Get rid of the tearing.
 
 Speed:
 - Speed for large(ish) models is poor. Find ways to improve it.

@@ -46,12 +46,9 @@ public:
 
   Float4 getTarget() const;
   float getDistance() const;
-  float getFieldOfViewY() const;
-  float getNearClip() const;
-  float getFarClip() const;
 
+  void setup(int width, int height, const Float4& low, const Float4& high);
   void transformTo();
-  void apply(int width, int height);
 
   void centerView(Model* model, unsigned int frameNum = 0);
   void frontView(Model* model, unsigned int frameNum = 0);
@@ -68,8 +65,6 @@ private:
   Float4 _rotation; // x,y,z are rotations around that axis; w is the distance.
 
   float _fieldOfViewY;
-  float _nearClip;
-  float _farClip;
 
   float distanceFrom(float highU, float lowU, float highV, float lowV) const;
 };

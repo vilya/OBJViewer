@@ -58,9 +58,7 @@ float FramesPerSecond::fps() const
 Camera::Camera() :
   _target(0, 0, 0),
   _rotation(0, 0, 0, 10),
-  _fieldOfViewY(30),
-  _nearClip(0.01),
-  _farClip(5000)
+  _fieldOfViewY(30)
 {
 }
 
@@ -103,21 +101,37 @@ float Camera::getDistance() const
 }
 
 
-float Camera::getFieldOfViewY() const
+void Camera::setup(int width, int height, const Float4& low, const Float4& high)
 {
-  return _fieldOfViewY;
-}
+  // Here we use the model's bounding sphere to calculate good values for
+  // the near and far clipping planes.
+  
+  // Radius of bounding sphere == half distance between opposite bbox corners
+  // FIXME: For some reason the radius ends up being too small, so instead I'm using the diameter for now.
+  float radius = length(high - low); 
+  // v is the vector from our target to the bbox center, but we'll only need
+  // the z component (see below) so that's all we calculate.
+  float vz = ((high.z + low.z) / 2.0) - _target.z;
+  // Since our direction vector d for the camera is 0,0,1 the dot product of v
+  // and d is simply v.z. This gives us the distance along our direction vector
+  // at which we're level with the bbox center: _rotation.w + vz. Subtract the
+  // radius from that and we've got out near clip plane.
+  float nearClip = _rotation.w + vz - radius;
+  // The far clip plane will always be the near clip plane plus the diameter.
+  float farClip = nearClip + 2 * radius;
+  // Make sure the near clip plane doesn't end up behind us.
+  if (nearClip < 0.01)
+    nearClip = 0.01;
+  // Make sure the far clip plane doesn't end up behind the near clip plane.
+  if (farClip <= nearClip)
+    farClip = nearClip + 0.01;
 
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
 
-float Camera::getNearClip() const
-{
-  return _nearClip;
-}
-
-
-float Camera::getFarClip() const
-{
-  return _farClip;
+  glLoadIdentity();
+  glViewport(0, 0, width, height); // Set the viewport to be the entire window
+  gluPerspective(_fieldOfViewY, double(width) / double(height), nearClip, farClip);
 }
 
 
@@ -127,17 +141,6 @@ void Camera::transformTo()
   glRotatef(_rotation.x, 1, 0, 0);
   glRotatef(_rotation.y, 0, 1, 0);
   glRotatef(_rotation.z, 0, 0, 1);
-}
-
-
-void Camera::apply(int width, int height)
-{
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-
-  glLoadIdentity();
-  glViewport(0, 0, width, height); // Set the viewport to be the entire window
-  gluPerspective(_fieldOfViewY, double(width) / double(height), _nearClip, _farClip);
 }
 
 
@@ -328,7 +331,8 @@ void Renderer::render(int width, int height)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // Apply the camera settings.
-  _camera->apply(width, height);
+  Frame& frame = _model->frames[0];
+  _camera->setup(width, height, frame.low, frame.high);
 
   // Draw the scene.
   glMatrixMode(GL_MODELVIEW);
