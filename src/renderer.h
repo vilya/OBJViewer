@@ -53,6 +53,7 @@ public:
   void transformTo();
   void apply(int width, int height);
 
+  void centerView(Model* model, unsigned int frameNum = 0);
   void frontView(Model* model, unsigned int frameNum = 0);
   void backView(Model* model, unsigned int frameNum = 0);
   void leftView(Model* model, unsigned int frameNum = 0);

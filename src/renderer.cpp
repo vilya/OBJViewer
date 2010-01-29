@@ -138,7 +138,16 @@ void Camera::apply(int width, int height)
   glLoadIdentity();
   glViewport(0, 0, width, height); // Set the viewport to be the entire window
   gluPerspective(_fieldOfViewY, double(width) / double(height), _nearClip, _farClip);
-  //transformTo();
+}
+
+
+void Camera::centerView(Model* model, unsigned int frameNum)
+{
+  Frame& frame = model->frames[frameNum];
+
+  _target = (frame.high + frame.low) / 2;
+  float distance = (frame.high.z - frame.low.z) / 10.0;
+  _rotation = Float4(0, 0, 0, distance);
 }
 
 

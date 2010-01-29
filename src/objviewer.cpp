@@ -118,6 +118,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       _renderer->toggleDrawLights();
       glutPostRedisplay();
       break;
+    case '0': // Center view.
+      _renderer->currentCamera()->centerView(_model, 0);
+      break;
     case '1': // Front view.
       _renderer->currentCamera()->frontView(_model, 0);
       break;
@@ -152,6 +155,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       printf("p     Display model as polygons.\n");
       printf("l     Display model as lines.\n");
       printf("i     Draw markers to show the positions of lights.\n");
+      printf("0     Center view (in the middle of the object).\n");
       printf("1     Front view.\n");
       printf("2     Back view.\n");
       printf("3     Left view.\n");
