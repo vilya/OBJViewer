@@ -19,8 +19,9 @@ struct Float4 {
 
 Float4 operator + (const Float4& a, const Float4& b);
 Float4 operator - (const Float4& a, const Float4& b);
-
 Float4 operator / (const Float4& a, float k);
+float lengthSqr(const Float4& a);
+float length(const Float4& a);
 
 
 struct Matrix4 {

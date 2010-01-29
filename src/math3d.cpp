@@ -56,6 +56,18 @@ Float4 operator / (const Float4& a, float k)
 }
 
 
+float lengthSqr(const Float4& a)
+{
+  return (a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+
+float length(const Float4& a)
+{
+  return sqrtf(lengthSqr(a));
+}
+
+
 //
 // Matrix4 METHODS
 //
