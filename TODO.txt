@@ -7,6 +7,7 @@ Lighting:
   - Arbitrary locations
 
 Rendering improvements:
+- Better display for objects with no materials specified.
 - Fix the texturing bugs on the ATI Radeon 4870 X2.
   - I think it's related to texture size - only the FairyForest scene, with
     it's 4000x4000 textures, seems to be affected.
