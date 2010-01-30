@@ -51,13 +51,13 @@ public:
   void setup(int width, int height, const Float4& low, const Float4& high);
   void transformTo();
 
-  void centerView(Model* model, unsigned int frameNum = 0);
-  void frontView(Model* model, unsigned int frameNum = 0);
-  void backView(Model* model, unsigned int frameNum = 0);
-  void leftView(Model* model, unsigned int frameNum = 0);
-  void rightView(Model* model, unsigned int frameNum = 0);
-  void topView(Model* model, unsigned int frameNum = 0);
-  void bottomView(Model* model, unsigned int frameNum = 0);
+  void centerView(const Float4& low, const Float4& high);
+  void frontView(const Float4& low, const Float4& high);
+  void backView(const Float4& low, const Float4& high);
+  void leftView(const Float4& low, const Float4& high);
+  void rightView(const Float4& low, const Float4& high);
+  void topView(const Float4& low, const Float4& high);
+  void bottomView(const Float4& low, const Float4& high);
 
   void printCameraInfo() const;
 

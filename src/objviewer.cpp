@@ -92,6 +92,13 @@ void OBJViewerApp::changeSize(int width, int height)
 
 void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 {
+  Float4 low(-1, -1, -1, 1);
+  Float4 high(1, 1, 1, 1);
+  if (_model != NULL) {
+    low = _model->frames[0].low;
+    high = _model->frames[0].high;
+  }
+
   switch (key) {
     case 27: // 27 is the ESC key.
       exit(0);
@@ -119,25 +126,25 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       glutPostRedisplay();
       break;
     case '0': // Center view.
-      _renderer->currentCamera()->centerView(_model, 0);
+      _renderer->currentCamera()->centerView(low, high);
       break;
     case '1': // Front view.
-      _renderer->currentCamera()->frontView(_model, 0);
+      _renderer->currentCamera()->frontView(low, high);
       break;
     case '2': // Back view.
-      _renderer->currentCamera()->backView(_model, 0);
+      _renderer->currentCamera()->backView(low, high);
       break;
     case '3': // Left view.
-      _renderer->currentCamera()->leftView(_model, 0);
+      _renderer->currentCamera()->leftView(low, high);
       break;
     case '4': // Right view.
-      _renderer->currentCamera()->rightView(_model, 0);
+      _renderer->currentCamera()->rightView(low, high);
       break;
     case '5': // Top view.
-      _renderer->currentCamera()->topView(_model, 0);
+      _renderer->currentCamera()->topView(low, high);
       break;
     case '6': // Bottom view.
-      _renderer->currentCamera()->bottomView(_model, 0);
+      _renderer->currentCamera()->bottomView(low, high);
       break;
     case 'c':
       _renderer->currentCamera()->printCameraInfo();

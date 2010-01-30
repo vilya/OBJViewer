@@ -151,78 +151,64 @@ void Camera::transformTo()
 }
 
 
-void Camera::centerView(Model* model, unsigned int frameNum)
+void Camera::centerView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.z - frame.low.z) / 10.0;
+  _target = (high + low) / 2;
+  float distance = (high.z - low.z) / 10.0;
   _rotation = Float4(0, 0, 0, distance);
 }
 
 
-void Camera::frontView(Model* model, unsigned int frameNum)
+void Camera::frontView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.z - frame.low.z) / 2 +
-      distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
+  _target = (high + low) / 2;
+  float distance = (high.z - low.z) / 2 +
+      distanceFrom(high.x, low.x, high.y, low.y);
   _rotation = Float4(0, 0, 0, distance);
 }
 
 
-void Camera::backView(Model* model, unsigned int frameNum)
+void Camera::backView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.z - frame.low.z) / 2 +
-      distanceFrom(frame.high.x, frame.low.x, frame.high.y, frame.low.y);
+  _target = (high + low) / 2;
+  float distance = (high.z - low.z) / 2 +
+      distanceFrom(high.x, low.x, high.y, low.y);
   _rotation = Float4(0, 180, 0, distance);
 }
 
 
-void Camera::leftView(Model* model, unsigned int frameNum)
+void Camera::leftView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.x - frame.low.x) / 2 +
-      distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
+  _target = (high + low) / 2;
+  float distance = (high.x - low.x) / 2 +
+      distanceFrom(high.z, low.z, high.y, low.y);
   _rotation = Float4(0, 270, 0, distance);
 }
 
 
-void Camera::rightView(Model* model, unsigned int frameNum)
+void Camera::rightView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.x - frame.low.x) / 2 +
-      distanceFrom(frame.high.z, frame.low.z, frame.high.y, frame.low.y);
+  _target = (high + low) / 2;
+  float distance = (high.x - low.x) / 2 +
+      distanceFrom(high.z, low.z, high.y, low.y);
   _rotation = Float4(0, 90, 0, distance);
 }
 
 
-void Camera::topView(Model* model, unsigned int frameNum)
+void Camera::topView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.y - frame.low.y) +
-      distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
+  _target = (high + low) / 2;
+  float distance = (high.y - low.y) +
+      distanceFrom(high.x, low.x, high.z, low.z);
   _rotation = Float4(90, 0, 0, distance);
 }
 
 
-void Camera::bottomView(Model* model, unsigned int frameNum)
+void Camera::bottomView(const Float4& low, const Float4& high)
 {
-  Frame& frame = model->frames[frameNum];
-
-  _target = (frame.high + frame.low) / 2;
-  float distance = (frame.high.y - frame.low.y) +
-      distanceFrom(frame.high.x, frame.low.x, frame.high.z, frame.low.z);
+  _target = (high + low) / 2;
+  float distance = (high.y - low.y) +
+      distanceFrom(high.x, low.x, high.z, low.z);
   _rotation = Float4(270, 0, 0, distance);
 }
 
@@ -287,7 +273,7 @@ Renderer::Renderer(Model* model) :
     prepare(_renderGroupsPolys);
     prepare(_renderGroupsLines);
 
-    _camera->frontView(_model);
+    _camera->frontView(_model->frames[0].low, _model->frames[0].high);
     loadTexturesForModel(_model);
     drawModel(_model, 0, kPolygons, _renderGroupsPolys);
     drawModel(_model, 0, kLines, _renderGroupsLines);
@@ -352,8 +338,14 @@ void Renderer::render(int width, int height)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // Apply the camera settings.
-  Frame& frame = _model->frames[0];
-  _camera->setup(width, height, frame.low, frame.high);
+  if (_model != NULL) {
+    Frame& frame = _model->frames[0];
+    _camera->setup(width, height, frame.low, frame.high);
+  } else {
+    Float4 low(-1, -1, -1, 1);
+    Float4 high(1, 1, 1, 1);
+    _camera->setup(width, height, low, high);
+  }
 
   // Draw the scene.
   glMatrixMode(GL_MODELVIEW);
