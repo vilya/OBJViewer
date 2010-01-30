@@ -24,9 +24,8 @@ Rendering improvements:
 - Get rid of the tearing.
 
 Speed:
-- Speed for large(ish) models is poor. Find ways to improve it.
-  - Heh, running on an ATI Radeon 4870 X2 does the job - it's super speedy! :-)
-- Goal: make it as quick as the OpenCTM viewer (but with texture support)!
+- Could be better for the Sponza model (getting about 16 fps on my MacBook - should be at least 24).
+- Likewise could be better for the Mini model (also getting about 16 fps).
 
 UI:
 - Widgets to display (and edit?) model attributes.
@@ -37,8 +36,7 @@ UI:
   box, and so on).
 
 Animation:
-- Support for keyframed animation (my sample data has keyframes baked out into
-  separate .obj files, so that's a good first target).
+- Able to load a sequence of .obj files as keyframe data.
 - Assume that only the vertex coords, texture coords and normals change between
   frames.
 - Face data stays the same
@@ -47,4 +45,5 @@ Animation:
 Additional model formats:
 - .ply
 - .fbx (via the FBX SDK)
+- Something where models include light and camera positions. RIB or PovRay formats, perhaps?
 
