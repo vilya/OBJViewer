@@ -53,7 +53,8 @@ enum MTLFileLineType {
   MTL_LINETYPE_MAP_KM,
   MTL_LINETYPE_MAP_KS,
   MTL_LINETYPE_MAP_D,
-  MTL_LINETYPE_MAP_BUMP 
+  MTL_LINETYPE_MAP_BUMP,
+  MTL_LINETYPE_BUMP 
 };
 
 
@@ -254,6 +255,7 @@ MTLFileLineType mtlParseLineType(char* line, char*& col) throw(ParseException) {
     { "map_Ks", MTL_LINETYPE_MAP_KS },
     { "map_D", MTL_LINETYPE_MAP_D },
     { "map_Bump", MTL_LINETYPE_MAP_BUMP },
+    { "bump", MTL_LINETYPE_MAP_BUMP },
     { "#", MTL_LINETYPE_COMMENT },
     { NULL, MTL_LINETYPE_UNKNOWN }
   };
@@ -427,6 +429,7 @@ void loadMaterialLibrary(const char* path,
         case MTL_LINETYPE_NI:
         case MTL_LINETYPE_ILLUM:
         case MTL_LINETYPE_TR:
+        case MTL_LINETYPE_BUMP:
           // TODO: handle these.
           while (!isEnd(*col))
             ++col;
