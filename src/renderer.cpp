@@ -273,10 +273,10 @@ Renderer::Renderer(Model* model) :
     prepare(_renderGroupsPolys);
     prepare(_renderGroupsLines);
 
-    _camera->frontView(_model->frames[0].low, _model->frames[0].high);
+    _camera->frontView(_model->low, _model->high);
     loadTexturesForModel(_model);
-    drawModel(_model, 0, kPolygons, _renderGroupsPolys);
-    drawModel(_model, 0, kLines, _renderGroupsLines);
+    drawModel(_model, kPolygons, _renderGroupsPolys);
+    drawModel(_model, kLines, _renderGroupsLines);
   }
   checkGLError("Error during initialisation.");
 }
@@ -339,8 +339,7 @@ void Renderer::render(int width, int height)
 
   // Apply the camera settings.
   if (_model != NULL) {
-    Frame& frame = _model->frames[0];
-    _camera->setup(width, height, frame.low, frame.high);
+    _camera->setup(width, height, _model->low, _model->high);
   } else {
     Float4 low(-1, -1, -1, 1);
     Float4 high(1, 1, 1, 1);
@@ -379,14 +378,12 @@ void Renderer::render(int width, int height)
 
 void Renderer::prepare(std::list<RenderGroup>& groups)
 {
-  Frame& frame = _model->frames[0];
-
   std::map<std::string, Material>::iterator m;
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
     Material* material = &m->second;
     size_t numFaces = 0;
-    for (size_t i = 0; i < frame.faces.size(); ++i) {
-      Face* face = frame.faces[i];
+    for (size_t i = 0; i < _model->faces.size(); ++i) {
+      Face* face = _model->faces[i];
       if (face->material == material)
         ++numFaces;
     }
@@ -404,7 +401,7 @@ void Renderer::prepare(std::list<RenderGroup>& groups)
 }
 
 
-void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style, std::list<RenderGroup>& groups)
+void Renderer::drawModel(Model* model, RenderStyle style, std::list<RenderGroup>& groups)
 {
   glDisable(GL_TEXTURE_2D);
 
@@ -416,7 +413,7 @@ void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style,
   for (iter = groups.begin(); iter != groups.end(); ++iter) {
     RenderGroup& rg = *iter;
     setupMaterial(rg.mat);
-    renderFacesForMaterial(model, frameNum, style, rg);
+    renderFacesForMaterial(model, style, rg);
   }
 }
 
@@ -459,10 +456,8 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
 }
 
 
-void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
-    RenderStyle style, const RenderGroup& group)
+void Renderer::renderFacesForMaterial(Model* model, RenderStyle style, const RenderGroup& group)
 {
-  Frame& frame = model->frames[frameNum];
   Material* material = group.mat;
 
   if (material != NULL) {
@@ -478,7 +473,7 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
 
   int displayListID = group.firstID;
   size_t facesRendered = 0;
-  for (unsigned int f = 0; f < frame.faces.size(); ++f) {
+  for (unsigned int f = 0; f < model->faces.size(); ++f) {
     if (facesRendered % MAX_FACES_PER_DISPLAYLIST == 0) {
       if (facesRendered > 0)
         glEndList();
@@ -486,15 +481,15 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
       ++displayListID;
     }
 
-    Face& face = *frame.faces[f];
+    Face& face = *model->faces[f];
     if (face.material != material)
       continue;
 
     glBegin( (style == kLines) ? GL_LINE_LOOP : GL_POLYGON );
 
     for (unsigned int i = 0; i < face.size(); ++i) {
-      if (material != NULL && face[i].vt >= 0 && (unsigned int)face[i].vt < frame.vt.size()) {
-        Float4& vt = frame.vt[face[i].vt];
+      if (material != NULL && face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
+        Float4& vt = model->vt[face[i].vt];
         if (material->mapKa != NULL)
           glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
         if (material->mapKd != NULL)
@@ -503,12 +498,12 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
           glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
       }
       
-      if (face[i].vn >= 0 && (unsigned int)face[i].vn < frame.vn.size()) {
-        Float4& vn = frame.vn[face[i].vn];
+      if (face[i].vn >= 0 && (unsigned int)face[i].vn < model->vn.size()) {
+        Float4& vn = model->vn[face[i].vn];
         glNormal3f(vn.x, vn.y, vn.z);
       }
 
-      Float4& v = frame.v[face[i].v];
+      Float4& v = model->v[face[i].v];
       glVertex4f(v.x, v.y, v.z, v.w);
     }
 

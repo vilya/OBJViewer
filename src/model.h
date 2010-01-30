@@ -46,28 +46,20 @@ struct Face {
 };
 
 
-struct Frame {
+struct Model {
   std::vector<Float4> v;
   std::vector<Float4> vt;
   std::vector<Float4> vp;
   std::vector<Float4> vn;
   std::vector<Face*> faces;
+  std::map<std::string, Material> materials;
 
   Float4 low;
   Float4 high;
 
-  Frame();
-  ~Frame();
-
-  void addV(const Float4& newV);
-};
-
-
-struct Model {
-  std::vector<Frame> frames;
-  std::map<std::string, Material> materials;
-
   Model();
+  ~Model();
+  void addV(const Float4& newV);
 };
 
 

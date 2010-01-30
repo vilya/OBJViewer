@@ -21,8 +21,7 @@ public:
 };
 
 
-Model* loadModel(const char* path,
-    unsigned int startFrame, unsigned int endFrame) throw(ParseException);
+Model* loadModel(const char* path) throw(ParseException);
 
 
 #endif // OBJViewer_parser_h

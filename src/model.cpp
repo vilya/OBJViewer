@@ -56,25 +56,25 @@ unsigned int Face::size() const
 
 
 //
-// Frame METHODS
+// Model METHODS
 //
 
-Frame::Frame() :
-    v(), vt(), vp(), vn(), faces(),
+Model::Model() :
+    v(), vt(), vp(), vn(), faces(), materials(),
     low(10000, 10000, 10000),
     high(-10000, -10000, -10000)
 {
 }
 
 
-Frame::~Frame()
+Model::~Model()
 {
   for (unsigned int i = 0; i < faces.size(); ++i)
     delete faces[i];
 }
 
 
-void Frame::addV(const Float4& newV)
+void Model::addV(const Float4& newV)
 {
   v.push_back(newV);
   for (unsigned int i = 0; i < 3; ++i) {
@@ -83,14 +83,5 @@ void Frame::addV(const Float4& newV)
     if (newV[i] > high[i])
       high[i] = newV[i];
   }
-}
-
-
-//
-// Model METHODS
-//
-
-Model::Model() : frames(), materials()
-{
 }
 

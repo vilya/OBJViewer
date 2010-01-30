@@ -97,12 +97,11 @@ public:
 private:
   void prepare(std::list<RenderGroup>& groups);
 
-  void drawModel(Model* theModel, unsigned int frameNum, RenderStyle style, std::list<RenderGroup>& groups);
+  void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup>& groups);
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
   void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
-  void renderFacesForMaterial(Model* model, unsigned int frameNum,
-      RenderStyle style, const RenderGroup& group);
+  void renderFacesForMaterial(Model* model, RenderStyle style, const RenderGroup& group);
 
   void loadTexturesForModel(Model* model);
   void loadTexture(RawImage* tex);

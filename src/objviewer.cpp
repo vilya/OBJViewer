@@ -92,13 +92,6 @@ void OBJViewerApp::changeSize(int width, int height)
 
 void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 {
-  Float4 low(-1, -1, -1, 1);
-  Float4 high(1, 1, 1, 1);
-  if (_model != NULL) {
-    low = _model->frames[0].low;
-    high = _model->frames[0].high;
-  }
-
   switch (key) {
     case 27: // 27 is the ESC key.
       exit(0);
@@ -126,25 +119,25 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       glutPostRedisplay();
       break;
     case '0': // Center view.
-      _renderer->currentCamera()->centerView(low, high);
+      _renderer->currentCamera()->centerView(_model->low, _model->high);
       break;
     case '1': // Front view.
-      _renderer->currentCamera()->frontView(low, high);
+      _renderer->currentCamera()->frontView(_model->low, _model->high);
       break;
     case '2': // Back view.
-      _renderer->currentCamera()->backView(low, high);
+      _renderer->currentCamera()->backView(_model->low, _model->high);
       break;
     case '3': // Left view.
-      _renderer->currentCamera()->leftView(low, high);
+      _renderer->currentCamera()->leftView(_model->low, _model->high);
       break;
     case '4': // Right view.
-      _renderer->currentCamera()->rightView(low, high);
+      _renderer->currentCamera()->rightView(_model->low, _model->high);
       break;
     case '5': // Top view.
-      _renderer->currentCamera()->topView(low, high);
+      _renderer->currentCamera()->topView(_model->low, _model->high);
       break;
     case '6': // Bottom view.
-      _renderer->currentCamera()->bottomView(low, high);
+      _renderer->currentCamera()->bottomView(_model->low, _model->high);
       break;
     case 'c':
       _renderer->currentCamera()->printCameraInfo();
@@ -234,20 +227,20 @@ void OBJViewerApp::run()
 void OBJViewerApp::usage(char *progname)
 {
     fprintf(stderr,
-"Usage: %s [options] <objfile> <startFrame> <endFrame>\n"
+"Usage: %s [options] <objfile>\n"
 "\n"
 "Where [options] can be any combination of:\n"
 "  -v,--verbose                 Print out some extra information.\n"
 "  -h,--help                    Print this message and exit.\n"
+"\n"
+"You can also press keys to perform various functions while viewing a model.\n"
+"To see a list of these, press the '?' key."
             , basename(progname));
 }
 
 
 void OBJViewerApp::processArgs(int argc, char **argv)
 {
-  unsigned int startFrame = 0;
-  unsigned int endFrame = 0;
-
   const char *short_opts = "h";
   struct option long_opts[] = {
     { "help",               no_argument,        NULL, 'h' },
@@ -269,15 +262,8 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   argc -= optind;
   argv += optind;
   if (argc > 0) {
-    if (argc > 1) {
-      startFrame = (unsigned int)atoi(argv[1]);
-      endFrame = startFrame;
-    }
-    if (argc > 2)
-      endFrame = (unsigned int)atoi(argv[2]);
-
     try {
-      _model = loadModel(argv[0], startFrame, endFrame);
+      _model = loadModel(argv[0]);
     } catch (ParseException& e) {
       fprintf(stderr, "Unable to load model. Continuing with default model.\n");
     }

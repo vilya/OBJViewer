@@ -621,10 +621,8 @@ Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material>
 }
 
 
-void loadFrame(Model* model, const char* path) throw(ParseException)
+void loadModelInternal(Model* model, const char* path) throw(ParseException)
 {
-  fprintf(stderr, "Loading frame %s...\n", path);
-
   FILE *f = fopen(path, "r");
   if (f == NULL)
     throw ParseException("Unable to open file %s.\n", path);
@@ -635,9 +633,6 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
 
   Material *activeMaterial = NULL;
   try {
-    model->frames.push_back(Frame());
-    Frame& frame = model->frames.back();
-
     while (!feof(f)) {
       ++line_no;
 
@@ -652,20 +647,20 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
       eatSpace(col);
       switch (objParseLineType(col, col)) {
         case OBJ_LINETYPE_V:
-          frame.addV(objParseV(col, col));
+          model->addV(objParseV(col, col));
           break;
         case OBJ_LINETYPE_VT:
-          frame.vt.push_back(objParseVT(col, col));
+          model->vt.push_back(objParseVT(col, col));
           break;
         case OBJ_LINETYPE_VP:
-          frame.vp.push_back(objParseVP(col, col));
+          model->vp.push_back(objParseVP(col, col));
           break;
         case OBJ_LINETYPE_VN:
-          frame.vn.push_back(objParseVN(col, col));
+          model->vn.push_back(objParseVN(col, col));
           break;
         case OBJ_LINETYPE_F:
         case OBJ_LINETYPE_FO:
-          frame.faces.push_back(objParseFace(col, col, activeMaterial));
+          model->faces.push_back(objParseFace(col, col, activeMaterial));
           break;
         case OBJ_LINETYPE_USEMTL:
           activeMaterial = objParseUSEMTL(col, col, model->materials);
@@ -702,21 +697,11 @@ void loadFrame(Model* model, const char* path) throw(ParseException)
 }
 
 
-Model* loadModel(const char* path,
-    unsigned int startFrame, unsigned int endFrame) throw(ParseException)
+Model* loadModel(const char* path) throw(ParseException)
 {
-  char framePath[_MAX_LINE_LEN];
-  
   Model *model = new Model();
   try {
-    if (strchr(path, '#') != NULL) {
-      for (unsigned int frameNum = startFrame; frameNum <= endFrame; ++frameNum) {
-        sprintf(framePath, path, frameNum);
-        loadFrame(model, framePath);
-      }
-    } else {
-      loadFrame(model, path);
-    }
+    loadModelInternal(model, path);
   } catch (ParseException& ex) {
     if (model != NULL)
       delete model;
