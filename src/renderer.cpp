@@ -265,6 +265,8 @@ Renderer::Renderer(Model* model) :
   _drawLights(false),
   _model(model),
   _camera(new Camera()),
+  _renderGroupsPolys(),
+  _renderGroupsLines(),
   _currentMapKa(NULL),
   _currentMapKd(NULL),
   _currentMapKs(NULL),
@@ -282,12 +284,13 @@ Renderer::Renderer(Model* model) :
   glShadeModel(GL_SMOOTH);
 
   if (_model != NULL) {
-    prepare();
+    prepare(_renderGroupsPolys);
+    prepare(_renderGroupsLines);
 
     _camera->frontView(_model);
     loadTexturesForModel(_model);
-    drawModel(_model, 0, kLines);
-    drawModel(_model, 0, kPolygons);
+    drawModel(_model, 0, kPolygons, _renderGroupsPolys);
+    drawModel(_model, 0, kLines, _renderGroupsLines);
   }
   checkGLError("Error during initialisation.");
 }
@@ -361,8 +364,9 @@ void Renderer::render(int width, int height)
 
   _camera->transformTo();
   if (_model != NULL) {
+    std::list<RenderGroup>& groups = (_style == kPolygons) ? _renderGroupsPolys : _renderGroupsLines;
     std::list<RenderGroup>::iterator iter;
-    for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+    for (iter = groups.begin(); iter != groups.end(); ++iter) {
       RenderGroup& group = *iter;
       setupMaterial(group.mat);
       for (int displayListID = group.firstID; displayListID < group.lastID; ++displayListID)
@@ -381,34 +385,34 @@ void Renderer::render(int width, int height)
 }
 
 
-void Renderer::prepare()
+void Renderer::prepare(std::list<RenderGroup>& groups)
 {
   Frame& frame = _model->frames[0];
 
   std::map<std::string, Material>::iterator m;
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
     Material* material = &m->second;
-    std::vector<Face*> faces;
+    size_t numFaces = 0;
     for (size_t i = 0; i < frame.faces.size(); ++i) {
       Face* face = frame.faces[i];
       if (face->material == material)
-        faces.push_back(face);
+        ++numFaces;
     }
 
-    if (faces.size() == 0)
+    if (numFaces == 0)
       continue;
 
-    size_t numRenderGroups = faces.size() / MAX_FACES_PER_DISPLAYLIST;
-    if (faces.size() % MAX_FACES_PER_DISPLAYLIST != 0)
+    size_t numRenderGroups = numFaces / MAX_FACES_PER_DISPLAYLIST;
+    if (numFaces % MAX_FACES_PER_DISPLAYLIST != 0)
         ++numRenderGroups;
 
     GLuint firstID = glGenLists(numRenderGroups);
-    _renderGroups.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+    groups.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
   }
 }
 
 
-void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style)
+void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style, std::list<RenderGroup>& groups)
 {
   glDisable(GL_TEXTURE_2D);
 
@@ -417,7 +421,7 @@ void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style)
   _currentMapKs = NULL;
 
   std::list<RenderGroup>::iterator iter;
-  for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+  for (iter = groups.begin(); iter != groups.end(); ++iter) {
     RenderGroup& rg = *iter;
     setupMaterial(rg.mat);
     renderFacesForMaterial(model, frameNum, style, rg);

@@ -95,9 +95,9 @@ public:
   void render(int width, int height);
 
 private:
-  void prepare();
+  void prepare(std::list<RenderGroup>& groups);
 
-  void drawModel(Model* theModel, unsigned int frameNum, RenderStyle style);
+  void drawModel(Model* theModel, unsigned int frameNum, RenderStyle style, std::list<RenderGroup>& groups);
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
   void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
@@ -118,7 +118,8 @@ private:
   bool _drawLights;
   Model* _model;
   Camera* _camera;
-  std::list<RenderGroup> _renderGroups;
+  std::list<RenderGroup> _renderGroupsPolys;
+  std::list<RenderGroup> _renderGroupsLines;
 
   RawImage* _currentMapKa;
   RawImage* _currentMapKd;
