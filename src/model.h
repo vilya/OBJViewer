@@ -66,7 +66,6 @@ struct Frame {
 struct Model {
   std::vector<Frame> frames;
   std::map<std::string, Material> materials;
-  unsigned int displayListStart;
 
   Model();
 };

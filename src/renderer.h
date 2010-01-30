@@ -1,6 +1,7 @@
 #ifndef OBJViewer_renderer_h
 #define OBJViewer_renderer_h
 
+#include <list>
 #include <map>
 
 #include <imagelib.h>
@@ -70,6 +71,15 @@ private:
 };
 
 
+struct RenderGroup {
+  Material* mat;
+  int firstID;
+  int lastID;
+
+  RenderGroup(Material* material, int firstID, int lastID);
+};
+
+
 class Renderer {
 public:
   Renderer(Model* model);
@@ -85,12 +95,14 @@ public:
   void render(int width, int height);
 
 private:
+  void prepare();
+
   void drawModel(Model* theModel, unsigned int frameNum, RenderStyle style);
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
   void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
   void renderFacesForMaterial(Model* model, unsigned int frameNum,
-      Material* material, RenderStyle style);
+      RenderStyle style, const RenderGroup& group);
 
   void loadTexturesForModel(Model* model);
   void loadTexture(RawImage* tex);
@@ -106,6 +118,7 @@ private:
   bool _drawLights;
   Model* _model;
   Camera* _camera;
+  std::list<RenderGroup> _renderGroups;
 
   RawImage* _currentMapKa;
   RawImage* _currentMapKd;

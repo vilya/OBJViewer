@@ -17,6 +17,13 @@
 
 
 //
+// CONSTANTS
+//
+
+const size_t MAX_FACES_PER_DISPLAYLIST = 20000;
+
+
+//
 // FUNCTION DECLARATIONS
 //
 
@@ -239,6 +246,16 @@ void Camera::printCameraInfo() const
 
 
 //
+// RenderGroup METHODS
+//
+
+RenderGroup::RenderGroup(Material* iMaterial, int iFirstID, int iLastID) :
+  mat(iMaterial), firstID(iFirstID), lastID(iLastID)
+{
+}
+
+
+//
 // Renderer METHODS
 //
 
@@ -265,8 +282,9 @@ Renderer::Renderer(Model* model) :
   glShadeModel(GL_SMOOTH);
 
   if (_model != NULL) {
+    prepare();
+
     _camera->frontView(_model);
-    _model->displayListStart = glGenLists(_model->materials.size() * 2);
     loadTexturesForModel(_model);
     drawModel(_model, 0, kLines);
     drawModel(_model, 0, kPolygons);
@@ -343,14 +361,12 @@ void Renderer::render(int width, int height)
 
   _camera->transformTo();
   if (_model != NULL) {
-    std::map<std::string, Material>::iterator m;
-    unsigned int displayListID = _model->displayListStart +
-      _model->materials.size() * (unsigned int)_style;
-    for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
-      Material* material = &m->second;
-      setupMaterial(material);
-      glCallList(displayListID);
-      ++displayListID;
+    std::list<RenderGroup>::iterator iter;
+    for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+      RenderGroup& group = *iter;
+      setupMaterial(group.mat);
+      for (int displayListID = group.firstID; displayListID < group.lastID; ++displayListID)
+        glCallList(displayListID);
     }
   } else {
     drawDefaultModel(_style);
@@ -365,6 +381,33 @@ void Renderer::render(int width, int height)
 }
 
 
+void Renderer::prepare()
+{
+  Frame& frame = _model->frames[0];
+
+  std::map<std::string, Material>::iterator m;
+  for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
+    Material* material = &m->second;
+    std::vector<Face*> faces;
+    for (size_t i = 0; i < frame.faces.size(); ++i) {
+      Face* face = frame.faces[i];
+      if (face->material == material)
+        faces.push_back(face);
+    }
+
+    if (faces.size() == 0)
+      continue;
+
+    size_t numRenderGroups = faces.size() / MAX_FACES_PER_DISPLAYLIST;
+    if (faces.size() % MAX_FACES_PER_DISPLAYLIST != 0)
+        ++numRenderGroups;
+
+    GLuint firstID = glGenLists(numRenderGroups);
+    _renderGroups.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+  }
+}
+
+
 void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style)
 {
   glDisable(GL_TEXTURE_2D);
@@ -373,16 +416,11 @@ void Renderer::drawModel(Model* model, unsigned int frameNum, RenderStyle style)
   _currentMapKd = NULL;
   _currentMapKs = NULL;
 
-  unsigned int displayListID = model->displayListStart + model->materials.size() * (unsigned int)style;
-
-  std::map<std::string, Material>::iterator m;
-  for (m = model->materials.begin(); m != model->materials.end(); ++m) {
-    Material *material = &m->second;
-    setupMaterial(material);
-    glNewList(displayListID, GL_COMPILE);
-    renderFacesForMaterial(model, frameNum, material, style);
-    glEndList();
-    ++displayListID;
+  std::list<RenderGroup>::iterator iter;
+  for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+    RenderGroup& rg = *iter;
+    setupMaterial(rg.mat);
+    renderFacesForMaterial(model, frameNum, style, rg);
   }
 }
 
@@ -416,11 +454,6 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
     if (texture != NULL) {
       glEnable(GL_TEXTURE_2D);
       glBindTexture(GL_TEXTURE_2D, texture->getTexID());
-      /* Disabled for now because it kills things when you have a couple of large (4k) textures:
-      gluBuild2DMipmaps(GL_TEXTURE_2D, texture->getType(),
-          texture->getWidth(), texture->getHeight(),
-          texture->getType(), GL_UNSIGNED_BYTE, texture->getPixels());
-      */
       checkGLError("Error setting up texture");
     } else {
       glDisable(GL_TEXTURE_2D);
@@ -431,10 +464,32 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
 
 
 void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
-    Material* material, RenderStyle style)
+    RenderStyle style, const RenderGroup& group)
 {
   Frame& frame = model->frames[frameNum];
+  Material* material = group.mat;
+
+  if (material != NULL) {
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material->Ka.data);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material->Kd.data);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material->Ks.data);
+  } else {
+    float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
+  }
+
+  int displayListID = group.firstID;
+  size_t facesRendered = 0;
   for (unsigned int f = 0; f < frame.faces.size(); ++f) {
+    if (facesRendered % MAX_FACES_PER_DISPLAYLIST == 0) {
+      if (facesRendered > 0)
+        glEndList();
+      glNewList(displayListID, GL_COMPILE);
+      ++displayListID;
+    }
+
     Face& face = *frame.faces[f];
     if (face.material != material)
       continue;
@@ -442,25 +497,14 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
     glBegin( (style == kLines) ? GL_LINE_LOOP : GL_POLYGON );
 
     for (unsigned int i = 0; i < face.size(); ++i) {
-      if (face.material != NULL) {
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, face.material->Ka.data);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, face.material->Kd.data);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, face.material->Ks.data);
-
-        if (face[i].vt >= 0 && (unsigned int)face[i].vt < frame.vt.size()) {
-          Float4& vt = frame.vt[face[i].vt];
-          if (face.material->mapKa != NULL)
-            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-          if (face.material->mapKd != NULL)
-            glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
-          if (face.material->mapKs != NULL)
-            glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
-        }
-      } else {
-        float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
+      if (material != NULL && face[i].vt >= 0 && (unsigned int)face[i].vt < frame.vt.size()) {
+        Float4& vt = frame.vt[face[i].vt];
+        if (material->mapKa != NULL)
+          glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+        if (material->mapKd != NULL)
+          glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
+        if (material->mapKs != NULL)
+          glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
       }
       
       if (face[i].vn >= 0 && (unsigned int)face[i].vn < frame.vn.size()) {
@@ -474,6 +518,7 @@ void Renderer::renderFacesForMaterial(Model* model, unsigned int frameNum,
 
     glEnd();
   }
+  glEndList();
 }
 
 
