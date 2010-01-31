@@ -256,6 +256,7 @@ Renderer::Renderer(Model* model) :
   _currentMapKa(NULL),
   _currentMapKd(NULL),
   _currentMapKs(NULL),
+  _currentMapD(NULL),
   _fps()
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
@@ -379,6 +380,8 @@ void Renderer::render(int width, int height)
 void Renderer::prepare(std::list<RenderGroup>& groups)
 {
   std::map<std::string, Material>::iterator m;
+  std::list<RenderGroup> groupsWithTransparency;
+
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
     Material* material = &m->second;
     size_t numFaces = 0;
@@ -396,8 +399,23 @@ void Renderer::prepare(std::list<RenderGroup>& groups)
         ++numRenderGroups;
 
     GLuint firstID = glGenLists(numRenderGroups);
-    groups.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+    if (material != NULL && (material->d != 1 || material->mapD != NULL)) {
+      groupsWithTransparency.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+    } else {
+      groups.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+    }
   }
+
+  // Prepare the materials.
+  std::list<RenderGroup>::iterator iter;
+  for (iter = groupsWithTransparency.begin(); iter != groupsWithTransparency.end(); ++iter) {
+    Material* material = iter->mat;
+    material->Ka.a = material->d;
+    material->Kd.a = material->d;
+    material->Ks.a = material->d;
+  }
+
+  groups.insert(groups.end(), groupsWithTransparency.begin(), groupsWithTransparency.end());
 }
 
 
@@ -434,9 +452,10 @@ void Renderer::drawDefaultModel(RenderStyle style)
 
 void Renderer::setupMaterial(Material* material)
 {
-  setupTexture(GL_TEXTURE0, material->mapKa, _currentMapKa);
-  setupTexture(GL_TEXTURE1, material->mapKd, _currentMapKd);
-  setupTexture(GL_TEXTURE2, material->mapKs, _currentMapKs);
+  setupTexture(GL_TEXTURE0, material->mapD, _currentMapD);
+  setupTexture(GL_TEXTURE1, material->mapKa, _currentMapKa);
+  setupTexture(GL_TEXTURE2, material->mapKd, _currentMapKd);
+  setupTexture(GL_TEXTURE3, material->mapKs, _currentMapKs);
 }
 
 
@@ -460,17 +479,6 @@ void Renderer::renderFacesForMaterial(Model* model, RenderStyle style, const Ren
 {
   Material* material = group.mat;
 
-  if (material != NULL) {
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material->Ka.data);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material->Kd.data);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material->Ks.data);
-  } else {
-    float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
-  }
-
   int displayListID = group.firstID;
   size_t facesRendered = 0;
   for (unsigned int f = 0; f < model->faces.size(); ++f) {
@@ -487,17 +495,32 @@ void Renderer::renderFacesForMaterial(Model* model, RenderStyle style, const Ren
 
     glBegin( (style == kLines) ? GL_LINE_LOOP : GL_POLYGON );
 
+    if (material != NULL) {
+      glMaterialfv(GL_FRONT, GL_AMBIENT, material->Ka.data);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, material->Kd.data);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, material->Ks.data);
+    } else {
+      float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
+    }
+
     for (unsigned int i = 0; i < face.size(); ++i) {
-      if (material != NULL && face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
-        Float4& vt = model->vt[face[i].vt];
-        if (material->mapKa != NULL)
-          glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-        if (material->mapKd != NULL)
-          glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
-        if (material->mapKs != NULL)
-          glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
+      if (material != NULL) {
+        if (face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
+          Float4& vt = model->vt[face[i].vt];
+          if (material->mapD != NULL)
+            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
+          if (material->mapKa != NULL)
+            glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
+          if (material->mapKd != NULL)
+            glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
+          if (material->mapKs != NULL)
+            glMultiTexCoord3f(GL_TEXTURE3, vt.x, vt.y, vt.z);
+        }
       }
-      
+
       if (face[i].vn >= 0 && (unsigned int)face[i].vn < model->vn.size()) {
         Float4& vn = model->vn[face[i].vn];
         glNormal3f(vn.x, vn.y, vn.z);
@@ -520,6 +543,7 @@ void Renderer::loadTexturesForModel(Model* model)
 
   std::map<std::string, Material>::iterator iter;
   for (iter = model->materials.begin(); iter != model->materials.end(); ++iter) {
+    loadTexture(iter->second.mapD);
     loadTexture(iter->second.mapKa);
     loadTexture(iter->second.mapKd);
     loadTexture(iter->second.mapKs);

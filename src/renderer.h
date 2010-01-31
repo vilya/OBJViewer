@@ -123,6 +123,7 @@ private:
   RawImage* _currentMapKa;
   RawImage* _currentMapKd;
   RawImage* _currentMapKs;
+  RawImage* _currentMapD;
 
   FramesPerSecond _fps;
 };

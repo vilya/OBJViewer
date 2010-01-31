@@ -14,7 +14,8 @@ Material::Material() :
     Ns(1.0),
     mapKa(NULL),
     mapKd(NULL),
-    mapKs(NULL)
+    mapKs(NULL),
+    mapD(NULL)
 {
 }
 
