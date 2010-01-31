@@ -7,6 +7,9 @@ Lighting:
   - Arbitrary locations
 
 Rendering improvements:
+- Transparency
+  - Add alpha channel from the mapD texture to the mapKa, mapKd and mapKs channels?
+  - Change the texture combining to use the mapD texture properly?
 - Better display for objects with no materials specified.
 - Fix the texturing bugs on the ATI Radeon 4870 X2.
   - I think it's related to texture size - only the FairyForest scene, with
@@ -26,6 +29,10 @@ Rendering improvements:
 Speed:
 - Could be better for the Sponza model (getting about 16 fps on my MacBook - should be at least 24).
 - Likewise could be better for the Mini model (also getting about 16 fps).
+- Reduce render state changes:
+  - Tesselate polygons into triangles (if possible, turn them into a triangle strip).
+  - Render all triangles for one strip inside a single glBegin()/glEnd() call.
+  - Only set the glMaterialfv properties once, immediately after the glBegin() call.
 
 UI:
 - Widgets to display (and edit?) model attributes.
