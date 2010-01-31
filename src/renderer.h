@@ -101,7 +101,7 @@ private:
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
   void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
-  void renderFacesForMaterial(Model* model, RenderStyle style, const RenderGroup& group);
+  void renderGroup(Model* model, RenderStyle style, const RenderGroup& group);
 
   void loadTexturesForModel(Model* model);
   void loadTexture(RawImage* tex);

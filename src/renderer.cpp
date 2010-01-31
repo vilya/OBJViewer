@@ -423,6 +423,7 @@ void Renderer::drawModel(Model* model, RenderStyle style, std::list<RenderGroup>
 {
   glDisable(GL_TEXTURE_2D);
 
+  _currentMapD = NULL;
   _currentMapKa = NULL;
   _currentMapKd = NULL;
   _currentMapKs = NULL;
@@ -431,7 +432,7 @@ void Renderer::drawModel(Model* model, RenderStyle style, std::list<RenderGroup>
   for (iter = groups.begin(); iter != groups.end(); ++iter) {
     RenderGroup& rg = *iter;
     setupMaterial(rg.mat);
-    renderFacesForMaterial(model, style, rg);
+    renderGroup(model, style, rg);
   }
 }
 
@@ -475,7 +476,7 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
 }
 
 
-void Renderer::renderFacesForMaterial(Model* model, RenderStyle style, const RenderGroup& group)
+void Renderer::renderGroup(Model* model, RenderStyle style, const RenderGroup& group)
 {
   Material* material = group.mat;
 
