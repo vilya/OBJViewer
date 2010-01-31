@@ -495,7 +495,6 @@ void Renderer::renderGroup(Model* model, RenderStyle style, const RenderGroup& g
       continue;
 
     glBegin( (style == kLines) ? GL_LINE_LOOP : GL_POLYGON );
-
     if (material != NULL) {
       glMaterialfv(GL_FRONT, GL_AMBIENT, material->Ka.data);
       glMaterialfv(GL_FRONT, GL_DIFFUSE, material->Kd.data);
@@ -506,7 +505,6 @@ void Renderer::renderGroup(Model* model, RenderStyle style, const RenderGroup& g
       glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
       glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
     }
-
     for (unsigned int i = 0; i < face.size(); ++i) {
       if (material != NULL) {
         if (face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
@@ -530,8 +528,9 @@ void Renderer::renderGroup(Model* model, RenderStyle style, const RenderGroup& g
       Float4& v = model->v[face[i].v];
       glVertex4f(v.x, v.y, v.z, v.w);
     }
-
     glEnd();
+
+    ++facesRendered;
   }
   glEndList();
 }
