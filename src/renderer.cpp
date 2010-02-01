@@ -241,6 +241,8 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType) :
   _material(iMaterial),
   _type(iType),
   _size(0),
+  _hasTexCoords(true),
+  _hasNormalCoords(false),
   _coords(),
   _coordsID(0),
   _indexes(),
@@ -257,28 +259,33 @@ Material* RenderGroup::getMaterial() const
 
 void RenderGroup::add(Model* model, Face* face)
 {
+  if (_size == 0) {
+    _hasTexCoords = (*face)[0].vt >= 0;
+    _hasNormalCoords = (*face)[0].vn >= 0;
+  }
+
   for (size_t i = 0; i < face->size(); ++i) {
     int vi = (*face)[i].v;
-    int vti = (*face)[i].vt;
-    int vni = (*face)[i].vn;
-
-    // XXX: what to do if the vertex doesn't have tex coords or a normal?
-
     Float4& v = model->v[vi];
-    Float4& vt = model->vt[vti];
-    Float4& vn = model->vn[vni];
-  
     _coords.push_back(v.x);
     _coords.push_back(v.y);
     _coords.push_back(v.z);
     _coords.push_back(v.w);
 
-    _coords.push_back(vt.x);
-    _coords.push_back(vt.y);
+    if (_hasTexCoords) {
+      int vti = (*face)[i].vt;
+      Float4& vt = model->vt[vti];
+      _coords.push_back(vt.x);
+      _coords.push_back(vt.y);
+    }
 
-    _coords.push_back(vn.x);
-    _coords.push_back(vn.y);
-    _coords.push_back(vn.z);
+    if (_hasNormalCoords) {
+      int vni = (*face)[i].vn;
+      Float4& vn = model->vn[vni];
+      _coords.push_back(vn.x);
+      _coords.push_back(vn.y);
+      _coords.push_back(vn.z);
+    }
 
     _indexes.push_back(_indexes.size());
   }
@@ -318,36 +325,48 @@ void RenderGroup::render()
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
 
-  glVertexPointer(4, GL_FLOAT, sizeof(float)*9, 0);
+  GLuint stride = sizeof(float) * (4 + (_hasTexCoords ? 2 : 0) + (_hasNormalCoords ? 3 : 0));
+  glVertexPointer(4, GL_FLOAT, stride, 0);
+
   if (_material != NULL) {
     glMaterialfv(GL_FRONT, GL_AMBIENT, _material->Ka.data);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, _material->Kd.data);
     glMaterialfv(GL_FRONT, GL_SPECULAR, _material->Ks.data);
 
-    RawImage* textures[] = { _material->mapD, _material->mapKa, _material->mapKd, _material->mapKs };
-    for (int i = 0; i < 4; ++i) {
-      glActiveTexture(GL_TEXTURE0 + i);
-      glClientActiveTexture(GL_TEXTURE0 + i);
-      if (textures[i] != NULL) {
-        glEnable(GL_TEXTURE_2D);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
-        glTexCoordPointer(2, GL_FLOAT, sizeof(float)*9, (const GLvoid*)(sizeof(float)*4));
-      } else {
-        glDisable(GL_TEXTURE_2D);
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    if (_hasTexCoords) {
+      RawImage* textures[] =
+          { _material->mapD, _material->mapKa, _material->mapKd, _material->mapKs };
+      for (int i = 0; i < 4; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glClientActiveTexture(GL_TEXTURE0 + i);
+        if (textures[i] != NULL) {
+          glEnable(GL_TEXTURE_2D);
+          glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+          glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
+          glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)(sizeof(float)*4));
+        } else {
+          glDisable(GL_TEXTURE_2D);
+          glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        }
       }
+    } else {
+      glDisable(GL_TEXTURE_2D);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     }
   } else {
     glDisable(GL_TEXTURE_2D);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    float defaultColor[] = { 1.0, 0.0, 0.0, 1.0 };
+    float defaultColor[] = { 0.6, 0.6, 1.0, 1.0 };
     glMaterialfv(GL_FRONT, GL_AMBIENT, defaultColor);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, defaultColor);
     glMaterialfv(GL_FRONT, GL_SPECULAR, defaultColor);
   }
-  glNormalPointer(GL_FLOAT, sizeof(float)*9, (const GLvoid*)(sizeof(float)*6));
+
+  if (_hasNormalCoords) {
+    GLuint offset = sizeof(float) * (_hasTexCoords ? 6 : 4);
+    glNormalPointer(GL_FLOAT, sizeof(float)*9, (const GLvoid*)offset);
+  }
 
   switch (_type) {
     case kTriangleGroup:
@@ -504,6 +523,7 @@ void Renderer::prepare()
 {
   // Create the render groups. Each material will have up to one group for
   // each of triangles, quads and general polygons.
+  fprintf(stderr, "Creating render groups...\n");
   std::map<Material*, RenderGroup*> triangles;
   std::map<Material*, RenderGroup*> quads;
   std::map<Material*, std::list<RenderGroup*> > polys;
@@ -567,6 +587,7 @@ void Renderer::prepare()
   // Copy the render groups into the _renderGroups list. Make sure the groups
   // with transparent materials go last, so that they'll be rendered after the
   // opaque materials.
+  fprintf(stderr, "Sorting render groups...\n");
   std::map<Material*, RenderGroup*>::iterator iter;
   std::map<Material*, std::list<RenderGroup*> >::iterator listIter;
 
@@ -593,11 +614,13 @@ void Renderer::prepare()
   }
 
   // Prepare the render groups.
+  fprintf(stderr, "Preparing render groups...\n");
   std::list<RenderGroup*>::iterator groupIter;
   for (groupIter = _renderGroups.begin(); groupIter != _renderGroups.end(); ++groupIter)
     (*groupIter)->prepare();
 
   // Prepare the materials.
+  fprintf(stderr, "Preparing materials...\n");
   std::map<std::string, Material>::iterator m;
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
     Material& material = m->second;

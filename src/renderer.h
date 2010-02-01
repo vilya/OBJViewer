@@ -91,11 +91,13 @@ private:
   Material* _material;
   RenderGroupType _type;
   size_t _size;
+  bool _hasTexCoords;
+  bool _hasNormalCoords;
 
-  // Coords are interleaved in groups of 9 elements:
+  // Coords are interleaved in groups of up to 9 elements:
   // - First 4 elements in each group are vertex x, y, z and w.
-  // - Next 2 are texture x and y.
-  // - Final 3 are normal x, y, z.
+  // - Next 2 are texture x and y (if _hasTexCoords == true).
+  // - Final 3 are normal x, y, z (if _hasNormalCoords == true).
   std::vector<float> _coords;
   GLuint _coordsID;
 
