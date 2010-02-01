@@ -1,13 +1,15 @@
+#define GL_GLEXT_PROTOTYPES 1
+
 #ifdef linux
 #include <GL/gl.h>
+#include <GL/glext.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
-#include <GL/glext.h>
 #else
 #include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
 #include <OpenGL/glu.h>
 #include <GLUT/glut.h>
-#include <OpenGL/glext.h>
 #endif
 
 #include <cmath>
@@ -293,25 +295,25 @@ size_t RenderGroup::size() const
 void RenderGroup::prepare()
 {
   // Get a VBO ID for the coords, upload the coords to the VBO, then delete the local copy.
-  glGenBuffersARB(1, &_coordsID);
-  glBindBufferARB(GL_ARRAY_BUFFER_ARB, _coordsID);
-  glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-      sizeof(float) * _coords.size(), &_coords[0], GL_STATIC_DRAW_ARB);
+  glGenBuffers(1, &_coordsID);
+  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBufferData(GL_ARRAY_BUFFER,
+      sizeof(float) * _coords.size(), &_coords[0], GL_STATIC_DRAW);
   _coords.clear();
 
   // Do the same for the indexes.
-  glGenBuffersARB(1, &_indexesID);
-  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, _indexesID);
-  glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-      sizeof(unsigned int) * _indexes.size(), &_indexes[0], GL_STATIC_DRAW_ARB);
+  glGenBuffers(1, &_indexesID);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+      sizeof(unsigned int) * _indexes.size(), &_indexes[0], GL_STATIC_DRAW);
   _indexes.clear();
 }
 
 
 void RenderGroup::render()
 {
-  glBindBufferARB(GL_ARRAY_BUFFER_ARB, _coordsID);
-  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, _indexesID);
+  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
 
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
@@ -365,8 +367,8 @@ void RenderGroup::render()
   glDisableClientState(GL_NORMAL_ARRAY);
 
   // Release the VBOs.
-  glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 
