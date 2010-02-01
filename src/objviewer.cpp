@@ -272,6 +272,7 @@ void OBJViewerApp::processArgs(int argc, char **argv)
     try {
       _model = loadModel(argv[0]);
     } catch (ParseException& e) {
+      fprintf(stderr, "%s\n", e.what());
       fprintf(stderr, "Unable to load model. Continuing with default model.\n");
     }
   }

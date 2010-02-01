@@ -621,7 +621,7 @@ Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material>
 }
 
 
-void loadModelInternal(Model* model, const char* path) throw(ParseException)
+void loadOBJ(Model* model, const char* path) throw(ParseException)
 {
   FILE *f = fopen(path, "r");
   if (f == NULL)
@@ -699,12 +699,27 @@ void loadModelInternal(Model* model, const char* path) throw(ParseException)
 
 Model* loadModel(const char* path) throw(ParseException)
 {
+  const char *filename = basename(const_cast<char *>(path));
+  if (filename == NULL)
+    throw ParseException("Invalid model filename: %s does not name a file.", filename);
+
+  FILE *file = fopen(path, "rb");
+  if (file == NULL)
+    throw ParseException("File not found: %s.", path);
+
+  const char *ext = strrchr(filename, '.');
+  if (ext == NULL)
+    throw ParseException("Unknown model format.");
+
   Model *model = new Model();
   try {
-    loadModelInternal(model, path);
+    if (strcasecmp(ext, ".obj") == 0) {
+      loadOBJ(model, path);
+    } else {
+      throw ParseException("Unknown model format: %s", ext);
+    }
   } catch (ParseException& ex) {
-    if (model != NULL)
-      delete model;
+    delete model;
     throw ex;
   }
   return model;
