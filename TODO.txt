@@ -1,3 +1,7 @@
+Bugs:
+- Segfault when rendering a model with no material
+- Bring back the wireframe rendering mode.
+
 Camera:
 - Have a fly mode, which has a position and direction
 
@@ -15,24 +19,16 @@ Rendering improvements:
   - I think it's related to texture size - only the FairyForest scene, with
     it's 4000x4000 textures, seems to be affected.
 - Get the viewer using vertex and fragment shaders.
-- Use VBOs for the geometry data.
-- Multiple render passes:
-  - Diffuse pass
-  - Specular pass
+- DONE! - Use VBOs for the geometry data.
+- Multipass rendering
 - Calculate normals when the model doesn't provide them itself.
 - Bump-mapping
-- Transparency
 - Shadows
 - Atmospheric effects (fog, etc.)
 - Get rid of the tearing.
 
 Speed:
-- Could be better for the Sponza model (getting about 16 fps on my MacBook - should be at least 24).
-- Likewise could be better for the Mini model (also getting about 16 fps).
-- Reduce render state changes:
-  - Tesselate polygons into triangles (if possible, turn them into a triangle strip).
-  - Render all triangles for one strip inside a single glBegin()/glEnd() call.
-  - Only set the glMaterialfv properties once, immediately after the glBegin() call.
+- Varies a lot - seems, strangely, to be fill-rate limited.
 
 UI:
 - Widgets to display (and edit?) model attributes.

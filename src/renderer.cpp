@@ -235,9 +235,138 @@ void Camera::printCameraInfo() const
 // RenderGroup METHODS
 //
 
-RenderGroup::RenderGroup(Material* iMaterial, int iFirstID, int iLastID) :
-  mat(iMaterial), firstID(iFirstID), lastID(iLastID)
+RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType) :
+  _material(iMaterial),
+  _type(iType),
+  _size(0),
+  _coords(),
+  _coordsID(0),
+  _indexes(),
+  _indexesID(0)
 {
+}
+
+
+Material* RenderGroup::getMaterial() const
+{
+  return _material;
+}
+
+
+void RenderGroup::add(Model* model, Face* face)
+{
+  for (size_t i = 0; i < face->size(); ++i) {
+    int vi = (*face)[i].v;
+    int vti = (*face)[i].vt;
+    int vni = (*face)[i].vn;
+
+    // XXX: what to do if the vertex doesn't have tex coords or a normal?
+
+    Float4& v = model->v[vi];
+    Float4& vt = model->vt[vti];
+    Float4& vn = model->vn[vni];
+  
+    _coords.push_back(v.x);
+    _coords.push_back(v.y);
+    _coords.push_back(v.z);
+    _coords.push_back(v.w);
+
+    _coords.push_back(vt.x);
+    _coords.push_back(vt.y);
+
+    _coords.push_back(vn.x);
+    _coords.push_back(vn.y);
+    _coords.push_back(vn.z);
+
+    _indexes.push_back(_indexes.size());
+  }
+  _size = _indexes.size();
+}
+
+
+size_t RenderGroup::size() const
+{
+  return _size;
+}
+
+
+void RenderGroup::prepare()
+{
+  // Get a VBO ID for the coords, upload the coords to the VBO, then delete the local copy.
+  glGenBuffersARB(1, &_coordsID);
+  glBindBufferARB(GL_ARRAY_BUFFER_ARB, _coordsID);
+  glBufferDataARB(GL_ARRAY_BUFFER_ARB,
+      sizeof(float) * _coords.size(), &_coords[0], GL_STATIC_DRAW_ARB);
+  _coords.clear();
+
+  // Do the same for the indexes.
+  glGenBuffersARB(1, &_indexesID);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, _indexesID);
+  glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+      sizeof(unsigned int) * _indexes.size(), &_indexes[0], GL_STATIC_DRAW_ARB);
+  _indexes.clear();
+}
+
+
+void RenderGroup::render()
+{
+  glBindBufferARB(GL_ARRAY_BUFFER_ARB, _coordsID);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, _indexesID);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+
+  glVertexPointer(4, GL_FLOAT, sizeof(float)*9, 0);
+  if (_material != NULL) {
+    glMaterialfv(GL_FRONT, GL_AMBIENT, _material->Ka.data);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, _material->Kd.data);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, _material->Ks.data);
+
+    RawImage* textures[] = { _material->mapD, _material->mapKa, _material->mapKd, _material->mapKs };
+    for (int i = 0; i < 4; ++i) {
+      glActiveTexture(GL_TEXTURE0 + i);
+      glClientActiveTexture(GL_TEXTURE0 + i);
+      if (textures[i] != NULL) {
+        glEnable(GL_TEXTURE_2D);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
+        glTexCoordPointer(2, GL_FLOAT, sizeof(float)*9, (const GLvoid*)(sizeof(float)*4));
+      } else {
+        glDisable(GL_TEXTURE_2D);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      }
+    }
+  } else {
+    glDisable(GL_TEXTURE_2D);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    float defaultColor[] = { 1.0, 0.0, 0.0, 1.0 };
+    glMaterialfv(GL_FRONT, GL_AMBIENT, defaultColor);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, defaultColor);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, defaultColor);
+  }
+  glNormalPointer(GL_FLOAT, sizeof(float)*9, (const GLvoid*)(sizeof(float)*6));
+
+  switch (_type) {
+    case kTriangleGroup:
+      glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
+      break;
+    case kQuadGroup:
+      glDrawElements(GL_QUADS, _size, GL_UNSIGNED_INT, 0);
+      break;
+    case kPolygonGroup:
+      glDrawElements(GL_POLYGON, _size, GL_UNSIGNED_INT, 0);
+      break;
+  }
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  if (_material != NULL)
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+
+  // Release the VBOs.
+  glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 }
 
 
@@ -251,8 +380,7 @@ Renderer::Renderer(Model* model) :
   _drawLights(false),
   _model(model),
   _camera(new Camera()),
-  _renderGroupsPolys(),
-  _renderGroupsLines(),
+  _renderGroups(),
   _currentMapKa(NULL),
   _currentMapKd(NULL),
   _currentMapKs(NULL),
@@ -271,13 +399,9 @@ Renderer::Renderer(Model* model) :
   glShadeModel(GL_SMOOTH);
 
   if (_model != NULL) {
-    prepare(_renderGroupsPolys);
-    prepare(_renderGroupsLines);
-
+    prepare();
+    loadTextures(_renderGroups);
     _camera->frontView(_model->low, _model->high);
-    loadTexturesForModel(_model);
-    drawModel(_model, kPolygons, _renderGroupsPolys);
-    drawModel(_model, kLines, _renderGroupsLines);
   }
   checkGLError("Error during initialisation.");
 }
@@ -356,14 +480,11 @@ void Renderer::render(int width, int height)
 
   _camera->transformTo();
   if (_model != NULL) {
-    std::list<RenderGroup>& groups = (_style == kPolygons) ? _renderGroupsPolys : _renderGroupsLines;
-    std::list<RenderGroup>::iterator iter;
-    for (iter = groups.begin(); iter != groups.end(); ++iter) {
-      RenderGroup& group = *iter;
-      setupMaterial(group.mat);
-      for (int displayListID = group.firstID; displayListID < group.lastID; ++displayListID)
-        glCallList(displayListID);
-    }
+    std::list<RenderGroup*>::iterator iter;
+    for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+      RenderGroup* group = *iter;
+      group->render();
+   }
   } else {
     drawDefaultModel(_style);
   }
@@ -377,62 +498,112 @@ void Renderer::render(int width, int height)
 }
 
 
-void Renderer::prepare(std::list<RenderGroup>& groups)
+void Renderer::prepare()
 {
-  std::map<std::string, Material>::iterator m;
-  std::list<RenderGroup> groupsWithTransparency;
+  // Create the render groups. Each material will have up to one group for
+  // each of triangles, quads and general polygons.
+  std::map<Material*, RenderGroup*> triangles;
+  std::map<Material*, RenderGroup*> quads;
+  std::map<Material*, std::list<RenderGroup*> > polys;
+  std::map<Material*, RenderGroup*> transparentTriangles;
+  std::map<Material*, RenderGroup*> transparentQuads;
+  std::map<Material*, std::list<RenderGroup*> > transparentPolys;
 
-  for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
-    Material* material = &m->second;
-    size_t numFaces = 0;
-    for (size_t i = 0; i < _model->faces.size(); ++i) {
-      Face* face = _model->faces[i];
-      if (face->material == material)
-        ++numFaces;
-    }
-
-    if (numFaces == 0)
+  for (size_t i = 0; i < _model->faces.size(); ++i) {
+    Face* face = _model->faces[i];
+    if (face->size() < 3)
       continue;
 
-    size_t numRenderGroups = numFaces / MAX_FACES_PER_DISPLAYLIST;
-    if (numFaces % MAX_FACES_PER_DISPLAYLIST != 0)
-        ++numRenderGroups;
-
-    GLuint firstID = glGenLists(numRenderGroups);
+    Material* material = face->material;
     if (material != NULL && (material->d != 1 || material->mapD != NULL)) {
-      groupsWithTransparency.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+      switch (face->size()) {
+        case 3:
+          if (transparentTriangles.find(material) == transparentTriangles.end())
+            transparentTriangles[material] = new RenderGroup(material, kTriangleGroup);
+          transparentTriangles[material]->add(_model, face);
+          break;
+        case 4:
+          if (transparentQuads.find(material) == transparentQuads.end())
+            transparentQuads[material] = new RenderGroup(material, kQuadGroup);
+          transparentQuads[material]->add(_model, face);
+          break;
+        default:
+          {
+            if (transparentPolys.find(material) == transparentPolys.end())
+              transparentPolys[material] = std::list<RenderGroup*>();
+            RenderGroup* polyGroup = new RenderGroup(material, kPolygonGroup);
+            polyGroup->add(_model, face);
+            transparentPolys[material].push_back(polyGroup);
+          }
+          break;
+      }
     } else {
-      groups.push_back(RenderGroup(material, firstID, firstID + numRenderGroups));
+      switch (face->size()) {
+        case 3:
+          if (triangles.find(material) == triangles.end())
+            triangles[material] = new RenderGroup(material, kTriangleGroup);
+          triangles[material]->add(_model, face);
+          break;
+        case 4:
+          if (quads.find(material) == quads.end())
+            quads[material] = new RenderGroup(material, kQuadGroup);
+          quads[material]->add(_model, face);
+          break;
+        default:
+          {
+            if (polys.find(material) == polys.end())
+              polys[material] = std::list<RenderGroup*>();
+            RenderGroup* polyGroup = new RenderGroup(material, kPolygonGroup);
+            polyGroup->add(_model, face);
+            polys[material].push_back(polyGroup);
+          }
+          break;
+      }
     }
   }
 
-  // Prepare the materials.
-  std::list<RenderGroup>::iterator iter;
-  for (iter = groupsWithTransparency.begin(); iter != groupsWithTransparency.end(); ++iter) {
-    Material* material = iter->mat;
-    material->Ka.a = material->d;
-    material->Kd.a = material->d;
-    material->Ks.a = material->d;
+  // Copy the render groups into the _renderGroups list. Make sure the groups
+  // with transparent materials go last, so that they'll be rendered after the
+  // opaque materials.
+  std::map<Material*, RenderGroup*>::iterator iter;
+  std::map<Material*, std::list<RenderGroup*> >::iterator listIter;
+
+  for (iter = triangles.begin(); iter != triangles.end(); ++iter)
+    _renderGroups.push_back(iter->second);
+  for (iter = quads.begin(); iter != quads.end(); ++iter)
+    _renderGroups.push_back(iter->second);
+  for (listIter = polys.begin(); listIter != polys.end(); ++listIter) {
+    std::list<RenderGroup*>::iterator polyIter;
+    for (polyIter = listIter->second.begin(); polyIter != listIter->second.end(); ++polyIter)
+      _renderGroups.push_back(*polyIter);
   }
 
-  groups.insert(groups.end(), groupsWithTransparency.begin(), groupsWithTransparency.end());
-}
+  _transparentGroupsStart = _renderGroups.size();
 
+  for (iter = transparentTriangles.begin(); iter != transparentTriangles.end(); ++iter)
+    _renderGroups.push_back(iter->second);
+  for (iter = transparentQuads.begin(); iter != transparentQuads.end(); ++iter)
+    _renderGroups.push_back(iter->second);
+  for (listIter = transparentPolys.begin(); listIter != transparentPolys.end(); ++listIter) {
+    std::list<RenderGroup*>::iterator polyIter;
+    for (polyIter = listIter->second.begin(); polyIter != listIter->second.end(); ++polyIter)
+      _renderGroups.push_back(*polyIter);
+  }
 
-void Renderer::drawModel(Model* model, RenderStyle style, std::list<RenderGroup>& groups)
-{
-  glDisable(GL_TEXTURE_2D);
+  // Prepare the render groups.
+  std::list<RenderGroup*>::iterator groupIter;
+  for (groupIter = _renderGroups.begin(); groupIter != _renderGroups.end(); ++groupIter)
+    (*groupIter)->prepare();
 
-  _currentMapD = NULL;
-  _currentMapKa = NULL;
-  _currentMapKd = NULL;
-  _currentMapKs = NULL;
-
-  std::list<RenderGroup>::iterator iter;
-  for (iter = groups.begin(); iter != groups.end(); ++iter) {
-    RenderGroup& rg = *iter;
-    setupMaterial(rg.mat);
-    renderGroup(model, style, rg);
+  // Prepare the materials.
+  std::map<std::string, Material>::iterator m;
+  for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
+    Material& material = m->second;
+    if (material.d != 1 || material.mapD != NULL) {
+      material.Ka.a = material.d;
+      material.Kd.a = material.d;
+      material.Ks.a = material.d;
+    }
   }
 }
 
@@ -476,77 +647,19 @@ void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& curren
 }
 
 
-void Renderer::renderGroup(Model* model, RenderStyle style, const RenderGroup& group)
+void Renderer::loadTextures(std::list<RenderGroup*>& groups)
 {
-  Material* material = group.mat;
+  Material* currentMaterial = NULL;
 
-  int displayListID = group.firstID;
-  size_t facesRendered = 0;
-  for (unsigned int f = 0; f < model->faces.size(); ++f) {
-    if (facesRendered % MAX_FACES_PER_DISPLAYLIST == 0) {
-      if (facesRendered > 0)
-        glEndList();
-      glNewList(displayListID, GL_COMPILE);
-      ++displayListID;
+  std::list<RenderGroup*>::iterator iter;
+  for (iter = groups.begin(); iter != groups.end(); ++iter) {
+    Material* material = (*iter)->getMaterial();
+    if (material != NULL && material != currentMaterial) {
+      loadTexture(material->mapD);
+      loadTexture(material->mapKa);
+      loadTexture(material->mapKd);
+      loadTexture(material->mapKs);
     }
-
-    Face& face = *model->faces[f];
-    if (face.material != material)
-      continue;
-
-    glBegin( (style == kLines) ? GL_LINE_LOOP : GL_POLYGON );
-    if (material != NULL) {
-      glMaterialfv(GL_FRONT, GL_AMBIENT, material->Ka.data);
-      glMaterialfv(GL_FRONT, GL_DIFFUSE, material->Kd.data);
-      glMaterialfv(GL_FRONT, GL_SPECULAR, material->Ks.data);
-    } else {
-      float col[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, col);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
-      glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, col);
-    }
-    for (unsigned int i = 0; i < face.size(); ++i) {
-      if (material != NULL) {
-        if (face[i].vt >= 0 && (unsigned int)face[i].vt < model->vt.size()) {
-          Float4& vt = model->vt[face[i].vt];
-          if (material->mapD != NULL)
-            glMultiTexCoord3f(GL_TEXTURE0, vt.x, vt.y, vt.z);
-          if (material->mapKa != NULL)
-            glMultiTexCoord3f(GL_TEXTURE1, vt.x, vt.y, vt.z);
-          if (material->mapKd != NULL)
-            glMultiTexCoord3f(GL_TEXTURE2, vt.x, vt.y, vt.z);
-          if (material->mapKs != NULL)
-            glMultiTexCoord3f(GL_TEXTURE3, vt.x, vt.y, vt.z);
-        }
-      }
-
-      if (face[i].vn >= 0 && (unsigned int)face[i].vn < model->vn.size()) {
-        Float4& vn = model->vn[face[i].vn];
-        glNormal3f(vn.x, vn.y, vn.z);
-      }
-
-      Float4& v = model->v[face[i].v];
-      glVertex4f(v.x, v.y, v.z, v.w);
-    }
-    glEnd();
-
-    ++facesRendered;
-  }
-  glEndList();
-}
-
-
-void Renderer::loadTexturesForModel(Model* model)
-{
-  if (model == NULL)
-    return;
-
-  std::map<std::string, Material>::iterator iter;
-  for (iter = model->materials.begin(); iter != model->materials.end(); ++iter) {
-    loadTexture(iter->second.mapD);
-    loadTexture(iter->second.mapKa);
-    loadTexture(iter->second.mapKd);
-    loadTexture(iter->second.mapKs);
   }
 }
 

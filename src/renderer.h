@@ -21,6 +21,10 @@ enum LightType {
   kDirectional, kSpotlight
 };
 
+enum RenderGroupType {
+  kTriangleGroup, kQuadGroup, kPolygonGroup
+};
+
 
 class FramesPerSecond {
 public:
@@ -71,12 +75,32 @@ private:
 };
 
 
-struct RenderGroup {
-  Material* mat;
-  int firstID;
-  int lastID;
+class RenderGroup {
+public:
+  RenderGroup(Material* iMaterial, RenderGroupType iType);
 
-  RenderGroup(Material* material, int firstID, int lastID);
+  Material* getMaterial() const;
+
+  void add(Model* model, Face* face);
+  size_t size() const;
+
+  virtual void prepare();
+  virtual void render();
+
+private:
+  Material* _material;
+  RenderGroupType _type;
+  size_t _size;
+
+  // Coords are interleaved in groups of 9 elements:
+  // - First 4 elements in each group are vertex x, y, z and w.
+  // - Next 2 are texture x and y.
+  // - Final 3 are normal x, y, z.
+  std::vector<float> _coords;
+  GLuint _coordsID;
+
+  std::vector<unsigned int> _indexes;
+  GLuint _indexesID;
 };
 
 
@@ -95,15 +119,15 @@ public:
   void render(int width, int height);
 
 private:
-  void prepare(std::list<RenderGroup>& groups);
+  void prepare();
 
-  void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup>& groups);
+  void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup*>& groups);
   void drawDefaultModel(RenderStyle style);
   void setupMaterial(Material* material);
   void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
-  void renderGroup(Model* model, RenderStyle style, const RenderGroup& group);
+  void renderGroup(Model* model, RenderStyle style, const RenderGroup* group);
 
-  void loadTexturesForModel(Model* model);
+  void loadTextures(std::list<RenderGroup*>& groups);
   void loadTexture(RawImage* tex);
   void headlight(GLenum light, const Float4& color);
   void drawFPSCounter(int width, int height, float fps);
@@ -117,8 +141,8 @@ private:
   bool _drawLights;
   Model* _model;
   Camera* _camera;
-  std::list<RenderGroup> _renderGroupsPolys;
-  std::list<RenderGroup> _renderGroupsLines;
+  std::list<RenderGroup*> _renderGroups;
+  size_t _transparentGroupsStart;
 
   RawImage* _currentMapKa;
   RawImage* _currentMapKd;
