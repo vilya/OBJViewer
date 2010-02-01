@@ -15,6 +15,9 @@ def main():
     normals = 0
 
     biggest_face = 0
+    triangular_faces = 0
+    quad_faces = 0
+    poly_faces = 0
 
     print "--"
     print model
@@ -23,8 +26,16 @@ def main():
         if line.startswith('f ') or line.startswith('fo '):
           faces += 1
           face_size = len(line.split()) - 1
+
           if face_size > biggest_face:
             biggest_face = face_size
+
+          if face_size == 3:
+            triangular_faces += 1
+          elif face_size == 4:
+            quad_faces += 1
+          else:
+            poly_faces += 1
         elif line.startswith('v '):
           vertexes += 1
           v = map(float, line[2:].split())
@@ -41,6 +52,10 @@ def main():
       print "%s = %f - %f" % tuple(result)
     print ""
     print "%d faces of up to %d vertices" % (faces, biggest_face)
+    print "- %d triangular faces" % triangular_faces
+    print "- %d quad faces" % quad_faces
+    print "- %d other (general polygon) faces" % poly_faces
+    print ""
     print vertexes, "vertexes"
     print texture_vertexes, "texture vertexes"
     print param_vertexes, "parameter vertexes"
