@@ -432,6 +432,8 @@ Renderer::Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight
     prepare();
     loadTextures(_renderGroups);
     _camera->frontView(_model->low, _model->high);
+  } else {
+    prepareShaders();
   }
   checkGLError("Error during initialisation.");
 }
@@ -530,6 +532,14 @@ void Renderer::render(int width, int height)
 
 void Renderer::prepare()
 {
+  prepareRenderGroups();
+  prepareMaterials();
+  prepareShaders();
+}
+
+
+void Renderer::prepareRenderGroups()
+{
   // Create the render groups. Each material will have up to one group for
   // each of triangles, quads and general polygons.
   fprintf(stderr, "Creating render groups...\n");
@@ -627,7 +637,11 @@ void Renderer::prepare()
   std::list<RenderGroup*>::iterator groupIter;
   for (groupIter = _renderGroups.begin(); groupIter != _renderGroups.end(); ++groupIter)
     (*groupIter)->prepare();
+}
 
+
+void Renderer::prepareMaterials()
+{
   // Prepare the materials.
   fprintf(stderr, "Preparing materials...\n");
   std::map<std::string, Material>::iterator m;
@@ -639,6 +653,86 @@ void Renderer::prepare()
       material.Ks.a = material.d;
     }
   }
+}
+
+
+void Renderer::prepareShaders()
+{
+  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  GLuint fragmentShader1 = glCreateShader(GL_FRAGMENT_SHADER);
+  GLuint fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
+
+  // Get the shader source code.
+  // The example shaders here were copied from the lighthouse3d.com tutorial.
+  const char* vertexShaderSrc =
+    "varying vec3 normal, lightDir;\n"
+    "void main() {\n"
+    "  lightDir = normalize(vec3(gl_LightSource[0].position));\n"
+    "  normal = normalize(gl_NormalMatrix * gl_Normal);\n"
+    "  gl_Position = ftransform();\n"
+    "}";
+  const char* fragmentShader1Src =
+    "varying vec3 normal, lightDir;\n"
+    "\n"
+    "void main()\n"
+    "{\n"
+    "	float intensity;\n"
+    "	vec3 n;\n"
+    "	vec4 color;\n"
+    "\n"
+    "	n = normalize(normal);\n"
+    "	intensity = max(dot(lightDir,n),0.0); \n"
+    "\n"
+    "	if (intensity > 0.98)\n"
+    "		color = vec4(0.8,0.8,0.8,1.0);\n"
+    "	else if (intensity > 0.5)\n"
+    "		color = vec4(0.4,0.4,0.8,1.0);\n"
+    "	else if (intensity > 0.25)\n"
+    "		color = vec4(0.2,0.2,0.4,1.0);\n"
+    "	else\n"
+    "		color = vec4(0.1,0.1,0.1,1.0);\n"
+    "		\n"
+    "	gl_FragColor = color;\n"
+    "}";
+  const char* fragmentShader2Src =
+    "vec4 toonify(in float intensity) {\n"
+    "\n"
+    "	vec4 color;\n"
+    "\n"
+    "	if (intensity > 0.98)\n"
+    "		color = vec4(0.8,0.8,0.8,1.0);\n"
+    "	else if (intensity > 0.5)\n"
+    "		color = vec4(0.4,0.4,0.8,1.0);\n"
+    "	else if (intensity > 0.25)\n"
+    "		color = vec4(0.2,0.2,0.4,1.0);\n"
+    "	else\n"
+    "		color = vec4(0.1,0.1,0.1,1.0);\n"
+    "\n"
+    "	return(color);\n"
+    "}";
+
+  // Associate the source code strings with the shader handles. We can delete
+  // the strings after these calls.
+  glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
+  glShaderSource(fragmentShader1, 1, &fragmentShader1Src, NULL);
+  glShaderSource(fragmentShader2, 1, &fragmentShader2Src, NULL);
+
+  // Compile the shaders.
+  glCompileShader(vertexShader);
+  glCompileShader(fragmentShader1);
+  glCompileShader(fragmentShader2);
+
+  // Create a program object and attach the shaders to it.
+  GLuint programObject = glCreateProgramObjectARB();
+  glAttachShader(programObject, fragmentShader1);
+  glAttachShader(programObject, fragmentShader2);
+  glAttachShader(programObject, vertexShader);
+
+  // Link the program.
+  glLinkProgram(programObject);
+  
+  // Enable the program.
+  glUseProgram(programObject);
 }
 
 
