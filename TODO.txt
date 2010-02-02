@@ -21,6 +21,9 @@ Rendering improvements:
 - Bump-mapping
 - Shadows
 - Atmospheric effects (fog, etc.)
+- Support for very large textures
+  - Clipmapping (aka "Megatexturing").
+  - See the 1998 SGI paper linked from http://en.wikipedia.org/wiki/Clipmap
 - Get rid of the tearing.
 - Different render styles: points, wireframe, solid, textured
   - points & wireframe just toggle on or off independently
