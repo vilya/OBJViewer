@@ -1,5 +1,4 @@
 Bugs:
-- Segfault when rendering a model with no material
 - Bring back the wireframe rendering mode.
 
 Camera:
@@ -11,24 +10,22 @@ Lighting:
   - Arbitrary locations
 
 Rendering improvements:
-- Transparency
-  - Add alpha channel from the mapD texture to the mapKa, mapKd and mapKs channels?
-  - Change the texture combining to use the mapD texture properly?
-- Better display for objects with no materials specified.
 - Fix the texturing bugs on the ATI Radeon 4870 X2.
   - I think it's related to texture size - only the FairyForest scene, with
     it's 4000x4000 textures, seems to be affected.
 - Get the viewer using vertex and fragment shaders.
-- DONE! - Use VBOs for the geometry data.
 - Multipass rendering
-- Calculate normals when the model doesn't provide them itself.
 - Bump-mapping
 - Shadows
 - Atmospheric effects (fog, etc.)
 - Get rid of the tearing.
+- Different render styles: points, wireframe, solid, textured
+  - points & wireframe just toggle on or off independently
+  - can draw wireframe on top of solid/textured modes.
+  - can draw points on top of wireframe and/or solid/textured modes.
 
 Speed:
-- Varies a lot - seems, strangely, to be fill-rate limited.
+- Varies wildly. Find out why.
 
 UI:
 - Widgets to display (and edit?) model attributes.
@@ -36,7 +33,11 @@ UI:
 - Render a line grid on y=0 plane.
 - Render the bounding box of the object.
 - Display object statistics (number of faces/verts/etc., dimensions of bounding
-  box, and so on).
+  box, and so on) in a HUD.
+- Progress bar while loading the model, instead of printf.
+- Selection of different item types:
+  - faces, vertexes, lines
+  - Navigate to the selected face.
 
 Animation:
 - Able to load a sequence of .obj files as keyframe data.
@@ -45,8 +46,11 @@ Animation:
 - Face data stays the same
 - Material data stays the same.
 
-Additional model formats:
-- .ply
-- .fbx (via the FBX SDK)
-- Something where models include light and camera positions. RIB or PovRay formats, perhaps?
+Input files:
+- Add support for some additional model formats:
+  - .ply
+  - .fbx (via the FBX SDK)
+  - .dae (Collada)
+  - Something where models include light and camera positions. RIB or PovRay formats, perhaps?
+- Factor this out into a separate module.
 
