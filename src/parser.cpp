@@ -349,7 +349,6 @@ void loadMaterialLibrary(const char* path,
 
   char baseDir[_MAX_LINE_LEN];
   snprintf(baseDir, _MAX_LINE_LEN, "%s", dirname(const_cast<char*>(path)));
-  //fprintf(stderr, "baseDir for MTLLIB is %s\n", baseDir);
 
   std::string materialName;
   Material *material = NULL;
@@ -452,15 +451,13 @@ void loadMaterialLibrary(const char* path,
       delete material;
       material = NULL;
     }
+    fprintf(stderr, "Finished parsing mtllib %s\n", path);
   } catch (ParseException& ex) {
     fclose(f);
     if (material != NULL)
       delete material;
-    fprintf(stderr, "[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
-    throw ex;
+    throw ParseException("[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
   }
-
-  fprintf(stderr, "Finished parsing mtllib %s\n", path);
 }
 
 
@@ -689,11 +686,10 @@ void loadOBJ(Model* model, const char* path) throw(ParseException)
     }
   } catch (ParseException& ex) {
     fclose(f);
-    fprintf(stderr, "[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.message);
+    throw ParseException("[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.what());
     throw ex;
   }
 
-  fprintf(stderr, "Finished loading frame %s\n", path);
 }
 
 
