@@ -243,9 +243,9 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType) :
   _size(0),
   _hasTexCoords(true),
   _hasNormalCoords(false),
-  _coords(),
+  _coords(new std::vector<float>),
   _coordsID(0),
-  _indexes(),
+  _indexes(new std::vector<unsigned int>),
   _indexesID(0)
 {
 }
@@ -267,29 +267,29 @@ void RenderGroup::add(Model* model, Face* face)
   for (size_t i = 0; i < face->size(); ++i) {
     int vi = (*face)[i].v;
     Float4& v = model->v[vi];
-    _coords.push_back(v.x);
-    _coords.push_back(v.y);
-    _coords.push_back(v.z);
+    _coords->push_back(v.x);
+    _coords->push_back(v.y);
+    _coords->push_back(v.z);
 
     if (_hasTexCoords) {
       int vti = (*face)[i].vt;
       Float4& vt = model->vt[vti];
-      _coords.push_back(vt.x);
-      _coords.push_back(vt.y);
+      _coords->push_back(vt.x);
+      _coords->push_back(vt.y);
     }
 
     if (_hasNormalCoords) {
       int vni = (*face)[i].vn;
       Float4& vn = model->vn[vni];
-      _coords.push_back(vn.x);
-      _coords.push_back(vn.y);
-      _coords.push_back(vn.z);
-      _coords.push_back(vn.w);
+      _coords->push_back(vn.x);
+      _coords->push_back(vn.y);
+      _coords->push_back(vn.z);
+      _coords->push_back(vn.w);
     }
 
-    _indexes.push_back(_indexes.size());
+    _indexes->push_back(_indexes->size());
   }
-  _size = _indexes.size();
+  _size = _indexes->size();
 }
 
 
@@ -305,15 +305,17 @@ void RenderGroup::prepare()
   glGenBuffers(1, &_coordsID);
   glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
   glBufferData(GL_ARRAY_BUFFER,
-      sizeof(float) * _coords.size(), &_coords[0], GL_STATIC_DRAW);
-  _coords.clear();
+      sizeof(float) * _coords->size(), &(*_coords)[0], GL_STATIC_DRAW);
+  delete _coords;
+  _coords = NULL;
 
   // Do the same for the indexes.
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-      sizeof(unsigned int) * _indexes.size(), &_indexes[0], GL_STATIC_DRAW);
-  _indexes.clear();
+      sizeof(unsigned int) * _indexes->size(), &(*_indexes)[0], GL_STATIC_DRAW);
+  delete _indexes;
+  _indexes = NULL;
 }
 
 
