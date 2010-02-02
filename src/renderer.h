@@ -130,7 +130,7 @@ private:
   void renderGroup(Model* model, RenderStyle style, const RenderGroup* group);
 
   void loadTextures(std::list<RenderGroup*>& groups);
-  void loadTexture(RawImage* tex);
+  void loadTexture(RawImage* tex, bool isMatte);
   void headlight(GLenum light, const Float4& color);
   void drawFPSCounter(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
