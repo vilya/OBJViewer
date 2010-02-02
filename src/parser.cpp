@@ -658,6 +658,7 @@ void loadOBJ(Model* model, const char* path) throw(ParseException)
         case OBJ_LINETYPE_F:
         case OBJ_LINETYPE_FO:
           model->faces.push_back(objParseFace(col, col, activeMaterial));
+          // TODO: check for -ve indexes and resolve them to +ve ones.
           break;
         case OBJ_LINETYPE_USEMTL:
           activeMaterial = objParseUSEMTL(col, col, model->materials);
