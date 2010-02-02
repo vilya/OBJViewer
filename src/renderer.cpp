@@ -402,12 +402,14 @@ void RenderGroup::render()
 // Renderer METHODS
 //
 
-Renderer::Renderer(Model* model) :
+Renderer::Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight) :
   _style(kPolygons),
   _headlightType(kDirectional),
   _drawLights(false),
   _model(model),
   _camera(new Camera()),
+  _maxTextureWidth(maxTextureWidth),
+  _maxTextureHeight(maxTextureHeight),
   _renderGroups(),
   _currentMapKa(NULL),
   _currentMapKd(NULL),
@@ -745,8 +747,32 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
     glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
     glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
   }
-  glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex->getWidth(), tex->getHeight(), 0,
-               tex->getType(), GL_UNSIGNED_BYTE, tex->getPixels());
+
+  unsigned int downsampleX = 1;
+  unsigned int downsampleY = 1;
+  if (_maxTextureWidth > 0) {
+    while (tex->getWidth() / downsampleX > _maxTextureWidth)
+      ++downsampleX;
+  }
+  if (_maxTextureHeight > 0) {
+    while (tex->getHeight() / downsampleY > _maxTextureHeight)
+      ++downsampleY;
+  }
+
+  if (downsampleX == 1 || downsampleY == 1) {
+    glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex->getWidth(), tex->getHeight(), 0,
+                 tex->getType(), GL_UNSIGNED_BYTE, tex->getPixels());
+  } else {
+    fprintf(stderr, "Downsampling texture %d: %ux%u --> %ux%u\n", texID,
+      tex->getWidth(), tex->getHeight(),
+      tex->getWidth() / downsampleX, tex->getHeight() / downsampleY);
+    RawImage* downsampledTex = downsample(tex, downsampleX, downsampleY);
+    glTexImage2D(GL_TEXTURE_2D, 0, targetType,
+                 downsampledTex->getWidth(), downsampledTex->getHeight(), 0,
+                 downsampledTex->getType(), GL_UNSIGNED_BYTE, downsampledTex->getPixels());
+    delete downsampledTex;
+  }
+
   checkGLError("Texture failed to load.");
 
   tex->setTexID(texID);

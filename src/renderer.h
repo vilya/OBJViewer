@@ -108,7 +108,7 @@ private:
 
 class Renderer {
 public:
-  Renderer(Model* model);
+  Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight);
   ~Renderer();
 
   Camera* currentCamera();
@@ -143,6 +143,7 @@ private:
   bool _drawLights;
   Model* _model;
   Camera* _camera;
+  size_t _maxTextureWidth, _maxTextureHeight;
   std::list<RenderGroup*> _renderGroups;
   size_t _transparentGroupsStart;
 

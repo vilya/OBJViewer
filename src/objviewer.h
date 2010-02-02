@@ -11,29 +11,32 @@
 
 class OBJViewerApp {
 public:
-    OBJViewerApp(int argc, char **argv);
-    ~OBJViewerApp();
+  OBJViewerApp(int argc, char **argv);
+  ~OBJViewerApp();
 
-    void redraw();
-    void changeSize(int width, int height);
-    void keyPressed(unsigned char key, int x, int y);
-    void mousePressed(int button, int state, int x, int y);
-    void mouseDragged(int x, int y);
-    void run();
-
-private:
-    //! Prints help about the command line syntax and options to stderr.
-    void usage(char *progname);
-
-    //! Process the command line arguments.
-    void processArgs(int argc, char **argv);
+  void redraw();
+  void changeSize(int width, int height);
+  void keyPressed(unsigned char key, int x, int y);
+  void mousePressed(int button, int state, int x, int y);
+  void mouseDragged(int x, int y);
+  void run();
 
 private:
-    int winX, winY, winWidth, winHeight, currWidth, currHeight;
-    bool fullscreen;
-    int mouseX, mouseY, mouseButton, mouseModifiers;
-    Renderer* _renderer;
-    Model *_model;
+  //! Prints help about the command line syntax and options to stderr.
+  void usage(char *progname);
+
+  bool parseDimensions(char* dimensions, size_t& width, size_t& height);
+
+  //! Process the command line arguments.
+  void processArgs(int argc, char **argv);
+
+private:
+  int winX, winY, winWidth, winHeight, currWidth, currHeight;
+  bool fullscreen;
+  int mouseX, mouseY, mouseButton, mouseModifiers;
+  Renderer* _renderer;
+  Model *_model;
+  size_t _maxTextureWidth, _maxTextureHeight;
 };
 
 

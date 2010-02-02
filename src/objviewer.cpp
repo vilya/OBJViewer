@@ -46,7 +46,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   fullscreen(false),
   mouseX(0), mouseY(0), mouseButton(0), mouseModifiers(0),
   _renderer(NULL),
-  _model(NULL)
+  _model(NULL),
+  _maxTextureWidth(0), _maxTextureHeight(0)
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -55,7 +56,7 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutCreateWindow("Vil's OBJ Viewer");
 
   processArgs(argc, argv);
-  _renderer = new Renderer(_model);
+  _renderer = new Renderer(_model, _maxTextureWidth, _maxTextureHeight);
 
   glutDisplayFunc(doRender);
   glutReshapeFunc(doResize);
@@ -237,7 +238,9 @@ void OBJViewerApp::usage(char *progname)
 "Usage: %s [options] <objfile>\n"
 "\n"
 "Where [options] can be any combination of:\n"
-"  -v,--verbose                 Print out some extra information.\n"
+"  -t,--max-texture-size WxH    Specify the maximum texture size. Any textures\n"
+"                               larger than this will be downsampled. The\n"
+"                               default is no maximum.\n"
 "  -h,--help                    Print this message and exit.\n"
 "\n"
 "You can also press keys to perform various functions while viewing a model.\n"
@@ -246,16 +249,40 @@ void OBJViewerApp::usage(char *progname)
 }
 
 
+bool OBJViewerApp::parseDimensions(char* dimensions, size_t& width, size_t& height)
+{
+  char* tok = strtok(dimensions, "x");
+  if (tok == NULL)
+    return false;
+  width = atoi(tok);
+
+  tok = strtok(dimensions, "x");
+  if (tok == NULL)
+    height = width;
+  else
+    height = atoi(tok);
+  
+  return true;
+}
+
+
 void OBJViewerApp::processArgs(int argc, char **argv)
 {
-  const char *short_opts = "h";
+  const char *short_opts = "ht:";
   struct option long_opts[] = {
+    { "max-texture-size",   required_argument,  NULL, 't' },
     { "help",               no_argument,        NULL, 'h' },
     { NULL, 0, NULL, 0 }
   };
   int ch;
   while ((ch = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
     switch (ch) {
+    case 't':
+      if (!parseDimensions(optarg, _maxTextureWidth, _maxTextureHeight)) {
+        usage(argv[0]);
+        exit(0);
+      }
+      break;
     case 'h':
       usage(argv[0]);
       exit(0);
