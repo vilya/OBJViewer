@@ -122,6 +122,9 @@ public:
 
 private:
   void prepare();
+  void prepareRenderGroups();
+  void prepareMaterials();
+  void prepareShaders();
 
   void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup*>& groups);
   void drawDefaultModel(RenderStyle style);

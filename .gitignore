@@ -2,4 +2,5 @@ bin
 build
 Makefile
 contrib/vbo
+contrib/glutglsl-unix
 dist
