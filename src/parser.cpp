@@ -570,10 +570,12 @@ Vertex objParseVertex(char *line, char*& col) throw(ParseException) {
   int vn = -1;
   if (*col == '/') {
     eatChar('/', col);
-    vt = (*col != '/') ? parseInt(col, col) - 1 : -1;
+    if (*col == '-' || isDigit(*col))
+      vt = parseInt(col, col) - 1;
     if (*col == '/') {
       eatChar('/', col);
-      vn = parseInt(col, col) - 1;
+      if (*col == '-' || isDigit(*col))
+        vn = parseInt(col, col) - 1;
     }
   }
   return Vertex(v, vt, vn);
