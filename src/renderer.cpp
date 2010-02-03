@@ -482,14 +482,6 @@ void Renderer::printGLInfo()
 }
 
 
-GLint Renderer::glGet(GLenum what)
-{
-  GLint val;
-  glGetIntegerv(what, &val);
-  return val;
-}
-
-
 void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -659,73 +651,26 @@ void Renderer::prepareMaterials()
 void Renderer::prepareShaders()
 {
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  GLuint fragmentShader1 = glCreateShader(GL_FRAGMENT_SHADER);
-  GLuint fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
+  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
   // Get the shader source code.
-  // The example shaders here were copied from the lighthouse3d.com tutorial.
-  const char* vertexShaderSrc =
-    "varying vec3 normal, lightDir;\n"
-    "void main() {\n"
-    "  lightDir = normalize(vec3(gl_LightSource[0].position));\n"
-    "  normal = normalize(gl_NormalMatrix * gl_Normal);\n"
-    "  gl_Position = ftransform();\n"
-    "}";
-  const char* fragmentShader1Src =
-    "varying vec3 normal, lightDir;\n"
-    "\n"
-    "void main()\n"
-    "{\n"
-    "	float intensity;\n"
-    "	vec3 n;\n"
-    "	vec4 color;\n"
-    "\n"
-    "	n = normalize(normal);\n"
-    "	intensity = max(dot(lightDir,n),0.0); \n"
-    "\n"
-    "	if (intensity > 0.98)\n"
-    "		color = vec4(0.8,0.8,0.8,1.0);\n"
-    "	else if (intensity > 0.5)\n"
-    "		color = vec4(0.4,0.4,0.8,1.0);\n"
-    "	else if (intensity > 0.25)\n"
-    "		color = vec4(0.2,0.2,0.4,1.0);\n"
-    "	else\n"
-    "		color = vec4(0.1,0.1,0.1,1.0);\n"
-    "		\n"
-    "	gl_FragColor = color;\n"
-    "}";
-  const char* fragmentShader2Src =
-    "vec4 toonify(in float intensity) {\n"
-    "\n"
-    "	vec4 color;\n"
-    "\n"
-    "	if (intensity > 0.98)\n"
-    "		color = vec4(0.8,0.8,0.8,1.0);\n"
-    "	else if (intensity > 0.5)\n"
-    "		color = vec4(0.4,0.4,0.8,1.0);\n"
-    "	else if (intensity > 0.25)\n"
-    "		color = vec4(0.2,0.2,0.4,1.0);\n"
-    "	else\n"
-    "		color = vec4(0.1,0.1,0.1,1.0);\n"
-    "\n"
-    "	return(color);\n"
-    "}";
+  const char* vertexShaderSrc = loadShader("vertex.sl");
+  const char* fragmentShaderSrc = loadShader("fragment.sl");
+  if (vertexShaderSrc == NULL || fragmentShaderSrc == NULL)
+    return;
 
   // Associate the source code strings with the shader handles. We can delete
   // the strings after these calls.
   glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
-  glShaderSource(fragmentShader1, 1, &fragmentShader1Src, NULL);
-  glShaderSource(fragmentShader2, 1, &fragmentShader2Src, NULL);
+  glShaderSource(fragmentShader, 1, &fragmentShaderSrc, NULL);
 
   // Compile the shaders.
   glCompileShader(vertexShader);
-  glCompileShader(fragmentShader1);
-  glCompileShader(fragmentShader2);
+  glCompileShader(fragmentShader);
 
   // Create a program object and attach the shaders to it.
-  GLuint programObject = glCreateProgramObjectARB();
-  glAttachShader(programObject, fragmentShader1);
-  glAttachShader(programObject, fragmentShader2);
+  GLuint programObject = glCreateProgram();
+  glAttachShader(programObject, fragmentShader);
   glAttachShader(programObject, vertexShader);
 
   // Link the program.
@@ -943,6 +888,34 @@ void Renderer::drawBitmapString(float x, float y, void* font, char* str)
     glutBitmapCharacter(font, *ch);
     xPos += glutBitmapWidth(font, *ch);
   }
+}
+
+
+const char* Renderer::loadShader(const char* path)
+{
+  FILE* shaderFile = fopen(path, "r");
+  if (shaderFile == NULL)
+    return NULL;
+
+  // Get the length of the file.
+  fseek(shaderFile, 0, SEEK_END);
+  size_t length = ftell(shaderFile);
+  fseek(shaderFile, 0, SEEK_SET);
+
+  char* text = new char[length + 1];
+  fread(text, sizeof(const char), length, shaderFile);
+  text[length] = '\0';
+
+  fclose(shaderFile);
+  return text;
+}
+
+
+GLint Renderer::glGet(GLenum what)
+{
+  GLint val;
+  glGetIntegerv(what, &val);
+  return val;
 }
 
 

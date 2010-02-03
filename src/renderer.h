@@ -138,6 +138,7 @@ private:
   void drawFPSCounter(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
 
+  const char* loadShader(const char* path);
   GLint glGet(GLenum what);
 
 private:
