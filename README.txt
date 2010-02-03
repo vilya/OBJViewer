@@ -1,10 +1,10 @@
 Introduction
 ============
-This is a very basic viewer for Wavefront .obj files.
+This is a 3D viewer for Wavefront .obj files.
 
-It supports .obj and .mtl files at the moment, but the support is incomplete at
-the moment. The intent is to flesh out this support over time, as well as
-adding features to the viewer (which is pretty bare-bones for now too).
+It supports a reasonable subset of the .obj (geometry) and .mtl (material) file
+formats. Support for the rest depends on my finding sample models which makes
+use of those parts.
 
 
 License
@@ -19,6 +19,7 @@ Pre-requisites
 - MacOS X or Linux (tested on MacOS X 10.6).
 - Glut
 - ImageLib -- see http://github.com/vilya/ImageLib
+- A graphics card which supports OpenGL 2.1 or above. 
 
 
 Compiling
