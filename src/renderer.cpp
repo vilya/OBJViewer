@@ -260,7 +260,7 @@ Material* RenderGroup::getMaterial() const
 void RenderGroup::add(Model* model, Face* face)
 {
   if (_size == 0) {
-    _hasTexCoords = (*face)[0].vt >= 0;
+    _hasTexCoords = (face->material != NULL) && (*face)[0].vt >= 0;
     _hasNormalCoords = (*face)[0].vn >= 0;
   }
 
