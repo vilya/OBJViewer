@@ -7,6 +7,7 @@
 #include <imagelib.h>
 #include "math3d.h"
 #include "model.h"
+#include "parser.h"
 
 
 //
@@ -106,12 +107,13 @@ private:
 };
 
 
-class Renderer {
+class Renderer : public ParserCallbacks {
 public:
-  Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight);
+  Renderer(size_t maxTextureWidth, size_t maxTextureHeight);
   ~Renderer();
 
   Camera* currentCamera();
+  Model* currentModel();
 
   void setStyle(RenderStyle style);
   void toggleDrawLights();
@@ -119,6 +121,17 @@ public:
   void printGLInfo();
 
   void render(int width, int height);
+
+  // Parser callbacks
+  virtual void beginModel(const char* path);
+  virtual void endModel();
+  virtual void coordParsed(const Float4& coord);
+  virtual void texCoordParsed(const Float4& coord);
+  virtual void paramCoordParsed(const Float4& coord) {}
+  virtual void normalParsed(const Float4& normal);
+  virtual void faceParsed(Face* face);
+  virtual void materialParsed(const std::string& name, Material* material);
+  virtual void textureParsed(RawImage* texture);
 
 private:
   void prepare();

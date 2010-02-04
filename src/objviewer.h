@@ -35,7 +35,7 @@ private:
   bool fullscreen;
   int mouseX, mouseY, mouseButton, mouseModifiers;
   Renderer* _renderer;
-  Model *_model;
+  const char* _modelPath;
   size_t _maxTextureWidth, _maxTextureHeight;
 };
 

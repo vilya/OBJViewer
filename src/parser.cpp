@@ -334,8 +334,9 @@ RawImage* mtlParseTexture(char* line, char*& col, const char* baseDir) throw(Par
 }
 
 
-void loadMaterialLibrary(const char* path,
-    std::map<std::string, Material>& materials) throw(ParseException)
+void loadMaterialLibrary(ParserCallbacks* callbacks, const char* path,
+    std::map<std::string, Material*>& materials)
+  throw(ParseException)
 {
   fprintf(stderr, "Loading mtllib %s...\n", path);
 
@@ -369,57 +370,74 @@ void loadMaterialLibrary(const char* path,
       switch (mtlParseLineType(col, col)) {
         case MTL_LINETYPE_NEWMTL:
           if (material != NULL) {
-            materials[materialName] = *material;
-            delete material;
+            materials[materialName] = material;
+            callbacks->materialParsed(materialName, material);
             material = NULL;
           }
           materialName = mtlParseNEWMTL(col, col);
-          if (materials.count(materialName) == 0)
-            material = new Material();
+          if (materials.count(materialName) > 0)
+            throw ParseException("Redefinition of material %s", materialName.c_str());
+          material = new Material();
           break;
         case MTL_LINETYPE_KA:
-          if (material != NULL)
-            material->Ka = mtlParseColor(col, col);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->Ka = mtlParseColor(col, col);
           break;
         case MTL_LINETYPE_KD:
-          if (material != NULL)
-            material->Kd = mtlParseColor(col, col);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->Kd = mtlParseColor(col, col);
           break;
         case MTL_LINETYPE_KS:
-          if (material != NULL)
-            material->Ks = mtlParseColor(col, col);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->Ks = mtlParseColor(col, col);
           break;
         case MTL_LINETYPE_TF:
-          if (material != NULL)
-            material->Tf = mtlParseColor(col, col);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->Tf = mtlParseColor(col, col);
           break;
         case MTL_LINETYPE_D:
-          if (material != NULL)
-            material->d = mtlParseFloat(col, col);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->d = mtlParseFloat(col, col);
           break;
         case MTL_LINETYPE_NS:
-          if (material != NULL)
-            material->Ns = mtlParseFloat(col, col);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->Ns = mtlParseFloat(col, col);
           break;
         case MTL_LINETYPE_MAP_KA:
-          if (material != NULL)
-            material->mapKa = mtlParseTexture(col, col, baseDir);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->mapKa = mtlParseTexture(col, col, baseDir);
+          callbacks->textureParsed(material->mapKa);
           break;
         case MTL_LINETYPE_MAP_KD:
-          if (material != NULL)
-            material->mapKd = mtlParseTexture(col, col, baseDir);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->mapKd = mtlParseTexture(col, col, baseDir);
+          callbacks->textureParsed(material->mapKd);
           break;
         case MTL_LINETYPE_MAP_KS:
-          if (material != NULL)
-            material->mapKs = mtlParseTexture(col, col, baseDir);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->mapKs = mtlParseTexture(col, col, baseDir);
+          callbacks->textureParsed(material->mapKs);
           break;
         case MTL_LINETYPE_MAP_D:
-          if (material != NULL)
-            material->mapD = mtlParseTexture(col, col, baseDir);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->mapD = mtlParseTexture(col, col, baseDir);
+          callbacks->textureParsed(material->mapD);
           break;
         case MTL_LINETYPE_MAP_BUMP:
-          if (material != NULL)
-            material->mapBump = mtlParseTexture(col, col, baseDir);
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
+          material->mapBump = mtlParseTexture(col, col, baseDir);
+          callbacks->textureParsed(material->mapBump);
           break;
         case MTL_LINETYPE_KE:
         case MTL_LINETYPE_KM:
@@ -429,6 +447,8 @@ void loadMaterialLibrary(const char* path,
         case MTL_LINETYPE_ILLUM:
         case MTL_LINETYPE_TR:
         case MTL_LINETYPE_BUMP:
+          if (material == NULL)
+            throw ParseException("Defining a material property without declaring a material name.");
           // TODO: handle these.
           while (!isEnd(*col))
             ++col;
@@ -447,8 +467,8 @@ void loadMaterialLibrary(const char* path,
     }
 
     if (material != NULL) {
-      materials[materialName] = *material;
-      delete material;
+      materials[materialName] = material;
+      callbacks->materialParsed(materialName, material);
       material = NULL;
     }
     fprintf(stderr, "Finished parsing mtllib %s\n", path);
@@ -599,28 +619,34 @@ Face *objParseFace(char* line, char*& col, Material *activeMaterial) throw(Parse
 }
 
 
-void objParseMTLLIB(char* line, char*& col, const char* baseDir, std::map<std::string, Material>& materials) throw(ParseException) {
+void objParseMTLLIB(char* line, char*& col,
+    ParserCallbacks* callbacks, const char* baseDir,
+    std::map<std::string, Material*>& materials)
+  throw(ParseException)
+{
   col = line;
   while (!isEnd(*col) && !isCommentStart(*col)) {
     eatSpace(col, true);
     if (!isEnd(*col) && !isCommentStart(*col)) {
       std::string filename = resolvePath(baseDir, parseFilename(col, col));
-      loadMaterialLibrary(filename.c_str(), materials);
+      loadMaterialLibrary(callbacks, filename.c_str(), materials);
     }
   }
 }
 
 
-Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material>& materials) throw(ParseException) {
+Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material*>& materials)
+  throw(ParseException)
+{
   col = line;
   eatSpace(col, true);
   std::string name = parseIdentifier(col, col);
-  Material *material = &materials[name];
+  Material *material = materials[name];
   return material;
 }
 
 
-void loadOBJ(Model* model, const char* path) throw(ParseException)
+void loadOBJ(ParserCallbacks* callbacks, const char* path) throw(ParseException)
 {
   FILE *f = fopen(path, "r");
   if (f == NULL)
@@ -630,6 +656,7 @@ void loadOBJ(Model* model, const char* path) throw(ParseException)
   char *col;
   unsigned int line_no = 0;
 
+  std::map<std::string, Material*> materials;
   Material *activeMaterial = NULL;
   try {
     while (!feof(f)) {
@@ -646,27 +673,27 @@ void loadOBJ(Model* model, const char* path) throw(ParseException)
       eatSpace(col);
       switch (objParseLineType(col, col)) {
         case OBJ_LINETYPE_V:
-          model->addV(objParseV(col, col));
+          callbacks->coordParsed(objParseV(col, col));
           break;
         case OBJ_LINETYPE_VT:
-          model->vt.push_back(objParseVT(col, col));
+          callbacks->texCoordParsed(objParseVT(col, col));
           break;
         case OBJ_LINETYPE_VP:
-          model->vp.push_back(objParseVP(col, col));
+          callbacks->paramCoordParsed(objParseVP(col, col));
           break;
         case OBJ_LINETYPE_VN:
-          model->vn.push_back(objParseVN(col, col));
+          callbacks->normalParsed(objParseVN(col, col));
           break;
         case OBJ_LINETYPE_F:
         case OBJ_LINETYPE_FO:
-          model->faces.push_back(objParseFace(col, col, activeMaterial));
+          callbacks->faceParsed(objParseFace(col, col, activeMaterial));
           // TODO: check for -ve indexes and resolve them to +ve ones.
           break;
         case OBJ_LINETYPE_USEMTL:
-          activeMaterial = objParseUSEMTL(col, col, model->materials);
+          activeMaterial = objParseUSEMTL(col, col, materials);
           break;
         case OBJ_LINETYPE_MTLLIB:
-          objParseMTLLIB(col, col, dirname(const_cast<char*>(path)), model->materials);
+          objParseMTLLIB(col, col, callbacks, dirname(const_cast<char*>(path)), materials);
           break;
         case OBJ_LINETYPE_G:
         case OBJ_LINETYPE_S:
@@ -690,14 +717,16 @@ void loadOBJ(Model* model, const char* path) throw(ParseException)
   } catch (ParseException& ex) {
     fclose(f);
     throw ParseException("[%s: line %d, col %d] %s\n", path, line_no, (int)(col - line), ex.what());
-    throw ex;
   }
 
 }
 
 
-Model* loadModel(const char* path) throw(ParseException)
+void loadModel(ParserCallbacks* callbacks, const char* path) throw(ParseException)
 {
+  if (callbacks == NULL)
+    throw ParseException("You didn't provide any callbacks; parsing will do nothing!");
+
   const char *filename = basename(const_cast<char *>(path));
   if (filename == NULL)
     throw ParseException("Invalid model filename: %s does not name a file.", filename);
@@ -710,17 +739,12 @@ Model* loadModel(const char* path) throw(ParseException)
   if (ext == NULL)
     throw ParseException("Unknown model format.");
 
-  Model *model = new Model();
-  try {
-    if (strcasecmp(ext, ".obj") == 0) {
-      loadOBJ(model, path);
-    } else {
-      throw ParseException("Unknown model format: %s", ext);
-    }
-  } catch (ParseException& ex) {
-    delete model;
-    throw ex;
+  if (strcasecmp(ext, ".obj") == 0) {
+    callbacks->beginModel(path);
+    loadOBJ(callbacks, path);
+    callbacks->endModel();
+  } else {
+    throw ParseException("Unknown model format: %s", ext);
   }
-  return model;
 }
 

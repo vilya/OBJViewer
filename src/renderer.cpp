@@ -402,11 +402,11 @@ void RenderGroup::render()
 // Renderer METHODS
 //
 
-Renderer::Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight) :
+Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   _style(kPolygons),
   _headlightType(kDirectional),
   _drawLights(false),
-  _model(model),
+  _model(NULL),
   _camera(new Camera()),
   _maxTextureWidth(maxTextureWidth),
   _maxTextureHeight(maxTextureHeight),
@@ -427,26 +427,28 @@ Renderer::Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight
   float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
-
-  if (_model != NULL) {
-    prepare();
-    loadTextures(_renderGroups);
-    _camera->frontView(_model->low, _model->high);
-  }
-  checkGLError("Error during initialisation.");
 }
 
 
 Renderer::~Renderer()
 {
-  if (_camera != NULL)
-    delete _camera;
+  delete _camera;
+  delete _model;
+  std::list<RenderGroup*>::iterator iter;
+  for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter)
+    delete *iter;
 }
 
 
 Camera* Renderer::currentCamera()
 {
   return _camera;
+}
+
+
+Model* Renderer::currentModel()
+{
+  return _model;
 }
 
 
@@ -630,13 +632,13 @@ void Renderer::prepare()
 
   // Prepare the materials.
   fprintf(stderr, "Preparing materials...\n");
-  std::map<std::string, Material>::iterator m;
+  std::map<std::string, Material*>::iterator m;
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
-    Material& material = m->second;
-    if (material.d != 1 || material.mapD != NULL) {
-      material.Ka.a = material.d;
-      material.Kd.a = material.d;
-      material.Ks.a = material.d;
+    Material* material = m->second;
+    if (material->d != 1 || material->mapD != NULL) {
+      material->Ka.a = material->d;
+      material->Kd.a = material->d;
+      material->Ks.a = material->d;
     }
   }
 }
@@ -849,6 +851,70 @@ void Renderer::drawBitmapString(float x, float y, void* font, char* str)
     glutBitmapCharacter(font, *ch);
     xPos += glutBitmapWidth(font, *ch);
   }
+}
+
+
+void Renderer::beginModel(const char* path)
+{
+  // Clear out any old model data.
+  delete _model;
+  for (std::list<RenderGroup*>::iterator i = _renderGroups.begin(); i != _renderGroups.end(); ++i)
+    delete *i;
+  _renderGroups.clear();
+  _transparentGroupsStart = (size_t)-1;
+  _currentMapKa = NULL;
+  _currentMapKd = NULL;
+  _currentMapKs = NULL;
+  _currentMapD = NULL;
+
+  // Start a new model.
+  _model = new Model();
+}
+
+
+void Renderer::endModel()
+{
+  prepare();
+  loadTextures(_renderGroups);
+  _camera->frontView(_model->low, _model->high);
+  checkGLError("Error during preparation.");
+}
+
+
+void Renderer::coordParsed(const Float4& coord)
+{
+  _model->addV(coord);
+}
+
+
+void Renderer::texCoordParsed(const Float4& coord)
+{
+  _model->vt.push_back(coord);
+}
+
+
+void Renderer::normalParsed(const Float4& normal)
+{
+  _model->vn.push_back(normal);
+}
+
+
+void Renderer::faceParsed(Face* face)
+{
+  // TODO: triangulate face
+  _model->faces.push_back(face);
+}
+
+
+void Renderer::materialParsed(const std::string& name, Material* material)
+{
+  _model->materials[name] = material;
+}
+
+
+void Renderer::textureParsed(RawImage* texture)
+{
+  // At the moment we don't need to do anything here, but we probably will do soon...
 }
 
 

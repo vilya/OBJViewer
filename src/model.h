@@ -52,7 +52,7 @@ struct Model {
   std::vector<Float4> vp;
   std::vector<Float4> vn;
   std::vector<Face*> faces;
-  std::map<std::string, Material> materials;
+  std::map<std::string, Material*> materials;
 
   Float4 low;
   Float4 high;
