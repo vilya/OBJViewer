@@ -9,7 +9,7 @@ TESTSRC    := test
 TESTBIN    := build/test
 
 
-ifeq($(OSTYPE),linux-gnu)
+ifeq ($(OSTYPE), linux-gnu)
 IMAGELIB	 := /home/vilya/ImageLib/dist
 
 CC         := gcc
