@@ -11,22 +11,24 @@ TESTBIN    := build/test
 
 ifeq ($(OSTYPE), linux-gnu)
 IMAGELIB	 := /home/vilya/ImageLib/dist
-
 CC         := gcc
 CCFLAGS    := -g -Wall -fmessage-length=0 -m64
 CXX        := g++
 CXXFLAGS   := -g -Wall -fmessage-length=0 -m64
 LD         := g++
 LDFLAGS    := -m64
+INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
+LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
 else
 IMAGELIB	 := /users/vilya/Code/ImageLib/dist
-
 CC         := gcc
 CCFLAGS    := -g -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
 CXX        := g++
 CXXFLAGS   := -g -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
 LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64
+INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
+LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
 endif
 
 
@@ -42,9 +44,6 @@ THIRDPARTY_OBJS := $(THIRDPARTY_OBJ)/ply.o
 
 
 TARGET     := $(BIN)/objviewer
-
-INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
-LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
 
 
 .PHONY: all
