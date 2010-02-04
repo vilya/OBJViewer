@@ -13,6 +13,7 @@ struct PLYVertex {
   float x, y, z;
   float u, v;
   float nx, ny, nz;
+  float r, g, b;
   void* otherData;
 };
 
@@ -28,14 +29,17 @@ struct PLYFace {
 //
 
 PlyProperty vertexProps[] = {
-  {  "x", Float32, Float32, offsetof(PLYVertex, x), 0, 0, 0, 0 },
-  {  "y", Float32, Float32, offsetof(PLYVertex, y), 0, 0, 0, 0 },
-  {  "z", Float32, Float32, offsetof(PLYVertex, z), 0, 0, 0, 0 },
-  {  "u", Float32, Float32, offsetof(PLYVertex, u), 0, 0, 0, 0 },
-  {  "v", Float32, Float32, offsetof(PLYVertex, v), 0, 0, 0, 0 },
-  { "nx", Float32, Float32, offsetof(PLYVertex,nx), 0, 0, 0, 0 },
-  { "ny", Float32, Float32, offsetof(PLYVertex,ny), 0, 0, 0, 0 },
-  { "nz", Float32, Float32, offsetof(PLYVertex,nz), 0, 0, 0, 0 }
+  { "x",      Float32, Float32, offsetof(PLYVertex, x), 0, 0, 0, 0 },
+  { "y",      Float32, Float32, offsetof(PLYVertex, y), 0, 0, 0, 0 },
+  { "z",      Float32, Float32, offsetof(PLYVertex, z), 0, 0, 0, 0 },
+  { "u",      Float32, Float32, offsetof(PLYVertex, u), 0, 0, 0, 0 },
+  { "v",      Float32, Float32, offsetof(PLYVertex, v), 0, 0, 0, 0 },
+  { "nx",     Float32, Float32, offsetof(PLYVertex,nx), 0, 0, 0, 0 },
+  { "ny",     Float32, Float32, offsetof(PLYVertex,ny), 0, 0, 0, 0 },
+  { "nz",     Float32, Float32, offsetof(PLYVertex,nz), 0, 0, 0, 0 },
+  { "red",    Float32, Float32, offsetof(PLYVertex, r), 0, 0, 0, 0 },
+  { "green",  Float32, Float32, offsetof(PLYVertex, g), 0, 0, 0, 0 },
+  { "blue",   Float32, Float32, offsetof(PLYVertex, b), 0, 0, 0, 0 }
 };
 
 
@@ -43,6 +47,11 @@ PlyProperty faceProps[] = { /* list of property information for a face */
   { "vertex_indices", Int32, Int32, offsetof(PLYFace, verts),
     1, Uint8, Uint8, offsetof(PLYFace, nverts) }
 };
+
+
+bool hasTexCoords = false;
+bool hasNormals = false;
+bool hasColors = false;
 
 
 //
@@ -60,7 +69,7 @@ void plyParseVertices(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseEx
   unsigned int propMask = 0;
   for (int i = 0; i < plySrc->which_elem->nprops; ++i) {
     PlyProperty* availableProp = plySrc->which_elem->props[i];
-    for (int j = 3; j < 8; ++j) {
+    for (int j = 3; j < 11; ++j) {
       PlyProperty* requestedProp = &vertexProps[j];
       if (strcmp(requestedProp->name, availableProp->name) == 0) {
         setup_property_ply(plySrc, requestedProp);
@@ -70,8 +79,9 @@ void plyParseVertices(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseEx
   }
   get_other_properties_ply(plySrc, offsetof(PLYVertex, otherData));
 
-  bool hasNormals = propMask & (0x7 << 5); // true if the nx, ny and nz bits are set.
-  bool hasTexCoords = propMask & (0x3 << 3); // true if the u and v bits are set.
+  hasTexCoords = propMask & (0x3 << 3); // true if the u and v bits are set.
+  hasNormals = propMask & (0x7 << 5); // true if the nx, ny and nz bits are set.
+  hasColors = propMask & (0x7 << 8); // true if the r, g and b bits are set.
 
   for (int vertexNum = 0; vertexNum < plySrc->which_elem->num; ++vertexNum) {
     PLYVertex plyVert;
@@ -82,6 +92,7 @@ void plyParseVertices(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseEx
       callbacks->texCoordParsed(Float4(plyVert.u, plyVert.v, 0.0, 1.0));
     if (hasNormals)
       callbacks->normalParsed(Float4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0));
+    // TODO: if (hasColors) { ... }
   }
 }
 
@@ -97,8 +108,10 @@ void plyParseFaces(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseExcep
 
     Face* face = new Face();
     for (int j = 0; j < plyFace.nverts; ++j) {
-      int index = plyFace.verts[j];
-      face->vertexes.push_back(Vertex(index, -1, -1));
+      int v = plyFace.verts[j];
+      int vt = hasTexCoords ? v : -1;
+      int vn = hasNormals ? v : -1;
+      face->vertexes.push_back(Vertex(v, vt, vn));
     }
     callbacks->faceParsed(face);
   }
