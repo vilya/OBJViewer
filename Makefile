@@ -34,7 +34,8 @@ OBJS       := $(OBJ)/objviewer.o \
 							$(OBJ)/model.o \
 							$(OBJ)/renderer.o \
 							$(OBJ)/math3d.o \
-							$(OBJ)/parser.o
+							$(OBJ)/parser.o \
+							$(OBJ)/objparser.o
 
 THIRDPARTY_OBJS := $(THIRDPARTY_OBJ)/ply.o
 
