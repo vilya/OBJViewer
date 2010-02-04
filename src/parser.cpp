@@ -4,6 +4,7 @@
 
 #include "parser.h"
 #include "objparser.h"
+#include "plyparser.h"
 
 //
 // EXCEPTION METHODS
@@ -52,6 +53,10 @@ void loadModel(ParserCallbacks* callbacks, const char* path) throw(ParseExceptio
   if (strcasecmp(ext, ".obj") == 0) {
     callbacks->beginModel(path);
     loadOBJ(callbacks, path);
+    callbacks->endModel();
+  } else if (strcasecmp(ext, ".ply") == 0) {
+    callbacks->beginModel(path);
+    loadPLY(callbacks, path);
     callbacks->endModel();
   } else {
     throw ParseException("Unknown model format: %s", ext);
