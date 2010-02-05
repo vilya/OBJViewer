@@ -80,6 +80,12 @@ char *type_names[] = {
 "uchar", "ushort", "uint",
 "float", "double",
 };
+char *alt_type_names[] = {
+"invalid",
+"int8", "int16", "int32",
+"uint8", "uint16", "uint32",
+"float32", "float64",
+};
 
 int ply_type_size[] = {
   0, 1, 2, 4, 1, 2, 4, 4, 8
@@ -2684,6 +2690,10 @@ int get_prop_type(char *type_name)
 
   for (i = PLY_START_TYPE + 1; i < PLY_END_TYPE; i++)
     if (equal_strings (type_name, type_names[i]))
+      return (i);
+
+  for (i = PLY_START_TYPE + 1; i < PLY_END_TYPE; i++)
+    if (equal_strings (type_name, alt_type_names[i]))
       return (i);
 
   /* if we get here, we didn't find the type */
