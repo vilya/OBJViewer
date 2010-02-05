@@ -38,6 +38,12 @@ float& Float4::operator [] (int index)
 }
 
 
+Float4 operator - (const Float4& a)
+{
+  return Float4(-a.x, -a.y, -a.z, a.w);
+}
+
+
 Float4 operator + (const Float4& a, const Float4& b)
 {
   return Float4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
