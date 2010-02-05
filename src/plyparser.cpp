@@ -58,68 +58,10 @@ bool hasColors = false;
 // INTERNAL FUNCTIONS
 //
 
-void plyParseVertices(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseException)
+void plyParseFaces(ParserCallbacks* callbacks, PlyFile* plySrc,
+                   char* sectionName, int sectionSize, int numProperties)
+  throw(ParseException)
 {
-  // We always need to read the xyz position.
-  ply_describe_property(plySrc, vertexProps[0].name, &vertexProps[0]); 
-  ply_describe_property(plySrc, vertexProps[1].name, &vertexProps[1]); 
-  ply_describe_property(plySrc, vertexProps[2].name, &vertexProps[2]);
-
-  // If there are any texture or normal coords, grab them too.
-  unsigned int propMask = 0;
-  for (int i = 0; i < plySrc->which_elem->nprops; ++i) {
-    PlyProperty* availableProp = plySrc->which_elem->props[i];
-    for (int j = 3; j < 11; ++j) {
-      PlyProperty* requestedProp = &vertexProps[j];
-      if (strcmp(requestedProp->name, availableProp->name) == 0) {
-        ply_describe_property(plySrc, requestedProp->name, requestedProp);
-        propMask |= (1 << j);
-      }
-    }
-  }
-  ply_get_other_properties(plySrc, "other", offsetof(PLYVertex, otherData));
-
-  hasTexCoords = propMask & (0x3 << 3); // true if the u and v bits are set.
-  hasNormals = propMask & (0x7 << 5); // true if the nx, ny and nz bits are set.
-  hasColors = propMask & (0x7 << 8); // true if the r, g and b bits are set.
-
-  for (int vertexNum = 0; vertexNum < plySrc->which_elem->num; ++vertexNum) {
-    PLYVertex plyVert;
-    ply_get_element(plySrc, &plyVert);
-
-    callbacks->coordParsed(*(new Float4(plyVert.x, plyVert.y, plyVert.z, 1.0)));
-    if (hasTexCoords)
-      callbacks->texCoordParsed(*(new Float4(plyVert.u, plyVert.v, 0.0, 1.0)));
-    if (hasNormals)
-      callbacks->normalParsed(*(new Float4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0)));
-    // TODO: if (hasColors) { ... }
-  }
-}
-
-
-void plyParseFaces(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseException)
-{
-  ply_describe_property(plySrc, faceProps[0].name, &faceProps[0]);
-  ply_get_other_properties(plySrc, "other", offsetof(PLYFace, otherData));
-
-  Material* defaultMaterial = new Material();
-  defaultMaterial->Ka = Float4(0.2, 0.2, 0.2, 1.0);
-  defaultMaterial->Kd = Float4(0.7, 0.7, 0.7, 1.0);
-  defaultMaterial->Ks = Float4(1.0, 1.0, 1.0, 1.0);
-
-  for (int i = 0; i < plySrc->which_elem->num; ++i) {
-    PLYFace plyFace;
-    ply_get_element(plySrc, &plyFace);
-
-    Face* face = new Face(defaultMaterial);
-    for (int j = 0; j < plyFace.nverts; ++j) {
-      int v = plyFace.verts[j];
-      int vt = hasTexCoords ? v : -1;
-      int vn = hasNormals ? v : -1;
-      face->vertexes.push_back(Vertex(v, vt, vn));
-    }
-    callbacks->faceParsed(face);
-  }
 }
 
 
@@ -129,23 +71,75 @@ void plyParseFaces(ParserCallbacks* callbacks, PlyFile* plySrc) throw(ParseExcep
 
 void loadPLY(ParserCallbacks* callbacks, const char* path) throw(ParseException)
 {
-  FILE* f = fopen(path, "rb");
-  if (f == NULL)
-    throw ParseException("Unable to open file %s.\n", path);
-
   int numElements = 0;
   char** elementNames = NULL;
-  PlyFile* plySrc = ply_read(f, &numElements, &elementNames);
+  int fileType = 0;
+  float version = 0.0;
+  PlyFile* plySrc = ply_open_for_reading(const_cast<char*>(path),
+      &numElements, &elementNames, &fileType, &version);
 
-  int sectionSize;
-  for (int i = 0; i < plySrc->nelems; ++i) {
-    char* sectionName = ply_setup_element_read(plySrc, i, &sectionSize);
-    if (strcmp("vertex", sectionName) == 0)
-      plyParseVertices(callbacks, plySrc);
-    else if (strcmp("face", sectionName) == 0)
-      plyParseFaces(callbacks, plySrc);
-    else
+  for (int i = 0; i < numElements; ++i) {
+    char* sectionName = elementNames[i];
+    int sectionSize = 0;
+    int numProperties = 0;
+
+    PlyProperty** sectionProperties = ply_get_element_description(
+        plySrc, sectionName, &sectionSize, &numProperties);
+
+    if (strcmp("vertex", sectionName) == 0) {
+      ply_get_property(plySrc, sectionName, &vertexProps[0]); 
+      ply_get_property(plySrc, sectionName, &vertexProps[1]); 
+      ply_get_property(plySrc, sectionName, &vertexProps[2]);
+
+      // If there are any texture or normal coords, grab them too.
+      unsigned int propMask = 0;
+      for (int i = 0; i < numProperties; ++i) {
+        PlyProperty* availableProp = sectionProperties[i];
+        for (int j = 3; j < 11; ++j) {
+          PlyProperty* requestedProp = &vertexProps[j];
+          if (strcmp(requestedProp->name, availableProp->name) == 0) {
+            ply_get_property(plySrc, sectionName, requestedProp);
+            propMask |= (1 << j);
+          }
+        }
+      }
+      ply_get_other_properties(plySrc, sectionName, offsetof(PLYVertex, otherData));
+
+      hasTexCoords = propMask & (0x3 << 3); // true if the u and v bits are set.
+      hasNormals = propMask & (0x7 << 5); // true if the nx, ny and nz bits are set.
+      hasColors = propMask & (0x7 << 8); // true if the r, g and b bits are set.
+  
+      for (int vertexNum = 0; vertexNum < sectionSize; ++vertexNum) {
+        PLYVertex plyVert;
+        ply_get_element(plySrc, &plyVert);
+
+        callbacks->coordParsed(Float4(plyVert.x, plyVert.y, plyVert.z, 1.0));
+        if (hasTexCoords)
+          callbacks->texCoordParsed(Float4(plyVert.u, plyVert.v, 0.0, 1.0));
+        if (hasNormals)
+          callbacks->normalParsed(Float4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0));
+        // TODO: if (hasColors) { ... }
+      }
+    } else if (strcmp("face", sectionName) == 0) {
+      ply_get_property(plySrc, sectionName, &faceProps[0]);
+      ply_get_other_properties(plySrc, sectionName, offsetof(PLYFace, otherData));
+
+      for (int i = 0; i < sectionSize; ++i) {
+        PLYFace plyFace;
+        ply_get_element(plySrc, &plyFace);
+
+        Face* face = new Face();
+        for (int j = 0; j < plyFace.nverts; ++j) {
+          int v = plyFace.verts[j];
+          int vt = hasTexCoords ? v : -1;
+          int vn = hasNormals ? v : -1;
+          face->vertexes.push_back(Vertex(v, vt, vn));
+        }
+        callbacks->faceParsed(face);
+      }
+    } else {
       ply_get_other_element(plySrc, sectionName, sectionSize);
+    }
   }
 
   ply_close(plySrc);
