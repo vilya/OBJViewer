@@ -29,17 +29,17 @@ struct PLYFace {
 //
 
 PlyProperty vertexProps[] = {
-  { "x",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, x), 0, 0, 0, 0 },
-  { "y",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, y), 0, 0, 0, 0 },
-  { "z",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, z), 0, 0, 0, 0 },
-  { "u",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, u), 0, 0, 0, 0 },
-  { "v",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, v), 0, 0, 0, 0 },
-  { "nx",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,nx), 0, 0, 0, 0 },
-  { "ny",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,ny), 0, 0, 0, 0 },
-  { "nz",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,nz), 0, 0, 0, 0 },
-  { "red",    PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, r), 0, 0, 0, 0 },
-  { "green",  PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, g), 0, 0, 0, 0 },
-  { "blue",   PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, b), 0, 0, 0, 0 }
+  { (char*)"x",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, x), 0, 0, 0, 0 },
+  { (char*)"y",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, y), 0, 0, 0, 0 },
+  { (char*)"z",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, z), 0, 0, 0, 0 },
+  { (char*)"u",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, u), 0, 0, 0, 0 },
+  { (char*)"v",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, v), 0, 0, 0, 0 },
+  { (char*)"nx",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,nx), 0, 0, 0, 0 },
+  { (char*)"ny",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,ny), 0, 0, 0, 0 },
+  { (char*)"nz",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,nz), 0, 0, 0, 0 },
+  { (char*)"red",    PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, r), 0, 0, 0, 0 },
+  { (char*)"green",  PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, g), 0, 0, 0, 0 },
+  { (char*)"blue",   PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, b), 0, 0, 0, 0 }
 };
 
 
