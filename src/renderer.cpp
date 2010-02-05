@@ -524,7 +524,7 @@ void Renderer::prepare()
 {
   prepareRenderGroups();
   prepareMaterials();
-  prepareShaders();
+  //prepareShaders();
 }
 
 
