@@ -1,7 +1,5 @@
 Bugs:
-- Bring back the wireframe rendering mode.
-- Fix the crash during Renderer::prepare for some models loaded from .ply files.
-- Calculate vertex normals when the model doesn't provide them.
+- See the issues page on github.
 
 Camera:
 - Have a fly mode, which has a position and direction
