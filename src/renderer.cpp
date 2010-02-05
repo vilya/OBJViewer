@@ -266,8 +266,6 @@ void RenderGroup::add(Model* model, Face* face)
 
   for (size_t i = 0; i < face->size(); ++i) {
     int vi = (*face)[i].v;
-    if (vi > model->v.size())
-      fprintf(stderr, "vertex index %d is bigger than number of vertices (%lu)!\n", vi, model->v.size());
     Float4& v = model->v[vi];
     _coords.push_back(v.x);
     _coords.push_back(v.y);
