@@ -22,7 +22,7 @@
 // CONSTANTS
 //
 
-const size_t MAX_FACES_PER_DISPLAYLIST = 20000;
+const size_t MAX_FACES_PER_VBO = 200000;
 
 
 //
@@ -241,11 +241,11 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType) :
   _material(iMaterial),
   _type(iType),
   _size(0),
-  _hasTexCoords(true),
+  _hasTexCoords(false),
   _hasNormalCoords(false),
-  _coords(new std::vector<float>),
+  _coords(),
   _coordsID(0),
-  _indexes(new std::vector<unsigned int>),
+  _indexes(),
   _indexesID(0)
 {
 }
@@ -267,29 +267,29 @@ void RenderGroup::add(Model* model, Face* face)
   for (size_t i = 0; i < face->size(); ++i) {
     int vi = (*face)[i].v;
     Float4& v = model->v[vi];
-    _coords->push_back(v.x);
-    _coords->push_back(v.y);
-    _coords->push_back(v.z);
+    _coords.push_back(v.x);
+    _coords.push_back(v.y);
+    _coords.push_back(v.z);
 
     if (_hasTexCoords) {
       int vti = (*face)[i].vt;
       Float4& vt = model->vt[vti];
-      _coords->push_back(vt.x);
-      _coords->push_back(vt.y);
+      _coords.push_back(vt.x);
+      _coords.push_back(vt.y);
     }
 
     if (_hasNormalCoords) {
       int vni = (*face)[i].vn;
       Float4& vn = model->vn[vni];
-      _coords->push_back(vn.x);
-      _coords->push_back(vn.y);
-      _coords->push_back(vn.z);
-      _coords->push_back(vn.w);
+      _coords.push_back(vn.x);
+      _coords.push_back(vn.y);
+      _coords.push_back(vn.z);
+      _coords.push_back(vn.w);
     }
 
-    _indexes->push_back(_indexes->size());
+    _indexes.push_back(_indexes.size());
   }
-  _size = _indexes->size();
+  _size = _indexes.size();
 }
 
 
@@ -305,17 +305,15 @@ void RenderGroup::prepare()
   glGenBuffers(1, &_coordsID);
   glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
   glBufferData(GL_ARRAY_BUFFER,
-      sizeof(float) * _coords->size(), &(*_coords)[0], GL_STATIC_DRAW);
-  delete _coords;
-  _coords = NULL;
+      sizeof(float) * _coords.size(), &_coords[0], GL_STATIC_DRAW);
+  _coords.clear();
 
   // Do the same for the indexes.
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-      sizeof(unsigned int) * _indexes->size(), &(*_indexes)[0], GL_STATIC_DRAW);
-  delete _indexes;
-  _indexes = NULL;
+      sizeof(unsigned int) * _indexes.size(), &_indexes[0], GL_STATIC_DRAW);
+  _indexes.clear();
 }
 
 
@@ -402,11 +400,11 @@ void RenderGroup::render()
 // Renderer METHODS
 //
 
-Renderer::Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight) :
+Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   _style(kPolygons),
   _headlightType(kDirectional),
   _drawLights(false),
-  _model(model),
+  _model(NULL),
   _camera(new Camera()),
   _maxTextureWidth(maxTextureWidth),
   _maxTextureHeight(maxTextureHeight),
@@ -427,28 +425,28 @@ Renderer::Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight
   float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
-
-  if (_model != NULL) {
-    prepare();
-    loadTextures(_renderGroups);
-    _camera->frontView(_model->low, _model->high);
-  } else {
-    prepareShaders();
-  }
-  checkGLError("Error during initialisation.");
 }
 
 
 Renderer::~Renderer()
 {
-  if (_camera != NULL)
-    delete _camera;
+  delete _camera;
+  delete _model;
+  std::list<RenderGroup*>::iterator iter;
+  for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter)
+    delete *iter;
 }
 
 
 Camera* Renderer::currentCamera()
 {
   return _camera;
+}
+
+
+Model* Renderer::currentModel()
+{
+  return _model;
 }
 
 
@@ -636,13 +634,13 @@ void Renderer::prepareMaterials()
 {
   // Prepare the materials.
   fprintf(stderr, "Preparing materials...\n");
-  std::map<std::string, Material>::iterator m;
+  std::map<std::string, Material*>::iterator m;
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
-    Material& material = m->second;
-    if (material.d != 1 || material.mapD != NULL) {
-      material.Ka.a = material.d;
-      material.Kd.a = material.d;
-      material.Ks.a = material.d;
+    Material* material = m->second;
+    if (material->d != 1 || material->mapD != NULL) {
+      material->Ka.a = material->d;
+      material->Kd.a = material->d;
+      material->Ks.a = material->d;
     }
   }
 }
@@ -908,6 +906,69 @@ const char* Renderer::loadShader(const char* path)
 
   fclose(shaderFile);
   return text;
+}
+
+void Renderer::beginModel(const char* path)
+{
+  // Clear out any old model data.
+  delete _model;
+  for (std::list<RenderGroup*>::iterator i = _renderGroups.begin(); i != _renderGroups.end(); ++i)
+    delete *i;
+  _renderGroups.clear();
+  _transparentGroupsStart = (size_t)-1;
+  _currentMapKa = NULL;
+  _currentMapKd = NULL;
+  _currentMapKs = NULL;
+  _currentMapD = NULL;
+
+  // Start a new model.
+  _model = new Model();
+}
+
+
+void Renderer::endModel()
+{
+  prepare();
+  loadTextures(_renderGroups);
+  _camera->frontView(_model->low, _model->high);
+  checkGLError("Error during preparation.");
+}
+
+
+void Renderer::coordParsed(const Float4& coord)
+{
+  _model->addV(coord);
+}
+
+
+void Renderer::texCoordParsed(const Float4& coord)
+{
+  _model->vt.push_back(coord);
+}
+
+
+void Renderer::normalParsed(const Float4& normal)
+{
+  _model->vn.push_back(normal);
+}
+
+
+void Renderer::faceParsed(Face* face)
+{
+  // TODO: triangulate face
+  _model->faces.push_back(face);
+}
+
+
+void Renderer::materialParsed(const std::string& name, Material* material)
+{
+  _model->materials[name] = material;
+}
+
+
+void Renderer::textureParsed(RawImage* texture)
+{
+  // At the moment we don't need to do anything here, but we probably will do soon...
 }
 
 

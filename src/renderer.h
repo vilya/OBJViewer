@@ -7,6 +7,7 @@
 #include <imagelib.h>
 #include "math3d.h"
 #include "model.h"
+#include "parser.h"
 
 
 //
@@ -98,20 +99,21 @@ private:
   // - First 4 elements in each group are vertex x, y, z and w.
   // - Next 2 are texture x and y (if _hasTexCoords == true).
   // - Final 3 are normal x, y, z (if _hasNormalCoords == true).
-  std::vector<float> *_coords;
+  std::vector<float> _coords;
   GLuint _coordsID;
 
-  std::vector<unsigned int> *_indexes;
+  std::vector<unsigned int> _indexes;
   GLuint _indexesID;
 };
 
 
-class Renderer {
+class Renderer : public ParserCallbacks {
 public:
-  Renderer(Model* model, size_t maxTextureWidth, size_t maxTextureHeight);
+  Renderer(size_t maxTextureWidth, size_t maxTextureHeight);
   ~Renderer();
 
   Camera* currentCamera();
+  Model* currentModel();
 
   void setStyle(RenderStyle style);
   void toggleDrawLights();
@@ -119,6 +121,17 @@ public:
   void printGLInfo();
 
   void render(int width, int height);
+
+  // Parser callbacks
+  virtual void beginModel(const char* path);
+  virtual void endModel();
+  virtual void coordParsed(const Float4& coord);
+  virtual void texCoordParsed(const Float4& coord);
+  virtual void paramCoordParsed(const Float4& coord) {}
+  virtual void normalParsed(const Float4& normal);
+  virtual void faceParsed(Face* face);
+  virtual void materialParsed(const std::string& name, Material* material);
+  virtual void textureParsed(RawImage* texture);
 
 private:
   void prepare();

@@ -17,6 +17,7 @@ struct Float4 {
   float& operator [] (int index);
 };
 
+Float4 operator - (const Float4& a);
 Float4 operator + (const Float4& a, const Float4& b);
 Float4 operator - (const Float4& a, const Float4& b);
 Float4 operator / (const Float4& a, float k);

@@ -15,7 +15,8 @@ Material::Material() :
     mapKa(NULL),
     mapKd(NULL),
     mapKs(NULL),
-    mapD(NULL)
+    mapD(NULL),
+    mapBump(NULL)
 {
 }
 

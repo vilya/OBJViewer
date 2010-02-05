@@ -46,7 +46,7 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   fullscreen(false),
   mouseX(0), mouseY(0), mouseButton(0), mouseModifiers(0),
   _renderer(NULL),
-  _model(NULL),
+  _modelPath(NULL),
   _maxTextureWidth(0), _maxTextureHeight(0)
 {
   glutInit(&argc, argv);
@@ -56,7 +56,14 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutCreateWindow("Vil's OBJ Viewer");
 
   processArgs(argc, argv);
-  _renderer = new Renderer(_model, _maxTextureWidth, _maxTextureHeight);
+  _renderer = new Renderer(_maxTextureWidth, _maxTextureHeight);
+  try {
+    loadModel(_renderer, _modelPath);
+    fprintf(stderr, "Finished loading model %s\n", _modelPath);
+  } catch (ParseException& e) {
+    fprintf(stderr, "%s\n", e.what());
+    fprintf(stderr, "Unable to load model. Continuing with default model.\n");
+  }
 
   glutDisplayFunc(doRender);
   glutReshapeFunc(doResize);
@@ -70,7 +77,6 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
 OBJViewerApp::~OBJViewerApp()
 {
   delete _renderer;
-  delete _model;
 }
 
 
@@ -95,9 +101,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 {
   Float4 low(-1, -1, -1, 1);
   Float4 high(1, 1, 1, 1);
-  if (_model != NULL) {
-    low = _model->low;
-    high = _model->high;
+  if (_renderer != NULL && _renderer->currentModel() != NULL) {
+    low = _renderer->currentModel()->low;
+    high = _renderer->currentModel()->high;
   }
 
   switch (key) {
@@ -295,15 +301,8 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   }
   argc -= optind;
   argv += optind;
-  if (argc > 0) {
-    try {
-      _model = loadModel(argv[0]);
-      fprintf(stderr, "Finished loading model %s\n", argv[0]);
-    } catch (ParseException& e) {
-      fprintf(stderr, "%s\n", e.what());
-      fprintf(stderr, "Unable to load model. Continuing with default model.\n");
-    }
-  }
+  if (argc > 0)
+    _modelPath = argv[0];
 }
 
 
