@@ -1612,10 +1612,10 @@ void ascii_get_element(PlyFile *plyfile, char *elem_ptr)
     store_it = (elem->store_prop[j] | other_flag);
 
     /* store either in the user's structure or in other_props */
-  //  if (elem->store_prop[j])
+    if (elem->store_prop[j])
       elem_data = elem_ptr;
-    //else
-      //elem_data = other_data;
+    else
+      elem_data = other_data;
 
     if (prop->is_list) {       /* a list */
 
@@ -1723,10 +1723,10 @@ void binary_get_element(PlyFile *plyfile, char *elem_ptr)
     store_it = (elem->store_prop[j] | other_flag);
 
     /* store either in the user's structure or in other_props */
-//    if (elem->store_prop[j])
+    if (elem->store_prop[j])
       elem_data = elem_ptr;
-//    else
-//      elem_data = other_data;
+    else
+      elem_data = other_data;
 
     if (prop->is_list) {       /* a list */
 

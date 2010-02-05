@@ -480,14 +480,6 @@ void Renderer::printGLInfo()
 }
 
 
-GLint Renderer::glGet(GLenum what)
-{
-  GLint val;
-  glGetIntegerv(what, &val);
-  return val;
-}
-
-
 void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -529,6 +521,14 @@ void Renderer::render(int width, int height)
 
 
 void Renderer::prepare()
+{
+  prepareRenderGroups();
+  prepareMaterials();
+  prepareShaders();
+}
+
+
+void Renderer::prepareRenderGroups()
 {
   // Create the render groups. Each material will have up to one group for
   // each of triangles, quads and general polygons.
@@ -627,7 +627,11 @@ void Renderer::prepare()
   std::list<RenderGroup*>::iterator groupIter;
   for (groupIter = _renderGroups.begin(); groupIter != _renderGroups.end(); ++groupIter)
     (*groupIter)->prepare();
+}
 
+
+void Renderer::prepareMaterials()
+{
   // Prepare the materials.
   fprintf(stderr, "Preparing materials...\n");
   std::map<std::string, Material*>::iterator m;
@@ -639,6 +643,39 @@ void Renderer::prepare()
       material->Ks.a = material->d;
     }
   }
+}
+
+
+void Renderer::prepareShaders()
+{
+  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+  // Get the shader source code.
+  const char* vertexShaderSrc = loadShader("vertex.sl");
+  const char* fragmentShaderSrc = loadShader("fragment.sl");
+  if (vertexShaderSrc == NULL || fragmentShaderSrc == NULL)
+    return;
+
+  // Associate the source code strings with the shader handles. We can delete
+  // the strings after these calls.
+  glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
+  glShaderSource(fragmentShader, 1, &fragmentShaderSrc, NULL);
+
+  // Compile the shaders.
+  glCompileShader(vertexShader);
+  glCompileShader(fragmentShader);
+
+  // Create a program object and attach the shaders to it.
+  GLuint programObject = glCreateProgram();
+  glAttachShader(programObject, fragmentShader);
+  glAttachShader(programObject, vertexShader);
+
+  // Link the program.
+  glLinkProgram(programObject);
+  
+  // Enable the program.
+  glUseProgram(programObject);
 }
 
 
@@ -852,6 +889,25 @@ void Renderer::drawBitmapString(float x, float y, void* font, char* str)
 }
 
 
+const char* Renderer::loadShader(const char* path)
+{
+  FILE* shaderFile = fopen(path, "r");
+  if (shaderFile == NULL)
+    return NULL;
+
+  // Get the length of the file.
+  fseek(shaderFile, 0, SEEK_END);
+  size_t length = ftell(shaderFile);
+  fseek(shaderFile, 0, SEEK_SET);
+
+  char* text = new char[length + 1];
+  fread(text, sizeof(const char), length, shaderFile);
+  text[length] = '\0';
+
+  fclose(shaderFile);
+  return text;
+}
+
 void Renderer::beginModel(const char* path)
 {
   // Clear out any old model data.
@@ -913,6 +969,14 @@ void Renderer::materialParsed(const std::string& name, Material* material)
 void Renderer::textureParsed(RawImage* texture)
 {
   // At the moment we don't need to do anything here, but we probably will do soon...
+}
+
+
+GLint Renderer::glGet(GLenum what)
+{
+  GLint val;
+  glGetIntegerv(what, &val);
+  return val;
 }
 
 
