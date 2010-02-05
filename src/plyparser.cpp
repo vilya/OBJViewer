@@ -29,9 +29,11 @@ struct PLYFace {
 //
 
 PlyProperty vertexProps[] = {
+  // Required elements
   { (char*)"x",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, x), 0, 0, 0, 0 },
   { (char*)"y",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, y), 0, 0, 0, 0 },
   { (char*)"z",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, z), 0, 0, 0, 0 },
+  // Optional elements
   { (char*)"u",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, u), 0, 0, 0, 0 },
   { (char*)"v",      PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex, v), 0, 0, 0, 0 },
   { (char*)"nx",     PLY_FLOAT, PLY_FLOAT, offsetof(PLYVertex,nx), 0, 0, 0, 0 },
@@ -44,7 +46,7 @@ PlyProperty vertexProps[] = {
 
 
 PlyProperty faceProps[] = { /* list of property information for a face */
-  { "vertex_indices", PLY_INT, PLY_INT, offsetof(PLYFace, verts),
+  { (char*)"vertex_indices", PLY_INT, PLY_INT, offsetof(PLYFace, verts),
     1, PLY_CHAR, PLY_CHAR, offsetof(PLYFace, nverts) }
 };
 
