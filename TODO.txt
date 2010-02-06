@@ -10,13 +10,6 @@ Lighting:
   - Arbitrary locations
 
 Rendering improvements:
-- Fix the texturing bugs on the ATI Radeon 4870 X2.
-  - I think it's related to texture size - only the FairyForest scene, with
-    it's 4000x4000 textures, seems to be affected.
-  - Update: looks like a driver bug related to the texture size. Try tiling the
-    texture with (say) a 16 pixel overlap between tiles as a way around this
-    limitation.
-- Get the viewer using vertex and fragment shaders.
 - Multipass rendering & compositing via fragment shader.
 - Bump-mapping
 - Shadows
