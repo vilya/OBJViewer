@@ -554,11 +554,9 @@ void Renderer::prepareRenderGroups()
   // Create the render groups. Each material will have up to one group for
   // each of triangles, quads and general polygons.
   fprintf(stderr, "Creating render groups...\n");
-  std::map<Material*, RenderGroup*> triangles;
-  std::map<Material*, RenderGroup*> quads;
+  std::map<Material*, std::list<RenderGroup*> > triangles;
   std::map<Material*, std::list<RenderGroup*> > polys;
-  std::map<Material*, RenderGroup*> transparentTriangles;
-  std::map<Material*, RenderGroup*> transparentQuads;
+  std::map<Material*, std::list<RenderGroup*> > transparentTriangles;
   std::map<Material*, std::list<RenderGroup*> > transparentPolys;
 
   for (size_t i = 0; i < _model->faces.size(); ++i) {
@@ -566,81 +564,54 @@ void Renderer::prepareRenderGroups()
     if (face->size() < 3)
       continue;
 
+    // Note that we've already triangulated quads by this point.
     Material* material = face->material;
-    if (material != NULL && (material->d != 1 || material->mapD != NULL)) {
-      switch (face->size()) {
-        case 3:
-          if (transparentTriangles.find(material) == transparentTriangles.end())
-            transparentTriangles[material] = new RenderGroup(material, kTriangleGroup);
-          transparentTriangles[material]->add(_model, face);
-          break;
-        case 4:
-          if (transparentQuads.find(material) == transparentQuads.end())
-            transparentQuads[material] = new RenderGroup(material, kQuadGroup);
-          transparentQuads[material]->add(_model, face);
-          break;
-        default:
-          {
-            if (transparentPolys.find(material) == transparentPolys.end())
-              transparentPolys[material] = std::list<RenderGroup*>();
-            RenderGroup* polyGroup = new RenderGroup(material, kPolygonGroup);
-            polyGroup->add(_model, face);
-            transparentPolys[material].push_back(polyGroup);
-          }
-          break;
-      }
-    } else {
-      switch (face->size()) {
-        case 3:
-          if (triangles.find(material) == triangles.end())
-            triangles[material] = new RenderGroup(material, kTriangleGroup);
-          triangles[material]->add(_model, face);
-          break;
-        case 4:
-          if (quads.find(material) == quads.end())
-            quads[material] = new RenderGroup(material, kQuadGroup);
-          quads[material]->add(_model, face);
-          break;
-        default:
-          {
-            if (polys.find(material) == polys.end())
-              polys[material] = std::list<RenderGroup*>();
-            RenderGroup* polyGroup = new RenderGroup(material, kPolygonGroup);
-            polyGroup->add(_model, face);
-            polys[material].push_back(polyGroup);
-          }
-          break;
-      }
+
+    bool isTransparent = (material != NULL) && (material->d != 1 || material->mapD != NULL);
+    bool isTriangle = (face->size() == 3);
+
+    RenderGroupType type = isTriangle ? kTriangleGroup : kPolygonGroup;
+    std::map<Material*, std::list<RenderGroup*> >* groupMap;
+
+    if (isTriangle)
+      groupMap = isTransparent ? &transparentTriangles : &triangles;
+    else
+      groupMap = isTransparent ? &transparentPolys : &polys;
+
+    if (groupMap->find(material) == groupMap->end()) {
+      (*groupMap)[material] = std::list<RenderGroup*>();
+      (*groupMap)[material].push_back(new RenderGroup(material, type));
     }
+
+    std::list<RenderGroup*>& groups = (*groupMap)[material];
+    if (!isTriangle || groups.front()->size() >= MAX_FACES_PER_VBO)
+      groups.push_front(new RenderGroup(material, type));
+    groups.front()->add(_model, face);
   }
 
   // Copy the render groups into the _renderGroups list. Make sure the groups
   // with transparent materials go last, so that they'll be rendered after the
   // opaque materials.
   fprintf(stderr, "Sorting render groups...\n");
-  std::map<Material*, RenderGroup*>::iterator iter;
   std::map<Material*, std::list<RenderGroup*> >::iterator listIter;
+  std::list<RenderGroup*>::iterator iter;
 
-  for (iter = triangles.begin(); iter != triangles.end(); ++iter)
-    _renderGroups.push_back(iter->second);
-  for (iter = quads.begin(); iter != quads.end(); ++iter)
-    _renderGroups.push_back(iter->second);
-  for (listIter = polys.begin(); listIter != polys.end(); ++listIter) {
-    std::list<RenderGroup*>::iterator polyIter;
-    for (polyIter = listIter->second.begin(); polyIter != listIter->second.end(); ++polyIter)
-      _renderGroups.push_back(*polyIter);
+  for (listIter = triangles.begin(); listIter != triangles.end(); ++listIter) {
+    for (iter = listIter->second.begin(); iter != listIter->second.end(); ++iter)
+      _renderGroups.push_back(*iter);
   }
-
+  for (listIter = polys.begin(); listIter != polys.end(); ++listIter) {
+    for (iter = listIter->second.begin(); iter != listIter->second.end(); ++iter)
+      _renderGroups.push_back(*iter);
+  }
   _transparentGroupsStart = _renderGroups.size();
-
-  for (iter = transparentTriangles.begin(); iter != transparentTriangles.end(); ++iter)
-    _renderGroups.push_back(iter->second);
-  for (iter = transparentQuads.begin(); iter != transparentQuads.end(); ++iter)
-    _renderGroups.push_back(iter->second);
+  for (listIter = transparentTriangles.begin(); listIter != transparentTriangles.end(); ++listIter) {
+    for (iter = listIter->second.begin(); iter != listIter->second.end(); ++iter)
+      _renderGroups.push_back(*iter);
+  }
   for (listIter = transparentPolys.begin(); listIter != transparentPolys.end(); ++listIter) {
-    std::list<RenderGroup*>::iterator polyIter;
-    for (polyIter = listIter->second.begin(); polyIter != listIter->second.end(); ++polyIter)
-      _renderGroups.push_back(*polyIter);
+    for (iter = listIter->second.begin(); iter != listIter->second.end(); ++iter)
+      _renderGroups.push_back(*iter);
   }
 
   // Prepare the render groups.
@@ -982,8 +953,23 @@ void Renderer::colorParsed(const Float4& color)
 
 void Renderer::faceParsed(Face* face)
 {
-  // TODO: triangulate face
-  _model->faces.push_back(face);
+  if (face->size() == 4) {
+    Face* newFace = new Face(face->material);
+    newFace->vertexes.push_back(face->vertexes[0]);
+    newFace->vertexes.push_back(face->vertexes[1]);
+    newFace->vertexes.push_back(face->vertexes[2]);
+    _model->faces.push_back(newFace);
+
+    newFace = new Face(face->material);
+    newFace->vertexes.push_back(face->vertexes[0]);
+    newFace->vertexes.push_back(face->vertexes[2]);
+    newFace->vertexes.push_back(face->vertexes[3]);
+    _model->faces.push_back(newFace);
+
+    delete face;
+  } else {
+    _model->faces.push_back(face);
+  }
 }
 
 
