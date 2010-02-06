@@ -262,6 +262,7 @@ void RenderGroup::add(Model* model, Face* face)
   if (_size == 0) {
     _hasTexCoords = (face->material != NULL) && (*face)[0].vt >= 0;
     _hasNormalCoords = (*face)[0].vn >= 0;
+    _hasColors = (*face)[0].c >= 0;
   }
 
   for (size_t i = 0; i < face->size(); ++i) {
@@ -285,6 +286,14 @@ void RenderGroup::add(Model* model, Face* face)
       _coords.push_back(vn.y);
       _coords.push_back(vn.z);
       _coords.push_back(vn.w);
+    }
+
+    if (_hasColors) {
+      int ci = (*face)[i].c;
+      Float4& c = model->colors[ci];
+      _coords.push_back(c.r);
+      _coords.push_back(c.g);
+      _coords.push_back(c.b);
     }
 
     _indexes.push_back(_indexes.size());
@@ -323,14 +332,11 @@ void RenderGroup::render()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
 
   glEnableClientState(GL_VERTEX_ARRAY);
-  GLuint stride = sizeof(float) * (3 + (_hasTexCoords ? 2 : 0) + (_hasNormalCoords ? 4 : 0));
+  GLuint stride = sizeof(float) *
+    (3 + (_hasTexCoords ? 2 : 0) + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
   glVertexPointer(3, GL_FLOAT, stride, 0);
 
   if (_material != NULL) {
-    glMaterialfv(GL_FRONT, GL_AMBIENT, _material->Ka.data);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, _material->Kd.data);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, _material->Ks.data);
-
     if (_hasTexCoords) {
       RawImage* textures[] =
           { _material->mapKa, _material->mapKd, _material->mapKs, _material->mapD };
@@ -358,11 +364,6 @@ void RenderGroup::render()
       glDisable(GL_TEXTURE_2D);
       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     }
-
-    float defaultColor[] = { 0.4, 0.4, 0.4, 1.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, defaultColor);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
   }
 
   if (_hasNormalCoords) {
@@ -371,6 +372,23 @@ void RenderGroup::render()
     glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
   } else {
     glDisableClientState(GL_NORMAL_ARRAY);
+  }
+
+  if (_hasColors) {
+    glEnableClientState(GL_COLOR_ARRAY);
+    GLuint offset = sizeof(float) * ((_hasTexCoords ? 5 : 3) + (_hasNormalCoords ? 4 : 0));
+    glColorPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
+  } else if (_material != NULL) {
+    glDisableClientState(GL_COLOR_ARRAY);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, _material->Ka.data);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, _material->Kd.data);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, _material->Ks.data);
+  } else {
+    glDisableClientState(GL_COLOR_ARRAY);
+    float defaultColor[] = { 0.4, 0.4, 0.4, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, defaultColor);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
   }
 
   switch (_type) {
@@ -388,7 +406,10 @@ void RenderGroup::render()
   glDisableClientState(GL_VERTEX_ARRAY);
   if (_material != NULL)
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glDisableClientState(GL_NORMAL_ARRAY);
+  if (_hasNormalCoords)
+    glDisableClientState(GL_NORMAL_ARRAY);
+  if (_hasColors)
+    glDisableClientState(GL_COLOR_ARRAY);
 
   // Release the VBOs.
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -422,8 +443,8 @@ Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
-  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+  //float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+  //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
 }
 
@@ -950,6 +971,12 @@ void Renderer::texCoordParsed(const Float4& coord)
 void Renderer::normalParsed(const Float4& normal)
 {
   _model->vn.push_back(normal);
+}
+
+
+void Renderer::colorParsed(const Float4& color)
+{
+  _model->colors.push_back(color);
 }
 
 

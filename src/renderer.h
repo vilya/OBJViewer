@@ -94,11 +94,13 @@ private:
   size_t _size;
   bool _hasTexCoords;
   bool _hasNormalCoords;
+  bool _hasColors;
 
-  // Coords are interleaved in groups of up to 9 elements:
-  // - First 4 elements in each group are vertex x, y, z and w.
-  // - Next 2 are texture x and y (if _hasTexCoords == true).
-  // - Final 3 are normal x, y, z (if _hasNormalCoords == true).
+  // Coords are interleaved in groups of up to 12 elements:
+  // - First 3 elements in each group are vertex x, y, z.
+  // - Next 2 are texture u and v (if _hasTexCoords == true).
+  // - Next 4 are normal x, y, z and w (if _hasNormalCoords == true).
+  // - Final 3 are color r, g and b (if _hasColors == true).
   std::vector<float> _coords;
   GLuint _coordsID;
 
@@ -129,6 +131,7 @@ public:
   virtual void texCoordParsed(const Float4& coord);
   virtual void paramCoordParsed(const Float4& coord) {}
   virtual void normalParsed(const Float4& normal);
+  virtual void colorParsed(const Float4& color);
   virtual void faceParsed(Face* face);
   virtual void materialParsed(const std::string& name, Material* material);
   virtual void textureParsed(RawImage* texture);

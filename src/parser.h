@@ -32,6 +32,7 @@ public:
   virtual void texCoordParsed(const Float4& coord) = 0;
   virtual void paramCoordParsed(const Float4& coord) = 0;
   virtual void normalParsed(const Float4& normal) = 0;
+  virtual void colorParsed(const Float4& color) = 0;
   virtual void faceParsed(Face* face) = 0;
   virtual void materialParsed(const std::string& name, Material* material) = 0;
   virtual void textureParsed(RawImage* texture) = 0;

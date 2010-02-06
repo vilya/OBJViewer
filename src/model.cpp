@@ -25,7 +25,7 @@ Material::Material() :
 // Vertex METHODS
 //
 
-Vertex::Vertex(int _v, int _vt, int _vn) : v(_v), vt(_vt), vn(_vn)
+Vertex::Vertex(int _v, int _vt, int _vn, int _c) : v(_v), vt(_vt), vn(_vn), c(_c)
 {
 }
 
@@ -62,7 +62,7 @@ unsigned int Face::size() const
 //
 
 Model::Model() :
-    v(), vt(), vp(), vn(), faces(), materials(),
+    v(), vt(), vp(), vn(), colors(), faces(), materials(),
     low(10000, 10000, 10000),
     high(-10000, -10000, -10000)
 {

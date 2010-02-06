@@ -578,7 +578,7 @@ Vertex objParseVertex(char *line, char*& col) throw(ParseException) {
         vn = parseInt(col, col) - 1;
     }
   }
-  return Vertex(v, vt, vn);
+  return Vertex(v, vt, vn, -1);
 }
 
 

@@ -120,7 +120,8 @@ void loadPLY(ParserCallbacks* callbacks, const char* path) throw(ParseException)
           callbacks->texCoordParsed(Float4(plyVert.u, plyVert.v, 0.0, 1.0));
         if (hasNormals)
           callbacks->normalParsed(Float4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0));
-        // TODO: if (hasColors) { ... }
+        if (hasColors)
+          callbacks->colorParsed(Float4(plyVert.r, plyVert.g, plyVert.b, 1.0));
       }
     } else if (strcmp("face", sectionName) == 0) {
       ply_get_property(plySrc, sectionName, &faceProps[0]);
@@ -135,7 +136,8 @@ void loadPLY(ParserCallbacks* callbacks, const char* path) throw(ParseException)
           int v = plyFace.verts[j];
           int vt = hasTexCoords ? v : -1;
           int vn = hasNormals ? v : -1;
-          face->vertexes.push_back(Vertex(v, vt, vn));
+          int c = hasColors ? v : -1;
+          face->vertexes.push_back(Vertex(v, vt, vn, c));
         }
         callbacks->faceParsed(face);
       }

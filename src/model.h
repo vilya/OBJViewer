@@ -27,9 +27,9 @@ struct Material {
 
 
 struct Vertex {
-  int v, vt, vn;
+  int v, vt, vn, c;
 
-  Vertex(int _v, int _vt, int _vn);
+  Vertex(int _v, int _vt, int _vn, int _c);
 };
 
 
@@ -51,6 +51,7 @@ struct Model {
   std::vector<Float4> vt;
   std::vector<Float4> vp;
   std::vector<Float4> vn;
+  std::vector<Float4> colors;
   std::vector<Face*> faces;
   std::map<std::string, Material*> materials;
 
@@ -59,6 +60,7 @@ struct Model {
 
   Model();
   ~Model();
+
   void addV(const Float4& newV);
 };
 
