@@ -237,7 +237,7 @@ void Camera::printCameraInfo() const
 // RenderGroup METHODS
 //
 
-RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType) :
+RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defaultTextureID) :
   _material(iMaterial),
   _type(iType),
   _size(0),
@@ -246,7 +246,8 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType) :
   _coords(),
   _coordsID(0),
   _indexes(),
-  _indexesID(0)
+  _indexesID(0),
+  _defaultTextureID(defaultTextureID)
 {
 }
 
@@ -277,6 +278,9 @@ void RenderGroup::add(Model* model, Face* face)
       Float4& vt = model->vt[vti];
       _coords.push_back(vt.x);
       _coords.push_back(vt.y);
+    } else {
+      _coords.push_back(0.5);
+      _coords.push_back(0.5);
     }
 
     if (_hasNormalCoords) {
@@ -333,42 +337,31 @@ void RenderGroup::render()
 
   glEnableClientState(GL_VERTEX_ARRAY);
   GLuint stride = sizeof(float) *
-    (3 + (_hasTexCoords ? 2 : 0) + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
+    (5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
   glVertexPointer(3, GL_FLOAT, stride, 0);
 
+  RawImage* textures[4] = { NULL, NULL, NULL, NULL };
   if (_material != NULL) {
-    if (_hasTexCoords) {
-      RawImage* textures[] =
-          { _material->mapKa, _material->mapKd, _material->mapKs, _material->mapD };
-      for (int i = 0; i < 4; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glClientActiveTexture(GL_TEXTURE0 + i);
-        if (textures[i] != NULL) {
-          glEnable(GL_TEXTURE_2D);
-          glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-          glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
-          glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)(sizeof(float)*3));
-        } else {
-          glDisable(GL_TEXTURE_2D);
-          glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        }
-      }
-    } else {
-      glDisable(GL_TEXTURE_2D);
-      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    }
-  } else {
-    for (int i = 0; i < 4; ++i) {
-      glActiveTexture(GL_TEXTURE0 + i);
-      glClientActiveTexture(GL_TEXTURE0 + i);
-      glDisable(GL_TEXTURE_2D);
-      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    }
+    textures[0] = _material->mapKa;
+    textures[1] = _material->mapKd;
+    textures[2] = _material->mapKs;
+    textures[3] = _material->mapD;
+  }
+  for (int i = 0; i < 4; ++i) {
+    glActiveTexture(GL_TEXTURE0 + i);
+    glClientActiveTexture(GL_TEXTURE0 + i);
+    glEnable(GL_TEXTURE_2D);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    if (textures[i] != NULL)
+      glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
+    else
+      glBindTexture(GL_TEXTURE_2D, _defaultTextureID);
+    glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)(sizeof(float)*3));
   }
 
   if (_hasNormalCoords) {
     glEnableClientState(GL_NORMAL_ARRAY);
-    GLuint offset = sizeof(float) * (_hasTexCoords ? 5 : 3);
+    GLuint offset = sizeof(float) * 5;
     glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
   } else {
     glDisableClientState(GL_NORMAL_ARRAY);
@@ -376,7 +369,7 @@ void RenderGroup::render()
 
   if (_hasColors) {
     glEnableClientState(GL_COLOR_ARRAY);
-    GLuint offset = sizeof(float) * ((_hasTexCoords ? 5 : 3) + (_hasNormalCoords ? 4 : 0));
+    GLuint offset = sizeof(float) * (5 + (_hasNormalCoords ? 4 : 0));
     glColorPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
   } else if (_material != NULL) {
     glDisableClientState(GL_COLOR_ARRAY);
@@ -395,17 +388,13 @@ void RenderGroup::render()
     case kTriangleGroup:
       glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
       break;
-    case kQuadGroup:
-      glDrawElements(GL_QUADS, _size, GL_UNSIGNED_INT, 0);
-      break;
     case kPolygonGroup:
       glDrawElements(GL_POLYGON, _size, GL_UNSIGNED_INT, 0);
       break;
   }
 
   glDisableClientState(GL_VERTEX_ARRAY);
-  if (_material != NULL)
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   if (_hasNormalCoords)
     glDisableClientState(GL_NORMAL_ARRAY);
   if (_hasColors)
@@ -443,9 +432,24 @@ Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+  glEnable(GL_TEXTURE_2D);
+  glEnable(GL_TEXTURE0);
+  glEnable(GL_TEXTURE1);
+  glEnable(GL_TEXTURE2);
+  glEnable(GL_TEXTURE3);
+
   //float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
+
+  // Create a default texture (1x1 pixel, pure white).
+  _defaultTexture = new RawImage(GL_RGBA, 4, 4, 4);
+  unsigned char* pixels = _defaultTexture->getPixels();
+  for (size_t i = 0; i < 4 * 4 * 4; ++i)
+    pixels[i] = 255;
+//  memset(_defaultTexture->getPixels(), 255,
+//      _defaultTexture->getBytesPerPixel() * _defaultTexture->getWidth() * _defaultTexture->getHeight());
+  loadTexture(_defaultTexture, false);
 }
 
 
@@ -545,7 +549,7 @@ void Renderer::prepare()
 {
   prepareRenderGroups();
   prepareMaterials();
-  //prepareShaders();
+  prepareShaders();
 }
 
 
@@ -580,12 +584,12 @@ void Renderer::prepareRenderGroups()
 
     if (groupMap->find(material) == groupMap->end()) {
       (*groupMap)[material] = std::list<RenderGroup*>();
-      (*groupMap)[material].push_back(new RenderGroup(material, type));
+      (*groupMap)[material].push_back(new RenderGroup(material, type, _defaultTexture->getTexID()));
     }
 
     std::list<RenderGroup*>& groups = (*groupMap)[material];
-    if (!isTriangle || groups.front()->size() >= MAX_FACES_PER_VBO)
-      groups.push_front(new RenderGroup(material, type));
+    if ((!isTriangle && groups.front()->size() > 0) || groups.front()->size() >= MAX_FACES_PER_VBO)
+      groups.push_front(new RenderGroup(material, type, _defaultTexture->getTexID()));
     groups.front()->add(_model, face);
   }
 
@@ -763,6 +767,7 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   checkGLError("Texture parameters not set.");
+  /*
   if (isMatte) {
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   } else {
@@ -776,6 +781,7 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
     glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
     glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
   }
+  */
 
   unsigned int downsampleX = 1;
   unsigned int downsampleY = 1;

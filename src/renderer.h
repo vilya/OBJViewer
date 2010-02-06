@@ -78,7 +78,7 @@ private:
 
 class RenderGroup {
 public:
-  RenderGroup(Material* iMaterial, RenderGroupType iType);
+  RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defaultTextureID);
 
   Material* getMaterial() const;
 
@@ -106,6 +106,8 @@ private:
 
   std::vector<unsigned int> _indexes;
   GLuint _indexesID;
+
+  GLuint _defaultTextureID;
 };
 
 
@@ -173,6 +175,8 @@ private:
   RawImage* _currentMapD;
 
   FramesPerSecond _fps;
+
+  RawImage* _defaultTexture;
 };
 
 
