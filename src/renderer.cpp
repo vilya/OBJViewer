@@ -372,13 +372,11 @@ void RenderGroup::render()
     GLuint offset = sizeof(float) * (5 + (_hasNormalCoords ? 4 : 0));
     glColorPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
   } else if (_material != NULL) {
-    glDisableClientState(GL_COLOR_ARRAY);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, _material->Ka.data);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, _material->Kd.data);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, _material->Ks.data);
   } else {
-    glDisableClientState(GL_COLOR_ARRAY);
-    float defaultColor[] = { 0.4, 0.4, 0.4, 1.0 };
+    float defaultColor[] = { 1.0, 1.0, 1.0, 1.0 };
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, defaultColor);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
@@ -423,7 +421,8 @@ Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   _currentMapKd(NULL),
   _currentMapKs(NULL),
   _currentMapD(NULL),
-  _fps()
+  _fps(),
+  _defaultTexture(NULL)
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
@@ -432,11 +431,10 @@ Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  glEnable(GL_TEXTURE_2D);
-  glEnable(GL_TEXTURE0);
-  glEnable(GL_TEXTURE1);
-  glEnable(GL_TEXTURE2);
-  glEnable(GL_TEXTURE3);
+  for (unsigned int i = 0; i < 4; ++i) {
+    glActiveTexture(GL_TEXTURE0 + i);
+    glEnable(GL_TEXTURE_2D);
+  }
 
   //float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
@@ -447,9 +445,6 @@ Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   unsigned char* pixels = _defaultTexture->getPixels();
   for (size_t i = 0; i < 4 * 4 * 4; ++i)
     pixels[i] = 255;
-//  memset(_defaultTexture->getPixels(), 255,
-//      _defaultTexture->getBytesPerPixel() * _defaultTexture->getWidth() * _defaultTexture->getHeight());
-  loadTexture(_defaultTexture, false);
 }
 
 
@@ -547,6 +542,7 @@ void Renderer::render(int width, int height)
 
 void Renderer::prepare()
 {
+  loadTexture(_defaultTexture, false);
   prepareRenderGroups();
   prepareMaterials();
   prepareShaders();
@@ -647,6 +643,8 @@ void Renderer::prepareShaders()
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
+  GLint status;
+
   // Get the shader source code.
   const char* vertexShaderSrc = loadShader("vertex.sl");
   const char* fragmentShaderSrc = loadShader("fragment.sl");
@@ -660,7 +658,18 @@ void Renderer::prepareShaders()
 
   // Compile the shaders.
   glCompileShader(vertexShader);
+  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE) {
+    fprintf(stderr, "Vertex shader failed to compile:\n");
+    printShaderInfoLog(vertexShader);
+  }
+
   glCompileShader(fragmentShader);
+  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE) {
+    fprintf(stderr, "Fragment shader failed to compile.\n");
+    printShaderInfoLog(fragmentShader);
+  }
 
   // Create a program object and attach the shaders to it.
   GLuint programObject = glCreateProgram();
@@ -669,9 +678,20 @@ void Renderer::prepareShaders()
 
   // Link the program.
   glLinkProgram(programObject);
-  
+  glGetProgramiv(programObject, GL_LINK_STATUS, &status);
+  if (status != GL_TRUE) {
+    fprintf(stderr, "Shader program failed to link.\n");
+    printProgramInfoLog(programObject);
+  }
+
   // Enable the program.
   glUseProgram(programObject);
+
+  const char* names[] = { "mapKa", "mapKd", "mapKs", "mapD" };
+  for (int i = 0; i < 4; ++i) {
+    GLint location = glGetUniformLocation(programObject, names[i]);
+    glUniform1i(location, i);
+  }
 }
 
 
@@ -685,31 +705,6 @@ void Renderer::drawDefaultModel(RenderStyle style)
   default:
     glutSolidTeapot(1.0f);
     break;
-  }
-}
-
-
-void Renderer::setupMaterial(Material* material)
-{
-  setupTexture(GL_TEXTURE0, material->mapKa, _currentMapKa);
-  setupTexture(GL_TEXTURE1, material->mapKd, _currentMapKd);
-  setupTexture(GL_TEXTURE2, material->mapKs, _currentMapKs);
-  setupTexture(GL_TEXTURE3, material->mapD, _currentMapD);
-}
-
-
-void Renderer::setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture)
-{
-  if (texture != currentTexture) {
-    glActiveTexture(texUnit);
-    if (texture != NULL) {
-      glEnable(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, texture->getTexID());
-      checkGLError("Error setting up texture");
-    } else {
-      glDisable(GL_TEXTURE_2D);
-    }
-    currentTexture = texture;
   }
 }
 
@@ -1012,6 +1007,37 @@ GLint Renderer::glGet(GLenum what)
   GLint val;
   glGetIntegerv(what, &val);
   return val;
+}
+
+
+void Renderer::printShaderInfoLog(GLuint obj)
+{
+  int infologLength = 0;
+	int charsWritten  = 0;
+	char *infoLog;
+
+	glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+	if (infologLength > 0) {
+	  infoLog = new char[infologLength];
+	  glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
+		fprintf(stderr, "%s\n", infoLog);
+    delete[] infoLog;
+	}
+}
+
+void Renderer::printProgramInfoLog(GLuint obj)
+{
+  int infologLength = 0;
+  int charsWritten  = 0;
+  char *infoLog;
+
+	glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+  if (infologLength > 0) {
+    infoLog = new char[infologLength];
+    glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
+		fprintf(stderr, "%s\n", infoLog);
+    delete[] infoLog;
+  }
 }
 
 

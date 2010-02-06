@@ -23,7 +23,7 @@ enum LightType {
 };
 
 enum RenderGroupType {
-  kTriangleGroup, kQuadGroup, kPolygonGroup
+  kTriangleGroup, kPolygonGroup
 };
 
 
@@ -146,9 +146,6 @@ private:
 
   void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup*>& groups);
   void drawDefaultModel(RenderStyle style);
-  void setupMaterial(Material* material);
-  void setupTexture(GLenum texUnit, RawImage* texture, RawImage*& currentTexture);
-  void renderGroup(Model* model, RenderStyle style, const RenderGroup* group);
 
   void loadTextures(std::list<RenderGroup*>& groups);
   void loadTexture(RawImage* tex, bool isMatte);
@@ -158,6 +155,9 @@ private:
 
   const char* loadShader(const char* path);
   GLint glGet(GLenum what);
+
+  void printShaderInfoLog(GLuint obj);
+  void printProgramInfoLog(GLuint obj);
 
 private:
   RenderStyle _style;
