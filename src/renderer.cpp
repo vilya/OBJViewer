@@ -527,7 +527,7 @@ void Renderer::render(int width, int height)
     for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
       RenderGroup* group = *iter;
       group->render();
-   }
+    }
   } else {
     drawDefaultModel(_style);
   }
