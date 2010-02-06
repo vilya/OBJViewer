@@ -151,7 +151,7 @@ private:
   void loadTextures(std::list<RenderGroup*>& groups);
   void loadTexture(RawImage* tex, bool isMatte);
   void headlight(GLenum light, const Float4& color);
-  void drawFPSCounter(int width, int height, float fps);
+  void drawHUD(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
 
   const char* loadShader(const char* path);

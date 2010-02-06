@@ -531,7 +531,7 @@ void Renderer::render(int width, int height)
   } else {
     drawDefaultModel(_style);
   }
-  drawFPSCounter(width, height, _fps.fps());
+  drawHUD(width, height, _fps.fps());
 
   glutSwapBuffers();
   glMatrixMode(GL_PROJECTION);
@@ -842,7 +842,7 @@ void Renderer::headlight(GLenum light, const Float4& color)
 }
 
 
-void Renderer::drawFPSCounter(int width, int height, float fps)
+void Renderer::drawHUD(int width, int height, float fps)
 {
   glDisable(GL_LIGHTING);
 
@@ -856,11 +856,27 @@ void Renderer::drawFPSCounter(int width, int height, float fps)
   glLoadIdentity();
   glColor4f(1.0f, 0.0f, 0.0f, 1.0);
 
-  char buf[20];
+  char buf[128];
   memset(buf, 0, sizeof(buf));
-  sprintf(buf, "%5.2f fps", fps);
+  sprintf(buf, "%5.2f FPS", fps);
+  drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
 
+  memset(buf, 0, sizeof(buf));
+  sprintf(buf, "%lu faces", _model->faces.size());
+  drawBitmapString(10, 55, GLUT_BITMAP_8_BY_13, buf);
+
+  memset(buf, 0, sizeof(buf));
+  sprintf(buf, "%lu vertexes", _model->v.size());
+  drawBitmapString(10, 40, GLUT_BITMAP_8_BY_13, buf);
+
+  memset(buf, 0, sizeof(buf));
+  sprintf(buf, "%lu materials", _model->materials.size());
+  drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
+
+  memset(buf, 0, sizeof(buf));
+  sprintf(buf, "%lu render groups", _renderGroups.size());
   drawBitmapString(10, 10, GLUT_BITMAP_8_BY_13, buf);
+
   glPopMatrix();
 
   glMatrixMode(GL_PROJECTION);
