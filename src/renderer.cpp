@@ -422,7 +422,8 @@ Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   _currentMapKs(NULL),
   _currentMapD(NULL),
   _fps(),
-  _defaultTexture(NULL)
+  _defaultTexture(NULL),
+  _programObject(0)
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
@@ -672,24 +673,25 @@ void Renderer::prepareShaders()
   }
 
   // Create a program object and attach the shaders to it.
-  GLuint programObject = glCreateProgram();
-  glAttachShader(programObject, fragmentShader);
-  glAttachShader(programObject, vertexShader);
+  _programObject = glCreateProgram();
+  glAttachShader(_programObject, fragmentShader);
+  glAttachShader(_programObject, vertexShader);
 
   // Link the program.
-  glLinkProgram(programObject);
-  glGetProgramiv(programObject, GL_LINK_STATUS, &status);
+  glLinkProgram(_programObject);
+  glGetProgramiv(_programObject, GL_LINK_STATUS, &status);
   if (status != GL_TRUE) {
     fprintf(stderr, "Shader program failed to link.\n");
-    printProgramInfoLog(programObject);
+    printProgramInfoLog(_programObject);
   }
 
   // Enable the program.
-  glUseProgram(programObject);
+  glUseProgram(_programObject);
 
+  // Pass the textures to the program.
   const char* names[] = { "mapKa", "mapKd", "mapKs", "mapD" };
   for (int i = 0; i < 4; ++i) {
-    GLint location = glGetUniformLocation(programObject, names[i]);
+    GLint location = glGetUniformLocation(_programObject, names[i]);
     glUniform1i(location, i);
   }
 }
@@ -845,7 +847,9 @@ void Renderer::headlight(GLenum light, const Float4& color)
 
 void Renderer::drawHUD(int width, int height, float fps)
 {
+  glUseProgram(0);
   glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
 
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
@@ -855,7 +859,11 @@ void Renderer::drawHUD(int width, int height, float fps)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  glColor4f(1.0f, 0.0f, 0.0f, 1.0);
+
+  float defaultColor[] = { 0.0, 1.0, 1.0, 1.0 };
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, defaultColor);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
 
   char buf[128];
   memset(buf, 0, sizeof(buf));
@@ -884,6 +892,8 @@ void Renderer::drawHUD(int width, int height, float fps)
   glPopMatrix();
 
   glEnable(GL_LIGHTING);
+  glEnable(GL_DEPTH_TEST);
+  glUseProgram(_programObject);
 }
 
 

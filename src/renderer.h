@@ -177,6 +177,7 @@ private:
   FramesPerSecond _fps;
 
   RawImage* _defaultTexture;
+  GLuint _programObject;
 };
 
 
