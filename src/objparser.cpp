@@ -1,5 +1,7 @@
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
+#include <errno.h>
 #include <libgen.h>
 
 #include <imagelib.h>
@@ -169,7 +171,8 @@ int parseInt(char* line, char*& col) throw(ParseException) {
 
 std::string parseIdentifier(char* line, char*& col) throw(ParseException) {
   col = line;
-  while (*col == '_' || *col == '-' || *col == '(' || *col == ')' || isLetter(*col) || isDigit(*col))
+  while (*col== '.' || *col == '_' || *col == '-' || *col == '(' || *col == ')' ||
+      isLetter(*col) || isDigit(*col))
     ++col;
 
   if (col > line) {
@@ -192,11 +195,13 @@ std::string parseFilename(char* line, char*& col) throw(ParseException) {
         quote = *col;
       else if (quote == *col)
         quote = '\0';
-    } else if (isSpace(*col) && !quote) {
-      break;
     }
     ++col;
   }
+
+  // Trim off trailing whitespace.
+  while (col > line && isSpace(*(col - 1)))
+    --col;
 
   if (quote)
     throw ParseException("Unclosed filename string: missing closing %c character", quote);
@@ -322,7 +327,7 @@ void loadMaterialLibrary(ParserCallbacks* callbacks, const char* path,
 
   FILE *f = fopen(path, "r");
   if (f == NULL)
-    throw ParseException("Unable to open mtl file %s.\n", path);
+    throw ParseException("Unable to open mtl file %s: %s\n", path, strerror(errno));
   
   char line[_MAX_LINE_LEN];
   char *col;
