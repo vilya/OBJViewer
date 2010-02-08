@@ -9,17 +9,18 @@ void main()
   float NdotL, NdotHV, D;
 
   n = normalize(normal);
-  NdotL = -min(dot(n, lightDir), 0.0);
+  NdotL = max(dot(n, lightDir), 0.0);
 
   color = Ka * texture2D(mapKa, gl_TexCoord[0].st).rgb;
   if (NdotL > 0.0) {
     color += NdotL * Kd * texture2D(mapKd, gl_TexCoord[1].st).rgb;
 
     halfV = normalize(halfVector);
-    NdotHV = max(dot(normal, gl_LightSource[0].halfVector.xyz), 0.0);
+    NdotHV = max(dot(normal, halfV), 0.0);
 
-    Ks = gl_FrontMaterial.specular.rgb * gl_LightSource[0].specular.rgb * pow(NdotHV, gl_FrontMaterial.shininess);
-    color += Ks * texture2D(mapKs, gl_TexCoord[0].st).rgb;
+    Ks = gl_FrontMaterial.specular.rgb * gl_LightSource[0].specular.rgb *
+        pow(NdotHV, gl_FrontMaterial.shininess);
+    color += Ks * texture2D(mapKs, gl_TexCoord[2].st).rgb;
   }
 
   D = gl_FrontMaterial.diffuse.a * texture2D(mapD,  gl_TexCoord[3].st).a;

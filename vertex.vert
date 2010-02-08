@@ -8,7 +8,7 @@ void main()
   vec3 globalAmbient, materialAmbient;
   
   normal = normalize(gl_NormalMatrix * gl_Normal);
-  lightDir = normalize(vec3(gl_LightSource[0].position));
+  lightDir = vec3(0, 0, 1);
   halfVector = normalize(gl_LightSource[0].halfVector.xyz);
 
   globalAmbient = gl_LightModel.ambient.rgb * gl_FrontMaterial.ambient.rgb;
