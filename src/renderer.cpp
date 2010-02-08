@@ -647,8 +647,8 @@ void Renderer::prepareShaders()
   GLint status;
 
   // Get the shader source code.
-  const char* vertexShaderSrc = loadShader("vertex.sl");
-  const char* fragmentShaderSrc = loadShader("fragment.sl");
+  const char* vertexShaderSrc = loadShader("vertex.vert");
+  const char* fragmentShaderSrc = loadShader("fragment.frag");
   if (vertexShaderSrc == NULL || fragmentShaderSrc == NULL)
     return;
 
