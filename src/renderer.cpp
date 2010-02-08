@@ -382,6 +382,13 @@ void RenderGroup::render()
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
   }
 
+  if (_material != NULL) {
+    float shininess = fminf(_material->Ns * 128.0, 128.0);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+  } else {
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10.0);
+  }
+
   switch (_type) {
     case kTriangleGroup:
       glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
