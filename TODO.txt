@@ -1,6 +1,16 @@
 Bugs:
 - See the issues page on github.
 
+Scene format:
+- Create a scene format which allows an arbitrary scene graph.
+- To include the following:
+  - Lights
+  - Cameras
+  - Multiple models (i.e. can reference an external model from inside the scene
+    graph).
+  - Transforms.
+- Look into RenderMan or POVRay scene formats.
+
 Camera:
 - Have a fly mode, which has a position and direction
 
@@ -11,7 +21,7 @@ Lighting:
 
 Rendering improvements:
 - Multipass rendering & compositing via fragment shader.
-- Bump-mapping
+- Bump-mapping, on materials that have bump maps.
 - Shadows
 - Atmospheric effects (fog, etc.)
 - Support for very large textures
@@ -25,9 +35,6 @@ Rendering improvements:
   - points & wireframe just toggle on or off independently
   - can draw wireframe on top of solid/textured modes.
   - can draw points on top of wireframe and/or solid/textured modes.
-
-Speed:
-- Varies wildly. Find out why.
 
 UI:
 - Widgets to display (and edit?) model attributes.
@@ -52,6 +59,6 @@ Input files:
 - Add support for some additional model formats:
   - .fbx (via the FBX SDK)
   - .dae (Collada)
-  - Something where models include light and camera positions. RIB or PovRay formats, perhaps?
+  - Something where models include light and camera positions. RenderMan or PovRay formats, perhaps?
 - Factor this out into a separate module.
 
