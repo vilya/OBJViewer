@@ -122,7 +122,7 @@ public:
   Model* currentModel();
 
   void setStyle(RenderStyle style);
-  void toggleDrawLights();
+  void toggleDrawPolys();
   void toggleDrawPoints();
   void toggleDrawLines();
   void toggleHeadlightType();
@@ -150,7 +150,7 @@ private:
   void prepareShaders();
 
   void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup*>& groups);
-  void drawDefaultModel(RenderStyle style);
+  void drawDefaultModel();
 
   void loadTextures(std::list<RenderGroup*>& groups);
   void loadTexture(RawImage* tex, bool isMatte);
@@ -167,7 +167,7 @@ private:
 private:
   RenderStyle _style;
   LightType _headlightType;
-  bool _drawPoints, _drawLines;
+  bool _drawPolys, _drawPoints, _drawLines;
   Model* _model;
   Camera* _camera;
   size_t _maxTextureWidth, _maxTextureHeight;

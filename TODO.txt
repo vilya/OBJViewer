@@ -31,10 +31,6 @@ Rendering improvements:
   - Try to get the lucy.ply model (~28 million triangles) running at
     interactive speeds.
 - Get rid of the tearing.
-- Different render styles: points, wireframe, solid, textured
-  - points & wireframe just toggle on or off independently
-  - can draw wireframe on top of solid/textured modes.
-  - can draw points on top of wireframe and/or solid/textured modes.
 
 UI:
 - Widgets to display (and edit?) model attributes.

@@ -117,6 +117,10 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       else
         glutReshapeWindow(winWidth, winHeight);
       break;
+    case 'o':
+      _renderer->toggleDrawPolys();
+      glutPostRedisplay();
+      break;
     case 'p':
       _renderer->toggleDrawPoints();
       glutPostRedisplay();
@@ -158,6 +162,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case '?':
       printf("Esc   Exit the program.\n");
       printf("f     Toggle fullscreen mode on/off.\n");
+      printf("o     Toggle display of polyons.\n");
       printf("p     Toggle display of points.\n");
       printf("l     Toggle display of lines.\n");
       printf("0     Center view (in the middle of the object).\n");

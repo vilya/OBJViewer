@@ -22,7 +22,7 @@
 // CONSTANTS
 //
 
-const size_t MAX_FACES_PER_VBO = 200000;
+const size_t MAX_FACES_PER_VBO = 1000000;
 
 
 //
@@ -415,6 +415,7 @@ void RenderGroup::renderPoints()
 {
   glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
+  glDisable(GL_LIGHTING);
 
   glEnableClientState(GL_VERTEX_ARRAY);
   GLuint stride = sizeof(float) *
@@ -424,7 +425,7 @@ void RenderGroup::renderPoints()
   glColor3f(0.0, 1.0, 1.0);
   glEnable(GL_POLYGON_OFFSET_POINT);
   glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-  glPolygonOffset(0, 4);
+  glPolygonOffset(0, -5);
   glPointSize(5);
 
   switch (_type) {
@@ -440,6 +441,7 @@ void RenderGroup::renderPoints()
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDisable(GL_POLYGON_OFFSET_POINT);
   glDisableClientState(GL_VERTEX_ARRAY);
+  glEnable(GL_LIGHTING);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -449,6 +451,7 @@ void RenderGroup::renderLines()
 {
   glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
+  glDisable(GL_LIGHTING);
 
   glEnableClientState(GL_VERTEX_ARRAY);
   GLuint stride = sizeof(float) *
@@ -458,7 +461,7 @@ void RenderGroup::renderLines()
   glColor3f(0.8, 0.8, 0.8);
   glEnable(GL_POLYGON_OFFSET_LINE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  glPolygonOffset(0, 3);
+  glPolygonOffset(0, -3);
 
   switch (_type) {
     case kTriangleGroup:
@@ -473,6 +476,7 @@ void RenderGroup::renderLines()
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDisable(GL_POLYGON_OFFSET_LINE);
   glDisableClientState(GL_VERTEX_ARRAY);
+  glEnable(GL_LIGHTING);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -483,8 +487,8 @@ void RenderGroup::renderLines()
 //
 
 Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
-  _style(kPolygons),
   _headlightType(kDirectional),
+  _drawPolys(true),
   _drawPoints(false),
   _drawLines(false),
   _model(NULL),
@@ -546,9 +550,9 @@ Model* Renderer::currentModel()
 }
 
 
-void Renderer::setStyle(RenderStyle style)
+void Renderer::toggleDrawPolys()
 {
-  _style = style;
+  _drawPolys = !_drawPolys;
 }
 
 
@@ -605,9 +609,12 @@ void Renderer::render(int width, int height)
   _camera->transformTo();
   if (_model != NULL) {
     std::list<RenderGroup*>::iterator iter;
-    for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
-      RenderGroup* group = *iter;
-      group->render();
+
+    if (_drawPolys) {
+      for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+        RenderGroup* group = *iter;
+        group->render();
+      }
     }
 
     if (_drawPoints) {
@@ -632,7 +639,7 @@ void Renderer::render(int width, int height)
       glUseProgram(_programObject);
     }
   } else {
-    drawDefaultModel(_style);
+    drawDefaultModel();
   }
   drawHUD(width, height, _fps.fps());
 
@@ -828,16 +835,12 @@ void Renderer::prepareShaders()
 }
 
 
-void Renderer::drawDefaultModel(RenderStyle style)
+void Renderer::drawDefaultModel()
 {
-  switch (style) {
-  case kLines:
-    glutWireTeapot(1.0f);
-    break;
-  case kPolygons:
-  default:
+  if (_drawPolys) {
     glutSolidTeapot(1.0f);
-    break;
+  } else {
+    glutWireTeapot(1.0f);
   }
 }
 
