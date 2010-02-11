@@ -46,13 +46,25 @@ Float4 operator - (const Float4& a)
 
 Float4 operator + (const Float4& a, const Float4& b)
 {
-  return Float4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+  return Float4(a.x + b.x, a.y + b.y, a.z + b.z, 1.0);
 }
 
 
 Float4 operator - (const Float4& a, const Float4& b)
 {
-  return Float4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+  return Float4(a.x - b.x, a.y - b.y, a.z - b.z, 1.0);
+}
+
+
+Float4 operator * (const Float4& a, const Float4& b)
+{
+  return Float4(a.x * b.x, a.y * b.y, a.z * b.z, 1.0);
+}
+
+
+Float4 operator / (const Float4& a, const Float4& b)
+{
+  return Float4(a.x / b.x, a.y / b.y, a.z / b.z, 1.0);
 }
 
 
@@ -71,6 +83,30 @@ float lengthSqr(const Float4& a)
 float length(const Float4& a)
 {
   return sqrtf(lengthSqr(a));
+}
+
+
+Float4 normalize(const Float4& a)
+{
+  return a / length(a);
+}
+
+
+float sum(const Float4& a)
+{
+  return a.x + a.y + a.z;
+}
+
+
+float dot(const Float4& a, const Float4& b)
+{
+  return sum(a * b);
+}
+
+
+Float4 cross(const Float4& a, const Float4& b)
+{
+  return Float4(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x, 1.0);
 }
 
 

@@ -140,6 +140,7 @@ public:
 
 private:
   void prepare();
+  void prepareModel();
   void prepareRenderGroups();
   void prepareMaterials();
   void prepareShaders();

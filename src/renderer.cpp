@@ -551,9 +551,37 @@ void Renderer::render(int width, int height)
 void Renderer::prepare()
 {
   loadTexture(_defaultTexture, false);
+  prepareModel();
   prepareRenderGroups();
   prepareMaterials();
   prepareShaders();
+}
+
+
+void Renderer::prepareModel()
+{
+  if (_model->vn.size() == 0) {
+    fprintf(stderr, "Calculating normals...\n");
+    _model->vn.reserve(_model->v.size());
+    while (_model->vn.size() < _model->v.size())
+      _model->vn.push_back(Float4());
+
+    for (size_t i = 0; i < _model->faces.size(); ++i) {
+      Face& face = *_model->faces[i];
+      Float4& a = _model->v[face[0].v];
+      Float4& b = _model->v[face[1].v];
+      Float4& c = _model->v[face[2].v];
+      Float4 faceNormal = normalize(cross(c - a, b - a));
+
+      for (size_t j = 0; j < face.size(); ++j) {
+        _model->vn[face[j].v] = _model->vn[face[j].v] + faceNormal;
+        face[j].vn = face[j].v;
+      }
+    }
+
+    for (size_t i = 0; i < _model->vn.size(); ++i)
+      _model->vn[i] = normalize(_model->vn[i]);
+  }
 }
 
 

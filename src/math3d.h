@@ -20,9 +20,14 @@ struct Float4 {
 Float4 operator - (const Float4& a);
 Float4 operator + (const Float4& a, const Float4& b);
 Float4 operator - (const Float4& a, const Float4& b);
+Float4 operator * (const Float4& a, const Float4& b);
 Float4 operator / (const Float4& a, float k);
 float lengthSqr(const Float4& a);
 float length(const Float4& a);
+float sum(const Float4& a);
+float dot(const Float4& a, const Float4& b);
+Float4 normalize(const Float4& a);
+Float4 cross(const Float4& a, const Float4& b);
 
 
 struct Matrix4 {
