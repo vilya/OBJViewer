@@ -571,7 +571,7 @@ void Renderer::prepareModel()
       Float4& a = _model->v[face[0].v];
       Float4& b = _model->v[face[1].v];
       Float4& c = _model->v[face[2].v];
-      Float4 faceNormal = normalize(cross(c - a, b - a));
+      Float4 faceNormal = normalize(cross(b - a, c - a));
 
       for (size_t j = 0; j < face.size(); ++j) {
         _model->vn[face[j].v] = _model->vn[face[j].v] + faceNormal;
@@ -799,22 +799,7 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   checkGLError("Texture parameters not set.");
-  /*
-  if (isMatte) {
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  } else {
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-    glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-    glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
-    glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-    glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_TEXTURE);
-    glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-    glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
-    glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-    glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
-  }
-  */
-
+  
   unsigned int downsampleX = 1;
   unsigned int downsampleY = 1;
   if (_maxTextureWidth > 0) {
