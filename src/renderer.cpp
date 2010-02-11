@@ -886,26 +886,24 @@ void Renderer::drawHUD(int width, int height, float fps)
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
 
   char buf[128];
-  memset(buf, 0, sizeof(buf));
   sprintf(buf, "%5.2f FPS", fps);
   drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
 
-  memset(buf, 0, sizeof(buf));
-  sprintf(buf, "%lu faces", _model->faces.size());
-  drawBitmapString(10, 55, GLUT_BITMAP_8_BY_13, buf);
+  if (_model != NULL) {
+    sprintf(buf, "%lu faces", _model->faces.size());
+    drawBitmapString(10, 55, GLUT_BITMAP_8_BY_13, buf);
 
-  memset(buf, 0, sizeof(buf));
-  sprintf(buf, "%lu vertexes", _model->v.size());
-  drawBitmapString(10, 40, GLUT_BITMAP_8_BY_13, buf);
+    sprintf(buf, "%lu vertexes", _model->v.size());
+    drawBitmapString(10, 40, GLUT_BITMAP_8_BY_13, buf);
 
-  memset(buf, 0, sizeof(buf));
-  sprintf(buf, "%lu materials", _model->materials.size());
-  drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
+    sprintf(buf, "%lu materials", _model->materials.size());
+    drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
 
-  memset(buf, 0, sizeof(buf));
-  sprintf(buf, "%lu render groups", _renderGroups.size());
-  drawBitmapString(10, 10, GLUT_BITMAP_8_BY_13, buf);
-
+    sprintf(buf, "%lu render groups", _renderGroups.size());
+    drawBitmapString(10, 10, GLUT_BITMAP_8_BY_13, buf);
+  } else {
+    drawBitmapString(10, 55, GLUT_BITMAP_8_BY_13, "Anyone for tea?");
+  }
   glPopMatrix();
 
   glMatrixMode(GL_PROJECTION);
