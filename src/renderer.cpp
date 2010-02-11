@@ -885,24 +885,22 @@ void Renderer::drawHUD(int width, int height, float fps)
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
 
-  char buf[128];
-  sprintf(buf, "%5.2f FPS", fps);
-  drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
-
+  char buf[4096];
   if (_model != NULL) {
-    sprintf(buf, "%lu faces", _model->faces.size());
-    drawBitmapString(10, 55, GLUT_BITMAP_8_BY_13, buf);
-
-    sprintf(buf, "%lu vertexes", _model->v.size());
-    drawBitmapString(10, 40, GLUT_BITMAP_8_BY_13, buf);
-
-    sprintf(buf, "%lu materials", _model->materials.size());
-    drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
-
-    sprintf(buf, "%lu render groups", _renderGroups.size());
-    drawBitmapString(10, 10, GLUT_BITMAP_8_BY_13, buf);
+    sprintf(buf,
+        "%5.2f FPS\n"
+        "%lu faces\n"
+        "%lu vertices\n"
+        "%lu materials\n"
+        "%lu render groups",
+        fps, _model->faces.size(), _model->v.size(), _model->materials.size(), _renderGroups.size());
+    drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
   } else {
-    drawBitmapString(10, 55, GLUT_BITMAP_8_BY_13, "Anyone for tea?");
+    sprintf(buf,
+        "%5.2f FPS\n"
+        "Anyone for tea?",
+        fps);
+    drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
   }
   glPopMatrix();
 
@@ -920,8 +918,16 @@ void Renderer::drawBitmapString(float x, float y, void* font, char* str)
   float xPos = x;
   for (char* ch = str; *ch != '\0'; ++ch) {
     glRasterPos2f(xPos, y);
-    glutBitmapCharacter(font, *ch);
-    xPos += glutBitmapWidth(font, *ch);
+    switch (*ch) {
+      case '\n':
+        xPos = x;
+        y -= 15;
+        break;
+      default:
+        glutBitmapCharacter(font, *ch);
+        xPos += glutBitmapWidth(font, *ch);
+        break;
+    }
   }
 }
 
