@@ -411,6 +411,73 @@ void RenderGroup::render()
 }
 
 
+void RenderGroup::renderPoints()
+{
+  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  GLuint stride = sizeof(float) *
+    (5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
+  glVertexPointer(3, GL_FLOAT, stride, 0);
+  
+  glColor3f(0.0, 1.0, 1.0);
+  glEnable(GL_POLYGON_OFFSET_POINT);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+  glPolygonOffset(0, 4);
+  glPointSize(5);
+
+  switch (_type) {
+    case kTriangleGroup:
+      glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
+      break;
+    case kPolygonGroup:
+      glDrawElements(GL_POLYGON, _size, GL_UNSIGNED_INT, 0);
+      break;
+  }
+
+  glPolygonOffset(0, 0);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glDisable(GL_POLYGON_OFFSET_POINT);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void RenderGroup::renderLines()
+{
+  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  GLuint stride = sizeof(float) *
+    (5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
+  glVertexPointer(3, GL_FLOAT, stride, 0);
+  
+  glColor3f(0.8, 0.8, 0.8);
+  glEnable(GL_POLYGON_OFFSET_LINE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  glPolygonOffset(0, 3);
+
+  switch (_type) {
+    case kTriangleGroup:
+      glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
+      break;
+    case kPolygonGroup:
+      glDrawElements(GL_POLYGON, _size, GL_UNSIGNED_INT, 0);
+      break;
+  }
+
+  glPolygonOffset(0, 0);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glDisable(GL_POLYGON_OFFSET_LINE);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 //
 // Renderer METHODS
 //
@@ -418,7 +485,8 @@ void RenderGroup::render()
 Renderer::Renderer(size_t maxTextureWidth, size_t maxTextureHeight) :
   _style(kPolygons),
   _headlightType(kDirectional),
-  _drawLights(false),
+  _drawPoints(false),
+  _drawLines(false),
   _model(NULL),
   _camera(new Camera()),
   _maxTextureWidth(maxTextureWidth),
@@ -484,9 +552,15 @@ void Renderer::setStyle(RenderStyle style)
 }
 
 
-void Renderer::toggleDrawLights()
+void Renderer::toggleDrawPoints()
 {
-  _drawLights = !_drawLights;
+  _drawPoints = !_drawPoints;
+}
+
+
+void Renderer::toggleDrawLines()
+{
+  _drawLines = !_drawLines;
 }
 
 
@@ -534,6 +608,28 @@ void Renderer::render(int width, int height)
     for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
       RenderGroup* group = *iter;
       group->render();
+    }
+
+    if (_drawPoints) {
+      glUseProgram(0);
+      glDisable(GL_LIGHTING);
+      for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+        RenderGroup* group = *iter;
+        group->renderPoints();
+      }
+      glEnable(GL_LIGHTING);
+      glUseProgram(_programObject);
+    }
+
+    if (_drawLines) {
+      glUseProgram(0);
+      glDisable(GL_LIGHTING);
+      for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
+        RenderGroup* group = *iter;
+        group->renderLines();
+      }
+      glEnable(GL_LIGHTING);
+      glUseProgram(_programObject);
     }
   } else {
     drawDefaultModel(_style);
@@ -849,18 +945,6 @@ void Renderer::headlight(GLenum light, const Float4& color)
   glLightfv(light, GL_POSITION, pos.data);
   glLightfv(light, GL_DIFFUSE, color.data);
 
-  if (_drawLights) {
-    glBegin(GL_LINES);
-    glVertex3f(pos.x - 10.5, pos.y, pos.z);
-    glVertex3f(pos.x + 10.5, pos.y, pos.z);
-
-    glVertex3f(pos.x, pos.y - 10.5, pos.z);
-    glVertex3f(pos.x, pos.y + 10.5, pos.z);
-  
-    glVertex3f(pos.x, pos.y, pos.z - 10.5);
-    glVertex3f(pos.x, pos.y, pos.z + 10.5);
-    glEnd();
-  }
   glPopMatrix();
 }
 

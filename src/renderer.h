@@ -87,6 +87,8 @@ public:
 
   virtual void prepare();
   virtual void render();
+  virtual void renderPoints();
+  virtual void renderLines();
 
 private:
   Material* _material;
@@ -121,6 +123,8 @@ public:
 
   void setStyle(RenderStyle style);
   void toggleDrawLights();
+  void toggleDrawPoints();
+  void toggleDrawLines();
   void toggleHeadlightType();
   void printGLInfo();
 
@@ -163,7 +167,7 @@ private:
 private:
   RenderStyle _style;
   LightType _headlightType;
-  bool _drawLights;
+  bool _drawPoints, _drawLines;
   Model* _model;
   Camera* _camera;
   size_t _maxTextureWidth, _maxTextureHeight;
@@ -179,6 +183,7 @@ private:
 
   RawImage* _defaultTexture;
   GLuint _programObject;
+  
 };
 
 

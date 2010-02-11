@@ -110,9 +110,6 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 27: // 27 is the ESC key.
       exit(0);
       break;
-    case 'r':
-      redraw();
-      break;
     case 'f':
       fullscreen = !fullscreen;
       if (fullscreen)
@@ -121,15 +118,11 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
         glutReshapeWindow(winWidth, winHeight);
       break;
     case 'p':
-      _renderer->setStyle(kPolygons);
+      _renderer->toggleDrawPoints();
       glutPostRedisplay();
       break;
     case 'l':
-      _renderer->setStyle(kLines);
-      glutPostRedisplay();
-      break;
-    case 'i':
-      _renderer->toggleDrawLights();
+      _renderer->toggleDrawLines();
       glutPostRedisplay();
       break;
     case '0': // Center view.
@@ -164,11 +157,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       break;
     case '?':
       printf("Esc   Exit the program.\n");
-      printf("r     Force a redraw.\n");
       printf("f     Toggle fullscreen mode on/off.\n");
-      printf("p     Display model as polygons.\n");
-      printf("l     Display model as lines.\n");
-      printf("i     Draw markers to show the positions of lights.\n");
+      printf("p     Toggle display of points.\n");
+      printf("l     Toggle display of lines.\n");
       printf("0     Center view (in the middle of the object).\n");
       printf("1     Front view.\n");
       printf("2     Back view.\n");
