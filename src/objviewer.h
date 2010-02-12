@@ -30,12 +30,14 @@ private:
   //! Process the command line arguments.
   void processArgs(int argc, char **argv);
 
+  Renderer* currentRenderer();
+
 private:
   int winX, winY, winWidth, winHeight, currWidth, currHeight;
   bool fullscreen;
   int mouseX, mouseY, mouseButton, mouseModifiers;
-  Renderer* _renderer;
-  const char* _modelPath;
+  std::vector<Renderer*> _renderers;
+  size_t _currentRenderer;
   size_t _maxTextureWidth, _maxTextureHeight;
 };
 

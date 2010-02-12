@@ -44,10 +44,14 @@ void doMouseDragged(int x, int y);
 OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   winX(100), winY(100), winWidth(800), winHeight(600),
   fullscreen(false),
-  mouseX(0), mouseY(0), mouseButton(0), mouseModifiers(0),
-  _renderer(NULL),
-  _modelPath(NULL),
-  _maxTextureWidth(0), _maxTextureHeight(0)
+  mouseX(0),
+  mouseY(0),
+  mouseButton(0),
+  mouseModifiers(0),
+  _renderers(),
+  _currentRenderer(0),
+  _maxTextureWidth(0),
+  _maxTextureHeight(0)
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -56,14 +60,6 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutCreateWindow("Vil's OBJ Viewer");
 
   processArgs(argc, argv);
-  _renderer = new Renderer(_maxTextureWidth, _maxTextureHeight);
-  try {
-    loadModel(_renderer, _modelPath);
-    fprintf(stderr, "Finished loading model %s\n", _modelPath);
-  } catch (ParseException& e) {
-    fprintf(stderr, "%s\n", e.what());
-    fprintf(stderr, "Unable to load model. Continuing with default model.\n");
-  }
 
   glutDisplayFunc(doRender);
   glutReshapeFunc(doResize);
@@ -76,13 +72,14 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
 
 OBJViewerApp::~OBJViewerApp()
 {
-  delete _renderer;
+  for (size_t i = 0; i < _renderers.size(); ++i)
+    delete _renderers[i];
 }
 
 
 void OBJViewerApp::redraw()
 {
-  _renderer->render(currWidth, currHeight);
+  currentRenderer()->render(currWidth, currHeight);
 }
 
 
@@ -101,9 +98,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 {
   Float4 low(-1, -1, -1, 1);
   Float4 high(1, 1, 1, 1);
-  if (_renderer != NULL && _renderer->currentModel() != NULL) {
-    low = _renderer->currentModel()->low;
-    high = _renderer->currentModel()->high;
+  if (currentRenderer() != NULL && currentRenderer()->currentModel() != NULL) {
+    low = currentRenderer()->currentModel()->low;
+    high = currentRenderer()->currentModel()->high;
   }
 
   switch (key) {
@@ -118,46 +115,52 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
         glutReshapeWindow(winWidth, winHeight);
       break;
     case 'o':
-      _renderer->toggleDrawPolys();
+      currentRenderer()->toggleDrawPolys();
       glutPostRedisplay();
       break;
     case 'p':
-      _renderer->toggleDrawPoints();
+      currentRenderer()->toggleDrawPoints();
       glutPostRedisplay();
       break;
     case 'l':
-      _renderer->toggleDrawLines();
+      currentRenderer()->toggleDrawLines();
       glutPostRedisplay();
       break;
     case '0': // Center view.
-      _renderer->currentCamera()->centerView(low, high);
+      currentRenderer()->currentCamera()->centerView(low, high);
       break;
     case '1': // Front view.
-      _renderer->currentCamera()->frontView(low, high);
+      currentRenderer()->currentCamera()->frontView(low, high);
       break;
     case '2': // Back view.
-      _renderer->currentCamera()->backView(low, high);
+      currentRenderer()->currentCamera()->backView(low, high);
       break;
     case '3': // Left view.
-      _renderer->currentCamera()->leftView(low, high);
+      currentRenderer()->currentCamera()->leftView(low, high);
       break;
     case '4': // Right view.
-      _renderer->currentCamera()->rightView(low, high);
+      currentRenderer()->currentCamera()->rightView(low, high);
       break;
     case '5': // Top view.
-      _renderer->currentCamera()->topView(low, high);
+      currentRenderer()->currentCamera()->topView(low, high);
       break;
     case '6': // Bottom view.
-      _renderer->currentCamera()->bottomView(low, high);
+      currentRenderer()->currentCamera()->bottomView(low, high);
       break;
     case 'c':
-      _renderer->currentCamera()->printCameraInfo();
+      currentRenderer()->currentCamera()->printCameraInfo();
       break;
     case 'g':
-      _renderer->printGLInfo();
+      currentRenderer()->printGLInfo();
       break;
     case 'h':
-      _renderer->toggleHeadlightType();
+      currentRenderer()->toggleHeadlightType();
+      break;
+    case ',': case '<':
+      _currentRenderer = (_currentRenderer > 0) ? _currentRenderer - 1 : _renderers.size() - 1;
+      break;
+    case '.': case '>':
+      _currentRenderer = (_currentRenderer + 1) % _renderers.size();
       break;
     case '?':
       printf("Esc   Exit the program.\n");
@@ -178,6 +181,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       printf("\n");
       break;
     default:
+      fprintf(stderr, "key %d pressed\n", key);
       break;
   }
 }
@@ -189,7 +193,7 @@ void OBJViewerApp::mousePressed(int button, int state, int x, int y) {
     mouseY = y;
     mouseButton = button;
 
-    Camera* camera = _renderer->currentCamera();
+    Camera* camera = currentRenderer()->currentCamera();
     // This bit doesn't work on OS X - no mouse wheel events are received (at
     // least by this method).
     if (mouseButton == 3) // Mouse wheel up
@@ -204,7 +208,7 @@ void OBJViewerApp::mouseDragged(int x, int y) {
   int dx = x - mouseX;
   int dy = y - mouseY;
 
-  Camera* camera = _renderer->currentCamera();
+  Camera* camera = currentRenderer()->currentCamera();
 
   switch (mouseButton) {
   case GLUT_LEFT_BUTTON:
@@ -237,7 +241,7 @@ void OBJViewerApp::run()
 void OBJViewerApp::usage(char *progname)
 {
     fprintf(stderr,
-"Usage: %s [options] <objfile>\n"
+"Usage: %s [options] <objfile> [ <objfile> ... ]\n"
 "\n"
 "Where [options] can be any combination of:\n"
 "  -t,--max-texture-size WxH    Specify the maximum texture size. Any textures\n"
@@ -297,8 +301,29 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   }
   argc -= optind;
   argv += optind;
-  if (argc > 0)
-    _modelPath = argv[0];
+
+  for (int arg = 0; arg < argc; ++arg) {
+    Renderer* renderer = new Renderer(_maxTextureWidth, _maxTextureHeight);
+    const char* modelPath = argv[arg];
+    try {
+      fprintf(stderr, "Loading model %s\n", modelPath);
+      loadModel(renderer, modelPath);
+      _renderers.push_back(renderer);
+      fprintf(stderr, "Finished loading model %s\n", modelPath);
+    } catch (ParseException& e) {
+      fprintf(stderr, "%s\n", e.what());
+      fprintf(stderr, "Unable to load model. Continuing with default model.\n");
+    }
+  }
+
+  if (_renderers.size() == 0)
+    _renderers.push_back(new Renderer(_maxTextureWidth, _maxTextureHeight));
+}
+
+
+Renderer* OBJViewerApp::currentRenderer()
+{
+  return _renderers[_currentRenderer];
 }
 
 
