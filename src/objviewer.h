@@ -39,6 +39,8 @@ private:
   std::vector<Renderer*> _renderers;
   size_t _currentRenderer;
   size_t _maxTextureWidth, _maxTextureHeight;
+
+  Camera* _camera;
 };
 
 

@@ -51,7 +51,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   _renderers(),
   _currentRenderer(0),
   _maxTextureWidth(0),
-  _maxTextureHeight(0)
+  _maxTextureHeight(0),
+  _camera(new Camera())
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -303,7 +304,7 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   argv += optind;
 
   for (int arg = 0; arg < argc; ++arg) {
-    Renderer* renderer = new Renderer(_maxTextureWidth, _maxTextureHeight);
+    Renderer* renderer = new Renderer(_camera, _maxTextureWidth, _maxTextureHeight);
     const char* modelPath = argv[arg];
     try {
       fprintf(stderr, "Loading model %s\n", modelPath);
@@ -317,7 +318,7 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   }
 
   if (_renderers.size() == 0)
-    _renderers.push_back(new Renderer(_maxTextureWidth, _maxTextureHeight));
+    _renderers.push_back(new Renderer(_camera, _maxTextureWidth, _maxTextureHeight));
 }
 
 
