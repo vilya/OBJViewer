@@ -70,8 +70,10 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defa
   _size(0),
   _hasTexCoords(false),
   _hasNormalCoords(false),
+  _hasColors(false),
+  _currentTime(-1e20),
   _coords(),
-  _coordsID(0),
+  _bufferID(0),
   _indexes(),
   _indexesID(0),
   _defaultTextureID(defaultTextureID)
@@ -95,36 +97,24 @@ void RenderGroup::add(Model* model, Face* face)
 
   for (size_t i = 0; i < face->size(); ++i) {
     int vi = (*face)[i].v;
-    Float4& v = model->v[vi];
-    _coords.push_back(v.x);
-    _coords.push_back(v.y);
-    _coords.push_back(v.z);
+    _coords.push_back(model->v[vi]);
 
     if (_hasTexCoords) {
       int vti = (*face)[i].vt;
-      Float4& vt = model->vt[vti];
-      _coords.push_back(vt.x);
-      _coords.push_back(vt.y);
+      _texCoords.push_back(model->vt[vti]);
     } else {
-      _coords.push_back(0.5);
-      _coords.push_back(0.5);
+      _texCoords.push_back(Curve());
+      _texCoords.back().addKeyframe(Float4(0.5, 0.5, 0.0, 1.0));
     }
 
     if (_hasNormalCoords) {
       int vni = (*face)[i].vn;
-      Float4& vn = model->vn[vni];
-      _coords.push_back(vn.x);
-      _coords.push_back(vn.y);
-      _coords.push_back(vn.z);
-      _coords.push_back(vn.w);
+      _normals.push_back(model->vn[vni]);
     }
 
     if (_hasColors) {
       int ci = (*face)[i].c;
-      Float4& c = model->colors[ci];
-      _coords.push_back(c.r);
-      _coords.push_back(c.g);
-      _coords.push_back(c.b);
+      _colors.push_back(model->colors[ci]);
     }
 
     _indexes.push_back(_indexes.size());
@@ -139,16 +129,23 @@ size_t RenderGroup::size() const
 }
 
 
+size_t RenderGroup::floatsPerVertex() const
+{
+  return 3 + (_hasTexCoords ? 2 : 0) +
+      (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0);
+}
+
+
 void RenderGroup::prepare()
 {
-  // Get a VBO ID for the coords, upload the coords to the VBO, then delete the local copy.
-  glGenBuffers(1, &_coordsID);
-  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
-  glBufferData(GL_ARRAY_BUFFER,
-      sizeof(float) * _coords.size(), &_coords[0], GL_STATIC_DRAW);
-  _coords.clear();
+  size_t bufferSize = _coords.size() * sizeof(float) * floatsPerVertex();
 
-  // Do the same for the indexes.
+  // Get a buffer ID for the coords & allocate space for them. 
+  glGenBuffers(1, &_bufferID);
+  glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
+  glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_STREAM_DRAW);
+
+  // Get a buffer ID for the indexes, upload them and clear out the local copy.
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
@@ -157,15 +154,21 @@ void RenderGroup::prepare()
 }
 
 
-void RenderGroup::render()
+void RenderGroup::render(float time)
 {
-  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
 
   glEnableClientState(GL_VERTEX_ARRAY);
-  GLuint stride = sizeof(float) *
-    (5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
-  glVertexPointer(3, GL_FLOAT, stride, 0);
+
+  setTime(time);
+
+  // Now start the rendering.
+  GLuint stride = sizeof(float) * floatsPerVertex();
+  GLuint offset = 0;
+
+  glVertexPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
+  offset += 3 * sizeof(float);
 
   RawImage* textures[4] = { NULL, NULL, NULL, NULL };
   if (_material != NULL) {
@@ -183,26 +186,29 @@ void RenderGroup::render()
       glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
     else
       glBindTexture(GL_TEXTURE_2D, _defaultTextureID);
-    glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)(sizeof(float)*3));
+    glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)offset);
   }
+  offset += 2 * sizeof(float);
 
   if (_hasNormalCoords) {
     glEnableClientState(GL_NORMAL_ARRAY);
-    GLuint offset = sizeof(float) * 5;
     glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
+    offset += 4 * sizeof(float);
   } else {
     glDisableClientState(GL_NORMAL_ARRAY);
   }
 
   if (_hasColors) {
     glEnableClientState(GL_COLOR_ARRAY);
-    GLuint offset = sizeof(float) * (5 + (_hasNormalCoords ? 4 : 0));
     glColorPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
+    offset += 3 * sizeof(float);
   } else if (_material != NULL) {
+    glDisableClientState(GL_COLOR_ARRAY);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, _material->Ka.data);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, _material->Kd.data);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, _material->Ks.data);
   } else {
+    glDisableClientState(GL_COLOR_ARRAY);
     float defaultColor[] = { 1.0, 1.0, 1.0, 1.0 };
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, defaultColor);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
@@ -226,7 +232,12 @@ void RenderGroup::render()
   }
 
   glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  for (int i = 0; i < 4; ++i) {
+    glActiveTexture(GL_TEXTURE0 + i);
+    glClientActiveTexture(GL_TEXTURE0 + i);
+    glDisable(GL_TEXTURE_2D);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  }
   if (_hasNormalCoords)
     glDisableClientState(GL_NORMAL_ARRAY);
   if (_hasColors)
@@ -238,15 +249,16 @@ void RenderGroup::render()
 }
 
 
-void RenderGroup::renderPoints()
+void RenderGroup::renderPoints(float time)
 {
-  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glDisable(GL_LIGHTING);
-
   glEnableClientState(GL_VERTEX_ARRAY);
-  GLuint stride = sizeof(float) *
-    (5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
+
+  setTime(time);
+
+  GLuint stride = sizeof(float) * floatsPerVertex();
   glVertexPointer(3, GL_FLOAT, stride, 0);
   
   glColor3f(0.0, 1.0, 1.0);
@@ -274,15 +286,16 @@ void RenderGroup::renderPoints()
 }
 
 
-void RenderGroup::renderLines()
+void RenderGroup::renderLines(float time)
 {
-  glBindBuffer(GL_ARRAY_BUFFER, _coordsID);
+  glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glDisable(GL_LIGHTING);
-
   glEnableClientState(GL_VERTEX_ARRAY);
-  GLuint stride = sizeof(float) *
-    (5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0));
+
+  setTime(time);
+
+  GLuint stride = sizeof(float) * floatsPerVertex();
   glVertexPointer(3, GL_FLOAT, stride, 0);
   
   glColor3f(0.8, 0.8, 0.8);
@@ -309,16 +322,70 @@ void RenderGroup::renderLines()
 }
 
 
+void RenderGroup::setTime(float time)
+{
+  // Note: This function assumes that the correct vertex buffer has already been bound.
+
+  if (time == _currentTime)
+    return;
+
+  _currentTime = time;
+
+  // Calculate the current animation frame.
+  size_t vertexSize = floatsPerVertex();
+  float* vertexBuffer = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+  float* vertexBufferPos = vertexBuffer;
+  for (size_t i = 0; i < _coords.size(); ++i) {
+    Float4 coord = _coords[i].valueAt(time);
+    vertexBufferPos[0] = coord.x;
+    vertexBufferPos[1] = coord.y;
+    vertexBufferPos[2] = coord.z;
+    vertexBufferPos += vertexSize;
+  }
+  vertexBuffer += 3;
+  vertexBufferPos = vertexBuffer;
+  for (size_t i = 0; i < _texCoords.size(); ++i) {
+    Float4 texCoord = _texCoords[i].valueAt(time);
+    vertexBufferPos[0] = texCoord.x;
+    vertexBufferPos[1] = texCoord.y;
+    vertexBufferPos += vertexSize;
+  }
+  vertexBuffer += 2;
+  if (_hasNormalCoords) {
+    vertexBufferPos = vertexBuffer;
+    for (size_t i = 0; i < _normals.size(); ++i) {
+      Float4 normal = _normals[i].valueAt(time);
+      vertexBufferPos[0] = normal.x;
+      vertexBufferPos[1] = normal.y;
+      vertexBufferPos[2] = normal.z;
+      vertexBufferPos[3] = normal.w;
+    }
+    vertexBuffer += 4;
+  }
+  if (_hasColors) {
+    vertexBufferPos = vertexBuffer;
+    for (size_t i = 0; i < _normals.size(); ++i) {
+      Float4 normal = _normals[i].valueAt(time);
+      vertexBufferPos[0] = normal.r;
+      vertexBufferPos[1] = normal.g;
+      vertexBufferPos[2] = normal.b;
+    }
+    vertexBuffer += 3;
+  }
+  glUnmapBuffer(GL_ARRAY_BUFFER);
+}
+
+
 //
 // Renderer METHODS
 //
 
-Renderer::Renderer(Camera* camera, size_t maxTextureWidth, size_t maxTextureHeight) :
+Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t maxTextureHeight) :
   _headlightType(kDirectional),
   _drawPolys(true),
   _drawPoints(false),
   _drawLines(false),
-  _model(NULL),
+  _model(model),
   _camera(camera),
   _maxTextureWidth(maxTextureWidth),
   _maxTextureHeight(maxTextureHeight),
@@ -329,7 +396,8 @@ Renderer::Renderer(Camera* camera, size_t maxTextureWidth, size_t maxTextureHeig
   _currentMapD(NULL),
   _fps(),
   _defaultTexture(NULL),
-  _programObject(0)
+  _programObject(0),
+  _currentTime(0)
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
@@ -412,6 +480,20 @@ void Renderer::printGLInfo()
 }
 
 
+void Renderer::prepare()
+{
+  loadTexture(_defaultTexture, false);
+
+  prepareModel();
+  prepareRenderGroups();
+  prepareMaterials();
+  prepareShaders();
+
+  loadTextures(_renderGroups);
+  _camera->frontView(_model->low, _model->high);
+}
+
+
 void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -439,7 +521,7 @@ void Renderer::render(int width, int height)
     if (_drawPolys) {
       for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
         RenderGroup* group = *iter;
-        group->render();
+        group->render(_currentTime);
       }
     }
 
@@ -448,7 +530,7 @@ void Renderer::render(int width, int height)
       glDisable(GL_LIGHTING);
       for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
         RenderGroup* group = *iter;
-        group->renderPoints();
+        group->renderPoints(_currentTime);
       }
       glEnable(GL_LIGHTING);
       glUseProgram(_programObject);
@@ -459,7 +541,7 @@ void Renderer::render(int width, int height)
       glDisable(GL_LIGHTING);
       for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
         RenderGroup* group = *iter;
-        group->renderLines();
+        group->renderLines(_currentTime);
       }
       glEnable(GL_LIGHTING);
       glUseProgram(_programObject);
@@ -474,6 +556,25 @@ void Renderer::render(int width, int height)
   glPopMatrix();
 
   _fps.increment();
+}
+
+
+void Renderer::setTime(float time)
+{
+  time = fmodf(time, _model->numKeyframes());
+  _currentTime = time;
+}
+
+
+void Renderer::nextFrame()
+{
+  setTime(_currentTime + 1.0);
+}
+
+
+void Renderer::previousFrame()
+{
+  setTime(_currentTime - 1.0);
 }
 
 
@@ -528,39 +629,40 @@ void Renderer::transformToCamera()
 }
 
 
-void Renderer::prepare()
-{
-  loadTexture(_defaultTexture, false);
-  prepareModel();
-  prepareRenderGroups();
-  prepareMaterials();
-  prepareShaders();
-}
-
-
 void Renderer::prepareModel()
 {
   if (_model->vn.size() == 0) {
     fprintf(stderr, "Calculating normals...\n");
-    _model->vn.reserve(_model->v.size());
-    while (_model->vn.size() < _model->v.size())
-      _model->vn.push_back(Float4());
+
+    // Setup a normal of 0,0,0,0 for all keyframes.
+    while (_model->vn.size() < _model->v.size()) {
+      Curve curve;
+      while (curve.numKeyframes() < _model->numKeyframes())
+        curve.addKeyframe(Float4(0, 0, 0, 0));
+      _model->vn.push_back(curve);
+    }
 
     for (size_t i = 0; i < _model->faces.size(); ++i) {
       Face& face = *_model->faces[i];
-      Float4& a = _model->v[face[0].v];
-      Float4& b = _model->v[face[1].v];
-      Float4& c = _model->v[face[2].v];
-      Float4 faceNormal = normalize(cross(b - a, c - a));
+      for (size_t frame = 0; frame < _model->numKeyframes(); ++frame) {
+        const Float4& a = _model->v[face[0].v][frame];
+        const Float4& b = _model->v[face[1].v][frame];
+        const Float4& c = _model->v[face[2].v][frame];
+        Float4 faceNormal = normalize(cross(b - a, c - a));
 
-      for (size_t j = 0; j < face.size(); ++j) {
-        _model->vn[face[j].v] = _model->vn[face[j].v] + faceNormal;
-        face[j].vn = face[j].v;
+        for (size_t j = 0; j < face.size(); ++j) {
+          Curve& curve = _model->vn[face[j].v];
+          curve[frame] = curve[frame] + faceNormal;
+        }
       }
+      for (size_t j = 0; j < face.size(); ++j)
+        face[j].vn = face[j].v;
     }
+  }
 
-    for (size_t i = 0; i < _model->vn.size(); ++i)
-      _model->vn[i] = normalize(_model->vn[i]);
+  for (size_t i = 0; i < _model->vn.size(); ++i) {
+    for (size_t frame = 0; frame < _model->numKeyframes(); ++frame)
+      _model->vn[i][frame] = normalize(_model->vn[i][frame]);
   }
 }
 
@@ -913,90 +1015,6 @@ const char* Renderer::loadShader(const char* path)
 
   fclose(shaderFile);
   return text;
-}
-
-void Renderer::beginModel(const char* path)
-{
-  // Clear out any old model data.
-  delete _model;
-  for (std::list<RenderGroup*>::iterator i = _renderGroups.begin(); i != _renderGroups.end(); ++i)
-    delete *i;
-  _renderGroups.clear();
-  _transparentGroupsStart = (size_t)-1;
-  _currentMapKa = NULL;
-  _currentMapKd = NULL;
-  _currentMapKs = NULL;
-  _currentMapD = NULL;
-
-  // Start a new model.
-  _model = new Model();
-}
-
-
-void Renderer::endModel()
-{
-  prepare();
-  loadTextures(_renderGroups);
-  _camera->frontView(_model->low, _model->high);
-  checkGLError("Error during preparation.");
-}
-
-
-void Renderer::coordParsed(const Float4& coord)
-{
-  _model->addV(coord);
-}
-
-
-void Renderer::texCoordParsed(const Float4& coord)
-{
-  _model->vt.push_back(coord);
-}
-
-
-void Renderer::normalParsed(const Float4& normal)
-{
-  _model->vn.push_back(normal);
-}
-
-
-void Renderer::colorParsed(const Float4& color)
-{
-  _model->colors.push_back(color);
-}
-
-
-void Renderer::faceParsed(Face* face)
-{
-  if (face->size() == 4) {
-    Face* newFace = new Face(face->material);
-    newFace->vertexes.push_back(face->vertexes[0]);
-    newFace->vertexes.push_back(face->vertexes[1]);
-    newFace->vertexes.push_back(face->vertexes[2]);
-    _model->faces.push_back(newFace);
-
-    newFace = new Face(face->material);
-    newFace->vertexes.push_back(face->vertexes[0]);
-    newFace->vertexes.push_back(face->vertexes[2]);
-    newFace->vertexes.push_back(face->vertexes[3]);
-    _model->faces.push_back(newFace);
-
-    delete face;
-  } else {
-    _model->faces.push_back(face);
-  }
-}
-
-
-void Renderer::materialParsed(const std::string& name, Material* material)
-{
-  _model->materials[name] = material;
-}
-
-
-void Renderer::textureParsed(RawImage* texture)
-{
-  // At the moment we don't need to do anything here, but we probably will do soon...
 }
 
 

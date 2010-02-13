@@ -62,9 +62,14 @@ unsigned int Face::size() const
 //
 
 Model::Model() :
-    v(), vt(), vp(), vn(), colors(), faces(), materials(),
-    low(10000, 10000, 10000),
-    high(-10000, -10000, -10000)
+    v(), vt(), vn(), colors(), faces(), materials(),
+    low(1e20, 1e20, 1e20),
+    high(-1e20, -1e20, -1e20),
+    _coordNum(0),
+    _texCoordNum(0),
+    _normalNum(0),
+    _colorNum(0),
+    _numKeyframes(0)
 {
 }
 
@@ -73,17 +78,80 @@ Model::~Model()
 {
   for (unsigned int i = 0; i < faces.size(); ++i)
     delete faces[i];
+  // TODO: delete materials.
 }
 
 
 void Model::addV(const Float4& newV)
 {
-  v.push_back(newV);
+  while (_coordNum >= v.size())
+    v.push_back(Curve());
+  v[_coordNum].addKeyframe(newV);
+  ++_coordNum;
+
+  // TODO: bounding box should be represented as a pair of curves too.
   for (unsigned int i = 0; i < 3; ++i) {
     if (newV[i] < low[i])
       low[i] = newV[i];
     if (newV[i] > high[i])
       high[i] = newV[i];
   }
+}
+
+
+void Model::addVt(const Float4& newVt)
+{
+  while (_texCoordNum >= vt.size())
+    vt.push_back(Curve());
+  vt[_texCoordNum].addKeyframe(newVt);
+  ++_texCoordNum;
+}
+
+
+void Model::addVn(const Float4& newVn)
+{
+  while (_normalNum >= vn.size())
+    vn.push_back(Curve());
+  vn[_normalNum].addKeyframe(newVn);
+  ++_normalNum;
+}
+
+
+void Model::addColor(const Float4& newColor)
+{
+  while (_colorNum >= colors.size())
+    colors.push_back(Curve());
+  colors[_colorNum].addKeyframe(newColor);
+  ++_colorNum;
+}
+
+
+void Model::addFace(Face* newFace)
+{
+  faces.push_back(newFace);
+}
+
+
+void Model::addMaterial(const std::string& name, Material* newMaterial)
+{
+  materials[name] = newMaterial;
+}
+
+
+void Model::newKeyframe()
+{
+  fprintf(stderr, "new keyframe\n");
+  _coordNum = 0;
+  _texCoordNum = 0;
+  _normalNum = 0;
+  _colorNum = 0;
+
+  ++_numKeyframes;
+}
+
+
+size_t Model::numKeyframes()
+{
+  return _numKeyframes;
 }
 

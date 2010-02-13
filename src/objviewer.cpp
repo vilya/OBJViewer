@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "curve.h"
 #include "objviewer.h"
 #include "parser.h"
 
@@ -48,8 +49,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   mouseY(0),
   mouseButton(0),
   mouseModifiers(0),
-  _renderers(),
-  _currentRenderer(0),
+  _model(NULL),
+  _renderer(NULL),
   _maxTextureWidth(0),
   _maxTextureHeight(0),
   _camera(new Camera())
@@ -60,7 +61,10 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutInitWindowSize(winWidth, winHeight);
   glutCreateWindow("Vil's OBJ Viewer");
 
+  _model = new Model();
   processArgs(argc, argv);
+  _renderer = new Renderer(_camera, _model, _maxTextureWidth, _maxTextureHeight);
+  _renderer->prepare();
 
   glutDisplayFunc(doRender);
   glutReshapeFunc(doResize);
@@ -73,8 +77,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
 
 OBJViewerApp::~OBJViewerApp()
 {
-  for (size_t i = 0; i < _renderers.size(); ++i)
-    delete _renderers[i];
+  delete _model;
+  delete _renderer;
   delete _camera;
 }
 
@@ -159,10 +163,10 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       currentRenderer()->toggleHeadlightType();
       break;
     case ',': case '<':
-      _currentRenderer = (_currentRenderer > 0) ? _currentRenderer - 1 : _renderers.size() - 1;
+      currentRenderer()->previousFrame();
       break;
     case '.': case '>':
-      _currentRenderer = (_currentRenderer + 1) % _renderers.size();
+      currentRenderer()->nextFrame();
       break;
     case '?':
       printf("Esc   Exit the program.\n");
@@ -240,6 +244,75 @@ void OBJViewerApp::run()
 }
 
 
+void OBJViewerApp::beginModel(const char* path)
+{
+  _model->newKeyframe();
+}
+
+
+void OBJViewerApp::endModel()
+{
+}
+
+
+void OBJViewerApp::coordParsed(const Float4& coord)
+{
+  _model->addV(coord);
+}
+
+
+void OBJViewerApp::texCoordParsed(const Float4& coord)
+{
+  _model->addVt(coord);
+}
+
+
+void OBJViewerApp::normalParsed(const Float4& normal)
+{
+  _model->addVn(normal);
+}
+
+
+void OBJViewerApp::colorParsed(const Float4& color)
+{
+  _model->addColor(color);
+}
+
+
+void OBJViewerApp::faceParsed(Face* face)
+{
+  if (face->size() == 4) {
+    Face* newFace = new Face(face->material);
+    newFace->vertexes.push_back(face->vertexes[0]);
+    newFace->vertexes.push_back(face->vertexes[1]);
+    newFace->vertexes.push_back(face->vertexes[2]);
+    _model->addFace(newFace);
+
+    newFace = new Face(face->material);
+    newFace->vertexes.push_back(face->vertexes[0]);
+    newFace->vertexes.push_back(face->vertexes[2]);
+    newFace->vertexes.push_back(face->vertexes[3]);
+    _model->addFace(newFace);
+
+    delete face;
+  } else {
+    _model->addFace(face);
+  }
+}
+
+
+void OBJViewerApp::materialParsed(const std::string& name, Material* material)
+{
+  _model->addMaterial(name, material);
+}
+
+
+void OBJViewerApp::textureParsed(RawImage* texture)
+{
+  // At the moment we don't need to do anything here, but we probably will do soon...
+}
+
+
 void OBJViewerApp::usage(char *progname)
 {
     fprintf(stderr,
@@ -305,27 +378,22 @@ void OBJViewerApp::processArgs(int argc, char **argv)
   argv += optind;
 
   for (int arg = 0; arg < argc; ++arg) {
-    Renderer* renderer = new Renderer(_camera, _maxTextureWidth, _maxTextureHeight);
     const char* modelPath = argv[arg];
     try {
       fprintf(stderr, "Loading model %s\n", modelPath);
-      loadModel(renderer, modelPath);
-      _renderers.push_back(renderer);
+      loadModel(this, modelPath);
       fprintf(stderr, "Finished loading model %s\n", modelPath);
     } catch (ParseException& e) {
       fprintf(stderr, "%s\n", e.what());
       fprintf(stderr, "Unable to load model. Continuing with default model.\n");
     }
   }
-
-  if (_renderers.size() == 0)
-    _renderers.push_back(new Renderer(_camera, _maxTextureWidth, _maxTextureHeight));
 }
 
 
 Renderer* OBJViewerApp::currentRenderer()
 {
-  return _renderers[_currentRenderer];
+  return _renderer;
 }
 
 

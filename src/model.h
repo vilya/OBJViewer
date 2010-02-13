@@ -6,6 +6,7 @@
 
 #include <imagelib.h>
 #include "math3d.h"
+#include "curve.h"
 
 
 struct Material {
@@ -46,12 +47,12 @@ struct Face {
 };
 
 
-struct Model {
-  std::vector<Float4> v;
-  std::vector<Float4> vt;
-  std::vector<Float4> vp;
-  std::vector<Float4> vn;
-  std::vector<Float4> colors;
+class Model {
+public:
+  std::vector<Curve> v;
+  std::vector<Curve> vt;
+  std::vector<Curve> vn;
+  std::vector<Curve> colors;
   std::vector<Face*> faces;
   std::map<std::string, Material*> materials;
 
@@ -62,6 +63,23 @@ struct Model {
   ~Model();
 
   void addV(const Float4& newV);
+  void addVt(const Float4& newVt);
+  void addVn(const Float4& newVn);
+  void addColor(const Float4& newColor);
+
+  void addFace(Face* newFace);
+  void addMaterial(const std::string& name, Material* newMaterial);
+
+  void newKeyframe();
+  size_t numKeyframes();
+
+private:
+  size_t _coordNum;
+  size_t _texCoordNum;
+  size_t _normalNum;
+  size_t _colorNum;
+
+  size_t _numKeyframes;
 };
 
 

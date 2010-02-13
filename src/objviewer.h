@@ -9,7 +9,7 @@
 // CLASSES
 //
 
-class OBJViewerApp {
+class OBJViewerApp : public ParserCallbacks {
 public:
   OBJViewerApp(int argc, char **argv);
   ~OBJViewerApp();
@@ -20,6 +20,17 @@ public:
   void mousePressed(int button, int state, int x, int y);
   void mouseDragged(int x, int y);
   void run();
+
+  // Parser callbacks
+  virtual void beginModel(const char* path);
+  virtual void endModel();
+  virtual void coordParsed(const Float4& coord);
+  virtual void texCoordParsed(const Float4& coord);
+  virtual void normalParsed(const Float4& normal);
+  virtual void colorParsed(const Float4& color);
+  virtual void faceParsed(Face* face);
+  virtual void materialParsed(const std::string& name, Material* material);
+  virtual void textureParsed(RawImage* texture);
 
 private:
   //! Prints help about the command line syntax and options to stderr.
@@ -36,8 +47,8 @@ private:
   int winX, winY, winWidth, winHeight, currWidth, currHeight;
   bool fullscreen;
   int mouseX, mouseY, mouseButton, mouseModifiers;
-  std::vector<Renderer*> _renderers;
-  size_t _currentRenderer;
+  Model* _model;
+  Renderer* _renderer;
   size_t _maxTextureWidth, _maxTextureHeight;
 
   Camera* _camera;

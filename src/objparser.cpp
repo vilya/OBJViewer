@@ -667,9 +667,6 @@ void loadOBJ(ParserCallbacks* callbacks, const char* path) throw(ParseException)
         case OBJ_LINETYPE_VT:
           callbacks->texCoordParsed(objParseVT(col, col));
           break;
-        case OBJ_LINETYPE_VP:
-          callbacks->paramCoordParsed(objParseVP(col, col));
-          break;
         case OBJ_LINETYPE_VN:
           callbacks->normalParsed(objParseVN(col, col));
           break;
@@ -684,6 +681,7 @@ void loadOBJ(ParserCallbacks* callbacks, const char* path) throw(ParseException)
         case OBJ_LINETYPE_MTLLIB:
           objParseMTLLIB(col, col, callbacks, dirname(const_cast<char*>(path)), materials);
           break;
+        case OBJ_LINETYPE_VP:
         case OBJ_LINETYPE_G:
         case OBJ_LINETYPE_S:
         case OBJ_LINETYPE_O:

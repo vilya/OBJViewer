@@ -49,10 +49,15 @@ public:
   void add(Model* model, Face* face);
   size_t size() const;
 
-  virtual void prepare();
-  virtual void render();
-  virtual void renderPoints();
-  virtual void renderLines();
+  size_t floatsPerVertex() const;
+
+  void prepare();
+  void render(float time);
+  void renderPoints(float time);
+  void renderLines(float time);
+
+private:
+  void setTime(float time);
 
 private:
   Material* _material;
@@ -61,14 +66,18 @@ private:
   bool _hasTexCoords;
   bool _hasNormalCoords;
   bool _hasColors;
+  float _currentTime;
 
   // Coords are interleaved in groups of up to 12 elements:
   // - First 3 elements in each group are vertex x, y, z.
   // - Next 2 are texture u and v (if _hasTexCoords == true).
   // - Next 4 are normal x, y, z and w (if _hasNormalCoords == true).
   // - Final 3 are color r, g and b (if _hasColors == true).
-  std::vector<float> _coords;
-  GLuint _coordsID;
+  std::vector<Curve> _coords;
+  std::vector<Curve> _texCoords;
+  std::vector<Curve> _normals;
+  std::vector<Curve> _colors;
+  GLuint _bufferID;
 
   std::vector<unsigned int> _indexes;
   GLuint _indexesID;
@@ -77,9 +86,9 @@ private:
 };
 
 
-class Renderer : public ParserCallbacks {
+class Renderer {
 public:
-  Renderer(Camera* camera, size_t maxTextureWidth, size_t maxTextureHeight);
+  Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t maxTextureHeight);
   ~Renderer();
 
   Camera* currentCamera();
@@ -91,24 +100,16 @@ public:
   void toggleHeadlightType();
   void printGLInfo();
 
+  void prepare();
   void render(int width, int height);
 
-  // Parser callbacks
-  virtual void beginModel(const char* path);
-  virtual void endModel();
-  virtual void coordParsed(const Float4& coord);
-  virtual void texCoordParsed(const Float4& coord);
-  virtual void paramCoordParsed(const Float4& coord) {}
-  virtual void normalParsed(const Float4& normal);
-  virtual void colorParsed(const Float4& color);
-  virtual void faceParsed(Face* face);
-  virtual void materialParsed(const std::string& name, Material* material);
-  virtual void textureParsed(RawImage* texture);
+  void setTime(float time);
+  void nextFrame();
+  void previousFrame();
 
 private:
   void setupCamera(int width, int height, const Float4& low, const Float4& high);
   void transformToCamera();
-  void prepare();
   void prepareModel();
   void prepareRenderGroups();
   void prepareMaterials();
@@ -148,6 +149,7 @@ private:
   RawImage* _defaultTexture;
   GLuint _programObject;
   
+  float _currentTime;
 };
 
 

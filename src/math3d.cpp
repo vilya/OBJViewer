@@ -68,6 +68,18 @@ Float4 operator / (const Float4& a, const Float4& b)
 }
 
 
+Float4 operator * (float k, const Float4& a)
+{
+  return Float4(a.x * k, a.y * k, a.z * k, a.w);
+}
+
+
+Float4 operator * (const Float4& a, float k)
+{
+  return Float4(a.x * k, a.y * k, a.z * k, a.w);
+}
+
+
 Float4 operator / (const Float4& a, float k)
 {
   return Float4(a.x / k, a.y / k, a.z / k, a.w);

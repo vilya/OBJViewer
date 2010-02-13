@@ -21,6 +21,7 @@ Float4 operator - (const Float4& a);
 Float4 operator + (const Float4& a, const Float4& b);
 Float4 operator - (const Float4& a, const Float4& b);
 Float4 operator * (const Float4& a, const Float4& b);
+Float4 operator * (const Float4& a, float k);
 Float4 operator / (const Float4& a, float k);
 float lengthSqr(const Float4& a);
 float length(const Float4& a);
