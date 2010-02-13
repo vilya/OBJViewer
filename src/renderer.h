@@ -111,6 +111,8 @@ public:
   virtual void textureParsed(RawImage* texture);
 
 private:
+  void setupCamera(int width, int height, const Float4& low, const Float4& high);
+  void transformToCamera();
   void prepare();
   void prepareModel();
   void prepareRenderGroups();

@@ -75,6 +75,7 @@ OBJViewerApp::~OBJViewerApp()
 {
   for (size_t i = 0; i < _renderers.size(); ++i)
     delete _renderers[i];
+  delete _camera;
 }
 
 

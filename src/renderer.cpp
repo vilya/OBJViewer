@@ -357,7 +357,6 @@ Renderer::Renderer(Camera* camera, size_t maxTextureWidth, size_t maxTextureHeig
 
 Renderer::~Renderer()
 {
-  delete _camera;
   delete _model;
   std::list<RenderGroup*>::iterator iter;
   for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter)
@@ -419,11 +418,11 @@ void Renderer::render(int width, int height)
 
   // Apply the camera settings.
   if (_model != NULL) {
-    _camera->setup(width, height, _model->low, _model->high);
+    setupCamera(width, height, _model->low, _model->high);
   } else {
     Float4 low(-1, -1, -1, 1);
     Float4 high(1, 1, 1, 1);
-    _camera->setup(width, height, low, high);
+    setupCamera(width, height, low, high);
   }
 
   // Draw the scene.
@@ -433,7 +432,7 @@ void Renderer::render(int width, int height)
   // Put a light at the same position as the camera.
   headlight(GL_LIGHT0, Float4(1, 1, 1, 1));
 
-  _camera->transformTo();
+  transformToCamera();
   if (_model != NULL) {
     std::list<RenderGroup*>::iterator iter;
 
@@ -475,6 +474,57 @@ void Renderer::render(int width, int height)
   glPopMatrix();
 
   _fps.increment();
+}
+
+
+void Renderer::setupCamera(int width, int height, const Float4& low, const Float4& high)
+{
+  Float4 target = _camera->getTarget();
+  float distance = _camera->getDistance();
+
+  // Here we use the model's bounding sphere to calculate good values for
+  // the near and far clipping planes.
+  
+  // Radius of bounding sphere == half distance between opposite bbox corners
+  // FIXME: For some reason the radius ends up being too small, so instead I'm
+  // using the diameter for now.
+  float radius = length(high - low); 
+  // v is the vector from our target to the bbox center, but we'll only need
+  // the z component (see below) so that's all we calculate.
+  float vz = ((high.z + low.z) / 2.0) - target.z;
+  // Since our direction vector d for the camera is 0,0,1 the dot product of v
+  // and d is simply v.z. This gives us the distance along our direction vector
+  // at which we're level with the bbox center: _rotation.w + vz. Subtract the
+  // radius from that and we've got out near clip plane.
+  float nearClip = distance + vz - radius;
+  // The far clip plane will always be the near clip plane plus the diameter.
+  float farClip = nearClip + 2 * radius;
+  // Make sure the near clip plane doesn't end up behind us.
+  if (nearClip < 0.01)
+    nearClip = 0.01;
+  // Make sure the far clip plane doesn't end up behind the near clip plane.
+  if (farClip <= nearClip)
+    farClip = nearClip + 0.01;
+
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+
+  glLoadIdentity();
+  glViewport(0, 0, width, height); // Set the viewport to be the entire window
+  gluPerspective(_camera->getFieldOfViewY(), double(width) / double(height),
+      nearClip, farClip);
+}
+
+
+void Renderer::transformToCamera()
+{
+  Float4 target = _camera->getTarget();
+  Float4 rotation = _camera->getRotation();
+  float distance = _camera->getDistance();
+  glTranslatef(-target.x, -target.y, -target.z - distance);
+  glRotatef(rotation.x, 1, 0, 0);
+  glRotatef(rotation.y, 0, 1, 0);
+  glRotatef(rotation.z, 0, 0, 1);
 }
 
 

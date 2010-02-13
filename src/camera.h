@@ -15,10 +15,9 @@ public:
   void rotateByV(float angle);
 
   Float4 getTarget() const;
+  Float4 getRotation() const;
   float getDistance() const;
-
-  void setup(int width, int height, const Float4& low, const Float4& high);
-  void transformTo();
+  float getFieldOfViewY() const;
 
   void centerView(const Float4& low, const Float4& high);
   void frontView(const Float4& low, const Float4& high);
