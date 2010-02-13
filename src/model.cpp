@@ -140,7 +140,6 @@ void Model::addMaterial(const std::string& name, Material* newMaterial)
 
 void Model::newKeyframe()
 {
-  fprintf(stderr, "new keyframe\n");
   _coordNum = 0;
   _texCoordNum = 0;
   _normalNum = 0;
