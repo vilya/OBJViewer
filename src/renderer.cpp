@@ -131,8 +131,7 @@ size_t RenderGroup::size() const
 
 size_t RenderGroup::floatsPerVertex() const
 {
-  return 3 + (_hasTexCoords ? 2 : 0) +
-      (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0);
+  return 5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0);
 }
 
 
@@ -747,7 +746,7 @@ void Renderer::prepareMaterials()
   std::map<std::string, Material*>::iterator m;
   for (m = _model->materials.begin(); m != _model->materials.end(); ++m) {
     Material* material = m->second;
-    if (material->d != 1 || material->mapD != NULL) {
+    if (material->d != 1) {
       material->Ka.a = material->d;
       material->Kd.a = material->d;
       material->Ks.a = material->d;
