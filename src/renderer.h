@@ -38,8 +38,6 @@ private:
 };
 
 
-
-
 class RenderGroup {
 public:
   RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defaultTextureID);
