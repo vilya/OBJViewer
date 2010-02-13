@@ -68,8 +68,6 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defa
   _material(iMaterial),
   _type(iType),
   _size(0),
-  _hasTexCoords(false),
-  _hasNormalCoords(false),
   _hasColors(false),
   _currentTime(-1e20),
   _coords(),
@@ -90,8 +88,6 @@ Material* RenderGroup::getMaterial() const
 void RenderGroup::add(Model* model, Face* face)
 {
   if (_size == 0) {
-    _hasTexCoords = (face->material != NULL) && (*face)[0].vt >= 0;
-    _hasNormalCoords = (*face)[0].vn >= 0;
     _hasColors = (*face)[0].c >= 0;
   }
 
@@ -99,18 +95,11 @@ void RenderGroup::add(Model* model, Face* face)
     int vi = (*face)[i].v;
     _coords.push_back(model->v[vi]);
 
-    if (_hasTexCoords) {
-      int vti = (*face)[i].vt;
-      _texCoords.push_back(model->vt[vti]);
-    } else {
-      _texCoords.push_back(Curve());
-      _texCoords.back().addKeyframe(Float4(0.5, 0.5, 0.0, 1.0));
-    }
+    int vti = (*face)[i].vt;
+    _texCoords.push_back(model->vt[vti]);
 
-    if (_hasNormalCoords) {
-      int vni = (*face)[i].vn;
-      _normals.push_back(model->vn[vni]);
-    }
+    int vni = (*face)[i].vn;
+    _normals.push_back(model->vn[vni]);
 
     if (_hasColors) {
       int ci = (*face)[i].c;
@@ -131,7 +120,8 @@ size_t RenderGroup::size() const
 
 size_t RenderGroup::floatsPerVertex() const
 {
-  return 5 + (_hasNormalCoords ? 4 : 0) + (_hasColors ? 3 : 0);
+  // First 9 floats are: x, y, z, u, v, nx, ny, nz, nw.
+  return 9 + (_hasColors ? 3 : 0);
 }
 
 
@@ -189,13 +179,9 @@ void RenderGroup::render(float time)
   }
   offset += 2 * sizeof(float);
 
-  if (_hasNormalCoords) {
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
-    offset += 4 * sizeof(float);
-  } else {
-    glDisableClientState(GL_NORMAL_ARRAY);
-  }
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
+  offset += 4 * sizeof(float);
 
   if (_hasColors) {
     glEnableClientState(GL_COLOR_ARRAY);
@@ -237,8 +223,7 @@ void RenderGroup::render(float time)
     glDisable(GL_TEXTURE_2D);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   }
-  if (_hasNormalCoords)
-    glDisableClientState(GL_NORMAL_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
   if (_hasColors)
     glDisableClientState(GL_COLOR_ARRAY);
 
@@ -350,17 +335,15 @@ void RenderGroup::setTime(float time)
     vertexBufferPos += vertexSize;
   }
   vertexBuffer += 2;
-  if (_hasNormalCoords) {
-    vertexBufferPos = vertexBuffer;
-    for (size_t i = 0; i < _normals.size(); ++i) {
-      Float4 normal = _normals[i].valueAt(time);
-      vertexBufferPos[0] = normal.x;
-      vertexBufferPos[1] = normal.y;
-      vertexBufferPos[2] = normal.z;
-      vertexBufferPos[3] = normal.w;
-    }
-    vertexBuffer += 4;
+  vertexBufferPos = vertexBuffer;
+  for (size_t i = 0; i < _normals.size(); ++i) {
+    Float4 normal = _normals[i].valueAt(time);
+    vertexBufferPos[0] = normal.x;
+    vertexBufferPos[1] = normal.y;
+    vertexBufferPos[2] = normal.z;
+    vertexBufferPos[3] = normal.w;
   }
+  vertexBuffer += 4;
   if (_hasColors) {
     vertexBufferPos = vertexBuffer;
     for (size_t i = 0; i < _normals.size(); ++i) {
@@ -630,6 +613,18 @@ void Renderer::transformToCamera()
 
 void Renderer::prepareModel()
 {
+  // Fill in default texture coordinates where necessary.
+  size_t defaultTexCoordIndex = _model->vt.size();
+  _model->addVt(Float4(0.5, 0.5, 0.0, 1.0));
+  for (size_t i = 0; i < _model->faces.size(); ++i) {
+    Face& face = *_model->faces[i];
+    for (size_t vertexNum = 0; vertexNum < face.size(); ++vertexNum) {
+      if (face[vertexNum].vt < 0)
+        face[vertexNum].vt = defaultTexCoordIndex;
+    }
+  }
+
+  // Calculate the normals if they're not present.
   if (_model->vn.size() == 0) {
     fprintf(stderr, "Calculating normals...\n");
 

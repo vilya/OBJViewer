@@ -63,8 +63,6 @@ private:
   Material* _material;
   RenderGroupType _type;
   size_t _size;
-  bool _hasTexCoords;
-  bool _hasNormalCoords;
   bool _hasColors;
   float _currentTime;
 
