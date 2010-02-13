@@ -93,17 +93,17 @@ void RenderGroup::add(Model* model, Face* face)
 
   for (size_t i = 0; i < face->size(); ++i) {
     int vi = (*face)[i].v;
-    _coords.push_back(model->v[vi]);
+    _coords.push_back(&model->v[vi]);
 
     int vti = (*face)[i].vt;
-    _texCoords.push_back(model->vt[vti]);
+    _texCoords.push_back(&model->vt[vti]);
 
     int vni = (*face)[i].vn;
-    _normals.push_back(model->vn[vni]);
+    _normals.push_back(&model->vn[vni]);
 
     if (_hasColors) {
       int ci = (*face)[i].c;
-      _colors.push_back(model->colors[ci]);
+      _colors.push_back(&model->colors[ci]);
     }
 
     _indexes.push_back(_indexes.size());
@@ -320,7 +320,7 @@ void RenderGroup::setTime(float time)
   float* vertexBuffer = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
   float* vertexBufferPos = vertexBuffer;
   for (size_t i = 0; i < _coords.size(); ++i) {
-    Float4 coord = _coords[i].valueAt(time);
+    Float4 coord = _coords[i]->valueAt(time);
     vertexBufferPos[0] = coord.x;
     vertexBufferPos[1] = coord.y;
     vertexBufferPos[2] = coord.z;
@@ -329,7 +329,7 @@ void RenderGroup::setTime(float time)
   vertexBuffer += 3;
   vertexBufferPos = vertexBuffer;
   for (size_t i = 0; i < _texCoords.size(); ++i) {
-    Float4 texCoord = _texCoords[i].valueAt(time);
+    Float4 texCoord = _texCoords[i]->valueAt(time);
     vertexBufferPos[0] = texCoord.x;
     vertexBufferPos[1] = texCoord.y;
     vertexBufferPos += vertexSize;
@@ -337,7 +337,7 @@ void RenderGroup::setTime(float time)
   vertexBuffer += 2;
   vertexBufferPos = vertexBuffer;
   for (size_t i = 0; i < _normals.size(); ++i) {
-    Float4 normal = _normals[i].valueAt(time);
+    Float4 normal = _normals[i]->valueAt(time);
     vertexBufferPos[0] = normal.x;
     vertexBufferPos[1] = normal.y;
     vertexBufferPos[2] = normal.z;
@@ -347,7 +347,7 @@ void RenderGroup::setTime(float time)
   if (_hasColors) {
     vertexBufferPos = vertexBuffer;
     for (size_t i = 0; i < _normals.size(); ++i) {
-      Float4 normal = _normals[i].valueAt(time);
+      Float4 normal = _normals[i]->valueAt(time);
       vertexBufferPos[0] = normal.r;
       vertexBufferPos[1] = normal.g;
       vertexBufferPos[2] = normal.b;
