@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -131,7 +132,7 @@ void Camera::bottomView(const Float4& low, const Float4& high)
 
 float Camera::distanceFrom(float highU, float lowU, float highV, float lowV) const
 {
-  float opposite = fmaxf(highU - lowU, highV - lowV) / 2.0;
+  float opposite = std::max(highU - lowU, highV - lowV) / 2.0;
   float angle = (_fieldOfViewY / 2.0) * M_PI / 180.0;
   float adjacent = (opposite / tanf(angle));
   return adjacent;

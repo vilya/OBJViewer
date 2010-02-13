@@ -210,7 +210,7 @@ void RenderGroup::render()
   }
 
   if (_material != NULL) {
-    float shininess = fminf(_material->Ns * 128.0, 128.0);
+    float shininess = std::min(_material->Ns * 128.0, 128.0);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
   } else {
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10.0);
