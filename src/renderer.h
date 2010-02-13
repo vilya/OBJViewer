@@ -15,10 +15,6 @@
 // TYPES
 //
 
-enum RenderStyle {
-  kLines, kPolygons
-};
-
 enum LightType {
   kDirectional, kSpotlight
 };
@@ -89,7 +85,6 @@ public:
   Camera* currentCamera();
   Model* currentModel();
 
-  void setStyle(RenderStyle style);
   void toggleDrawPolys();
   void toggleDrawPoints();
   void toggleDrawLines();
@@ -119,7 +114,7 @@ private:
   void prepareMaterials();
   void prepareShaders();
 
-  void drawModel(Model* theModel, RenderStyle style, std::list<RenderGroup*>& groups);
+  void drawModel(Model* theModel, std::list<RenderGroup*>& groups);
   void drawDefaultModel();
 
   void loadTextures(std::list<RenderGroup*>& groups);
@@ -135,7 +130,6 @@ private:
   void printProgramInfoLog(GLuint obj);
 
 private:
-  RenderStyle _style;
   LightType _headlightType;
   bool _drawPolys, _drawPoints, _drawLines;
   Model* _model;
