@@ -74,8 +74,6 @@ private:
   std::vector<Curve*> _normals;
   std::vector<Curve*> _colors;
   GLuint _bufferID;
-
-  std::vector<unsigned int> _indexes;
   GLuint _indexesID;
 
   GLuint _defaultTextureID;

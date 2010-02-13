@@ -72,7 +72,6 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defa
   _currentTime(-1e20),
   _coords(),
   _bufferID(0),
-  _indexes(),
   _indexesID(0),
   _defaultTextureID(defaultTextureID)
 {
@@ -106,9 +105,8 @@ void RenderGroup::add(Model* model, Face* face)
       _colors.push_back(&model->colors[ci]);
     }
 
-    _indexes.push_back(_indexes.size());
+    ++_size;
   }
-  _size = _indexes.size();
 }
 
 
@@ -138,8 +136,11 @@ void RenderGroup::prepare()
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-      sizeof(unsigned int) * _indexes.size(), &_indexes[0], GL_STATIC_DRAW);
-  _indexes.clear();
+      sizeof(GLuint) * _size, NULL, GL_STATIC_DRAW);
+  GLuint* indexBuffer = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+  for (GLuint i = 0; i < _size; ++i)
+    indexBuffer[i] = i;
+  glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 }
 
 
