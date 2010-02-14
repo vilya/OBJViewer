@@ -174,6 +174,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'm':
       currentRenderer()->firstFrame();
       break;
+    case ' ':
+      currentRenderer()->togglePlaying();
+      break;
     case '?':
       printf("Esc   Exit the program.\n");
       printf("f     Toggle fullscreen mode on/off.\n");
@@ -194,6 +197,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       printf(",     Step back 1 frame.\n");
       printf(".     Step forward 1 frame.\n");
       printf("/     Jump forward to the last frame.\n");
+      printf("Space Play/pause animation.\n");
       printf("\n");
       break;
     default:

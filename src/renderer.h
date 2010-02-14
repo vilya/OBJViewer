@@ -102,6 +102,7 @@ public:
   void previousFrame();
   void firstFrame();
   void lastFrame();
+  void togglePlaying();
 
 private:
   void setupCamera(int width, int height, const Float4& low, const Float4& high);
@@ -127,6 +128,8 @@ private:
   void printShaderInfoLog(GLuint obj);
   void printProgramInfoLog(GLuint obj);
 
+  float calculatePlaybackTime();
+
 private:
   LightType _headlightType;
   bool _drawPolys, _drawPoints, _drawLines;
@@ -147,6 +150,8 @@ private:
   GLuint _programObject;
   
   float _currentTime;
+  bool _playing;
+  int _since;
 };
 
 

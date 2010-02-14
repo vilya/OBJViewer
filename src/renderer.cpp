@@ -30,6 +30,7 @@ const size_t MAX_FACES_PER_VBO = 1000000;
 //
 
 void checkGLError(const char *errMsg, const char *okMsg = NULL);
+size_t systemTimeInMilliseconds();
 
 
 //
@@ -395,7 +396,9 @@ Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t 
   _fps(),
   _defaultTexture(NULL),
   _programObject(0),
-  _currentTime(0)
+  _currentTime(0),
+  _playing(false),
+  _since(0)
 {
   glClearColor(0.2, 0.2, 0.2, 1.0);
   glEnable(GL_DEPTH_TEST);
@@ -496,6 +499,10 @@ void Renderer::render(int width, int height)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // If we're playing the animation, calculate the new frame time.
+  if (_playing)
+    setTime(calculatePlaybackTime());
+
   // Apply the camera settings.
   if (_model != NULL) {
     setupCamera(width, height, _model->low, _model->high);
@@ -590,6 +597,14 @@ void Renderer::firstFrame()
 void Renderer::lastFrame()
 {
   _currentTime = _model->numKeyframes() - 1;
+}
+
+
+void Renderer::togglePlaying()
+{
+  _playing = !_playing;
+  if (_playing)
+    _since = glutGet(GLUT_ELAPSED_TIME);
 }
 
 
@@ -1107,6 +1122,15 @@ void Renderer::printProgramInfoLog(GLuint obj)
 		fprintf(stderr, "%s\n", infoLog);
     delete[] infoLog;
   }
+}
+
+
+float Renderer::calculatePlaybackTime()
+{
+  int now = glutGet(GLUT_ELAPSED_TIME);
+  float incr = 24.0 * float(now - _since) / 1000.0;
+  _since = now;
+  return _currentTime + incr;
 }
 
 
