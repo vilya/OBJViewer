@@ -560,6 +560,8 @@ void Renderer::render(int width, int height)
 void Renderer::setTime(float time)
 {
   time = fmodf(time, _model->numKeyframes());
+  if (time < 0)
+    time += _model->numKeyframes();
   _currentTime = time;
 }
 
@@ -576,6 +578,18 @@ void Renderer::previousFrame()
     setTime(_currentTime + _model->numKeyframes() - 1.0);
   else
     setTime(_currentTime - 1.0);
+}
+
+
+void Renderer::firstFrame()
+{
+  _currentTime = 0.0;
+}
+
+
+void Renderer::lastFrame()
+{
+  _currentTime = _model->numKeyframes() - 1;
 }
 
 

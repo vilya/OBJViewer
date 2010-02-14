@@ -100,6 +100,8 @@ public:
   void setTime(float time);
   void nextFrame();
   void previousFrame();
+  void firstFrame();
+  void lastFrame();
 
 private:
   void setupCamera(int width, int height, const Float4& low, const Float4& high);

@@ -162,11 +162,17 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'h':
       currentRenderer()->toggleHeadlightType();
       break;
-    case ',': case '<':
+    case ',':
       currentRenderer()->previousFrame();
       break;
-    case '.': case '>':
+    case '.':
       currentRenderer()->nextFrame();
+      break;
+    case '/':
+      currentRenderer()->lastFrame();
+      break;
+    case 'm':
+      currentRenderer()->firstFrame();
       break;
     case '?':
       printf("Esc   Exit the program.\n");
@@ -184,6 +190,10 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       printf("c     Print current camera info.\n");
       printf("g     Print OpenGL info.\n");
       printf("h     Toggle the type of headlight between directional and spot.\n");
+      printf("m     Jump back to the first frame.\n");
+      printf(",     Step back 1 frame.\n");
+      printf(".     Step forward 1 frame.\n");
+      printf("/     Jump forward to the last frame.\n");
       printf("\n");
       break;
     default:
