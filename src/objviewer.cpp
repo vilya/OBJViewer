@@ -281,6 +281,9 @@ void OBJViewerApp::colorParsed(const Float4& color)
 
 void OBJViewerApp::faceParsed(Face* face)
 {
+  if (_model->numKeyframes() > 1)
+    return;
+
   if (face->size() == 4) {
     Face* newFace = new Face(face->material);
     newFace->vertexes.push_back(face->vertexes[0]);
