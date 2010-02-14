@@ -119,6 +119,7 @@ private:
   void headlight(GLenum light, const Float4& color);
   void drawHUD(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
+  void drawRightAlignedBitmapString(float x, float y, void* font, char* str);
 
   const char* loadShader(const char* path);
   GLint glGet(GLenum what);

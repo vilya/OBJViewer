@@ -990,6 +990,9 @@ void Renderer::drawHUD(int width, int height, float fps)
         "%lu render groups",
         fps, _model->faces.size(), _model->v.size(), _model->materials.size(), _renderGroups.size());
     drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
+
+    sprintf(buf, "Frame %0.1f of %ld", _currentTime, _model->numKeyframes());
+    drawRightAlignedBitmapString(width - 10, 10, GLUT_BITMAP_8_BY_13, buf);
   } else {
     sprintf(buf,
         "%5.2f FPS\n"
@@ -1022,6 +1025,27 @@ void Renderer::drawBitmapString(float x, float y, void* font, char* str)
         glutBitmapCharacter(font, *ch);
         xPos += glutBitmapWidth(font, *ch);
         break;
+    }
+  }
+}
+
+
+void Renderer::drawRightAlignedBitmapString(float x, float y, void* font, char* str)
+{
+  float xPos = x;
+  while (*str != '\0') {
+    char* ch = str;
+    for (ch = str; *ch != '\0' && *ch != '\n'; ++ch)
+      xPos -= glutBitmapWidth(font, *ch);
+    for (; str < ch; ++str) {
+      glRasterPos2f(xPos, y);
+      glutBitmapCharacter(font, *str);
+      xPos += glutBitmapWidth(font, *str);
+    }
+    if (*str == '\n') {
+      ++str;
+      xPos = x;
+      y -= 15;
     }
   }
 }
