@@ -131,27 +131,33 @@ void RenderGroup::prepare()
   glGenBuffers(1, &_bufferID);
   glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_STREAM_DRAW);
+  checkGLError("Error setting up vertex buffer.");
 
   // Get a buffer ID for the indexes, upload them and clear out the local copy.
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
       sizeof(GLuint) * _size, NULL, GL_STATIC_DRAW);
+  checkGLError("Error setting up index buffer.");
+
   GLuint* indexBuffer = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
   for (GLuint i = 0; i < _size; ++i)
     indexBuffer[i] = i;
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+  checkGLError("Error filling index buffer.");
 }
 
 
 void RenderGroup::render(float time)
 {
+  checkGLError("Error before RenderGroup::render.");
   glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
 
   glEnableClientState(GL_VERTEX_ARRAY);
-
+  checkGLError("Error before setTime.");
   setTime(time);
+  checkGLError("Error in setTime.");
 
   // Now start the rendering.
   GLuint stride = sizeof(float) * floatsPerVertex();
@@ -159,6 +165,7 @@ void RenderGroup::render(float time)
 
   glVertexPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
   offset += 3 * sizeof(float);
+  checkGLError("Error setting up vertex pointer.");
 
   RawImage* textures[4] = { NULL, NULL, NULL, NULL };
   if (_material != NULL) {
@@ -174,15 +181,17 @@ void RenderGroup::render(float time)
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     if (textures[i] != NULL)
       glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
-    else
+    else 
       glBindTexture(GL_TEXTURE_2D, _defaultTextureID);
     glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)offset);
   }
   offset += 2 * sizeof(float);
+  checkGLError("Error setting up textures.");
 
   glEnableClientState(GL_NORMAL_ARRAY);
   glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
   offset += 4 * sizeof(float);
+  checkGLError("Error setting up normals.");
 
   if (_hasColors) {
     glEnableClientState(GL_COLOR_ARRAY);
@@ -200,6 +209,7 @@ void RenderGroup::render(float time)
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
   }
+  checkGLError("Error setting up colors.");
 
   if (_material != NULL) {
     float shininess = std::min(_material->Ns * 128.0, 128.0);
@@ -207,7 +217,8 @@ void RenderGroup::render(float time)
   } else {
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10.0);
   }
-
+  checkGLError("Error setting up shininess.");
+ 
   switch (_type) {
     case kTriangleGroup:
       glDrawElements(GL_TRIANGLES, _size, GL_UNSIGNED_INT, 0);
@@ -216,6 +227,7 @@ void RenderGroup::render(float time)
       glDrawElements(GL_POLYGON, _size, GL_UNSIGNED_INT, 0);
       break;
   }
+  checkGLError("Error drawing elements.");
 
   glDisableClientState(GL_VERTEX_ARRAY);
   for (int i = 0; i < 4; ++i) {
@@ -231,6 +243,7 @@ void RenderGroup::render(float time)
   // Release the VBOs.
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  checkGLError("Error clearing up.");
 }
 
 
@@ -343,6 +356,7 @@ void RenderGroup::setTime(float time)
     vertexBufferPos[1] = normal.y;
     vertexBufferPos[2] = normal.z;
     vertexBufferPos[3] = normal.w;
+    vertexBufferPos += vertexSize;
   }
   vertexBuffer += 4;
   if (_hasColors) {
@@ -352,6 +366,7 @@ void RenderGroup::setTime(float time)
       vertexBufferPos[0] = normal.r;
       vertexBufferPos[1] = normal.g;
       vertexBufferPos[2] = normal.b;
+      vertexBufferPos += vertexSize;
     }
     vertexBuffer += 3;
   }
@@ -653,11 +668,11 @@ void Renderer::prepareModel()
       for (size_t j = 0; j < face.size(); ++j)
         face[j].vn = face[j].v;
     }
-  }
 
-  for (size_t i = 0; i < _model->vn.size(); ++i) {
-    for (size_t frame = 0; frame < _model->numKeyframes(); ++frame)
-      _model->vn[i][frame] = normalize(_model->vn[i][frame]);
+    for (size_t i = 0; i < _model->vn.size(); ++i) {
+      for (size_t frame = 0; frame < _model->numKeyframes(); ++frame)
+        _model->vn[i][frame] = normalize(_model->vn[i][frame]);
+    }
   }
 }
 
@@ -841,6 +856,8 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
   // If tex is null, or tex is already loaded.
   if (tex == NULL || tex->getTexID() != (unsigned int)-1)
     return;
+  fprintf(stderr, "Loading %dx%d %d bpp texture onto the GPU.\n",
+      tex->getWidth(), tex->getHeight(), tex->getBytesPerPixel() * 8);
 
   GLenum targetType;
   if (isMatte) {
