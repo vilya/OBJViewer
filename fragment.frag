@@ -16,7 +16,7 @@ void main()
     color += NdotL * Kd * texture2D(mapKd, gl_TexCoord[1].st).rgb;
 
     halfV = normalize(halfVector);
-    NdotHV = max(dot(normal, halfV), 0.0);
+    NdotHV = max(dot(n, halfV), 0.0);
 
     Ks = gl_FrontMaterial.specular.rgb * gl_LightSource[0].specular.rgb *
         pow(NdotHV, gl_FrontMaterial.shininess);
