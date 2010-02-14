@@ -48,6 +48,7 @@ public:
   size_t size() const;
 
   size_t floatsPerVertex() const;
+  void flipNormals();
 
   void prepare();
   void render(float time);
@@ -63,6 +64,7 @@ private:
   size_t _size;
   bool _hasColors;
   float _currentTime;
+  bool _flipNormals;
 
   // Coords are interleaved in groups of up to 12 elements:
   // - First 3 elements in each group are vertex x, y, z.
@@ -103,6 +105,8 @@ public:
   void firstFrame();
   void lastFrame();
   void togglePlaying();
+
+  void flipNormals();
 
 private:
   void setupCamera(int width, int height, const Float4& low, const Float4& high);

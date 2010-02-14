@@ -159,6 +159,9 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
     case 'g':
       currentRenderer()->printGLInfo();
       break;
+    case 'n':
+      currentRenderer()->flipNormals();
+      break;
     case 'h':
       currentRenderer()->toggleHeadlightType();
       break;
@@ -192,6 +195,7 @@ void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
       printf("6     Bottom view.\n");
       printf("c     Print current camera info.\n");
       printf("g     Print OpenGL info.\n");
+      printf("n     Flip the normals.\n");
       printf("h     Toggle the type of headlight between directional and spot.\n");
       printf("m     Jump back to the first frame.\n");
       printf(",     Step back 1 frame.\n");

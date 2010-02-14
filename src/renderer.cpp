@@ -124,6 +124,13 @@ size_t RenderGroup::floatsPerVertex() const
 }
 
 
+void RenderGroup::flipNormals()
+{
+  _flipNormals = !_flipNormals;
+  _currentTime = -1.0; // force the next setTime call to recalculate.
+}
+
+
 void RenderGroup::prepare()
 {
   size_t bufferSize = _coords.size() * sizeof(float) * floatsPerVertex();
@@ -351,22 +358,33 @@ void RenderGroup::setTime(float time)
   }
   vertexBuffer += 2;
   vertexBufferPos = vertexBuffer;
-  for (size_t i = 0; i < _normals.size(); ++i) {
-    Float4 normal = _normals[i]->valueAt(time);
-    vertexBufferPos[0] = normal.x;
-    vertexBufferPos[1] = normal.y;
-    vertexBufferPos[2] = normal.z;
-    vertexBufferPos[3] = normal.w;
-    vertexBufferPos += vertexSize;
+  if (!_flipNormals) {
+    for (size_t i = 0; i < _normals.size(); ++i) {
+      Float4 normal = _normals[i]->valueAt(time);
+      vertexBufferPos[0] = normal.x;
+      vertexBufferPos[1] = normal.y;
+      vertexBufferPos[2] = normal.z;
+      vertexBufferPos[3] = normal.w;
+      vertexBufferPos += vertexSize;
+    }
+  } else {
+    for (size_t i = 0; i < _normals.size(); ++i) {
+      Float4 normal = _normals[i]->valueAt(time);
+      vertexBufferPos[0] = -normal.x;
+      vertexBufferPos[1] = -normal.y;
+      vertexBufferPos[2] = -normal.z;
+      vertexBufferPos[3] = normal.w;
+      vertexBufferPos += vertexSize;
+    }
   }
   vertexBuffer += 4;
   if (_hasColors) {
     vertexBufferPos = vertexBuffer;
-    for (size_t i = 0; i < _normals.size(); ++i) {
-      Float4 normal = _normals[i]->valueAt(time);
-      vertexBufferPos[0] = normal.r;
-      vertexBufferPos[1] = normal.g;
-      vertexBufferPos[2] = normal.b;
+    for (size_t i = 0; i < _colors.size(); ++i) {
+      Float4 color = _colors[i]->valueAt(time);
+      vertexBufferPos[0] = color.r;
+      vertexBufferPos[1] = color.g;
+      vertexBufferPos[2] = color.b;
       vertexBufferPos += vertexSize;
     }
     vertexBuffer += 3;
@@ -605,6 +623,14 @@ void Renderer::togglePlaying()
   _playing = !_playing;
   if (_playing)
     _since = glutGet(GLUT_ELAPSED_TIME);
+}
+
+
+void Renderer::flipNormals()
+{
+  std::list<RenderGroup*>::iterator iter;
+  for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter)
+    (*iter)->flipNormals();
 }
 
 
