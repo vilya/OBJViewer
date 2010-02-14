@@ -39,8 +39,14 @@ size_t Curve::numKeyframes() const
 
 Float4 Curve::valueAt(float time) const
 {
-  if (_keyframes.size() == 0)
-    return Float4(0, 0, 0, 0);
+  switch (_keyframes.size()) {
+    case 0:
+      return Float4();
+    case 1:
+      return _keyframes[0];
+    default:
+      break;
+  }
 
   int left = (int)floorf(time);
   int right = (left + 1) % _keyframes.size();

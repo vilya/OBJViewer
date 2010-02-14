@@ -566,13 +566,16 @@ void Renderer::setTime(float time)
 
 void Renderer::nextFrame()
 {
-  setTime(_currentTime + 1.0);
+  setTime(fmodf(_currentTime + 1.0, _model->numKeyframes()));
 }
 
 
 void Renderer::previousFrame()
 {
-  setTime(_currentTime - 1.0);
+  if (_currentTime < 1.0)
+    setTime(_currentTime + _model->numKeyframes() - 1.0);
+  else
+    setTime(_currentTime - 1.0);
 }
 
 
