@@ -1,6 +1,16 @@
 Bugs:
 - See the issues page on github.
 
+Animation:
+- Use the vertex shader to interpolate the keyframes:
+  - Arrange data so that all data for a single keyframe is in a contiguous block,
+    instead of having all keyframes for each datum in a contiguous block.
+  - Pass the left keyframe as the regular data. Pass the right keyframe as a set
+   of vertex attributes, using glVertexAttribPointer.
+  - Pass the fractional part of the current time into the vertex shader and use
+    it with the mix() function to interpolate values.
+- Look at ways of only animating those parts of the model that are moving.
+
 Scene format:
 - Create a scene format which allows an arbitrary scene graph.
 - To include the following:
