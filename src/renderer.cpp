@@ -192,11 +192,11 @@ void RenderGroup::render(float time)
       glEnable(GL_TEXTURE_2D);
       glEnableClientState(GL_TEXTURE_COORD_ARRAY);
       glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
+      glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)offset);
     } else {
       glDisable(GL_TEXTURE_2D);
       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     }
-    glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)offset);
   }
   offset += 2 * sizeof(float);
   checkGLError("Error setting up textures.");
@@ -249,6 +249,7 @@ void RenderGroup::render(float time)
     glDisable(GL_TEXTURE_2D);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   }
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
   if (_hasColors)
     glDisableClientState(GL_COLOR_ARRAY);
