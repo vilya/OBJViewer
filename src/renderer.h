@@ -40,7 +40,7 @@ private:
 
 class RenderGroup {
 public:
-  RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defaultTextureID);
+  RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint iShaderProgramID);
 
   Material* getMaterial() const;
 
@@ -57,6 +57,7 @@ public:
 
 private:
   void setTime(float time);
+  void setupShaders();
 
 private:
   Material* _material;
@@ -78,7 +79,7 @@ private:
   GLuint _bufferID;
   GLuint _indexesID;
 
-  GLuint _defaultTextureID;
+  GLuint _shaderProgramID;
 };
 
 
@@ -126,7 +127,8 @@ private:
   void drawBitmapString(float x, float y, void* font, char* str);
   void drawRightAlignedBitmapString(float x, float y, void* font, char* str);
 
-  const char* loadShader(const char* path);
+  GLuint loadShader(GLenum shaderType, const char* path);
+  GLuint linkProgram(GLuint vertexShaderID, GLuint fragmentShaderID);
   GLint glGet(GLenum what);
 
   void printShaderInfoLog(GLuint obj);
@@ -151,7 +153,8 @@ private:
   FramesPerSecond _fps;
 
   RawImage* _defaultTexture;
-  GLuint _programObject;
+  GLuint _shaderWithMaterial;
+  GLuint _shaderNoMaterial;
   
   float _currentTime;
   bool _playing;

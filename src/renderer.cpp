@@ -65,7 +65,7 @@ float FramesPerSecond::fps() const
 // RenderGroup METHODS
 //
 
-RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defaultTextureID) :
+RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint iShaderProgramID) :
   _material(iMaterial),
   _type(iType),
   _size(0),
@@ -74,7 +74,7 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint defa
   _coords(),
   _bufferID(0),
   _indexesID(0),
-  _defaultTextureID(defaultTextureID)
+  _shaderProgramID(iShaderProgramID)
 {
 }
 
@@ -139,33 +139,36 @@ void RenderGroup::prepare()
   glGenBuffers(1, &_bufferID);
   glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_STREAM_DRAW);
-  checkGLError("Error setting up vertex buffer.");
+  checkGLError("Error setting up vertex buffer");
 
   // Get a buffer ID for the indexes, upload them and clear out the local copy.
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
       sizeof(GLuint) * _size, NULL, GL_STATIC_DRAW);
-  checkGLError("Error setting up index buffer.");
+  checkGLError("Error setting up index buffer");
 
   GLuint* indexBuffer = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
   for (GLuint i = 0; i < _size; ++i)
     indexBuffer[i] = i;
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-  checkGLError("Error filling index buffer.");
+  checkGLError("Error filling index buffer");
 }
 
 
 void RenderGroup::render(float time)
 {
-  checkGLError("Error before RenderGroup::render.");
+  checkGLError("Error before RenderGroup::render");
   glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
 
   glEnableClientState(GL_VERTEX_ARRAY);
-  checkGLError("Error before setTime.");
+  checkGLError("Error before setTime");
   setTime(time);
   checkGLError("Error in setTime.");
+
+  // Set up the shaders for this render group.
+  setupShaders();
 
   // Now start the rendering.
   GLuint stride = sizeof(float) * floatsPerVertex();
@@ -173,7 +176,7 @@ void RenderGroup::render(float time)
 
   glVertexPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
   offset += 3 * sizeof(float);
-  checkGLError("Error setting up vertex pointer.");
+  checkGLError("Error setting up vertex pointer");
 
   RawImage* textures[4] = { NULL, NULL, NULL, NULL };
   if (_material != NULL) {
@@ -185,12 +188,14 @@ void RenderGroup::render(float time)
   for (int i = 0; i < 4; ++i) {
     glActiveTexture(GL_TEXTURE0 + i);
     glClientActiveTexture(GL_TEXTURE0 + i);
-    glEnable(GL_TEXTURE_2D);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    if (textures[i] != NULL)
+    if (textures[i] != NULL) {
+      glEnable(GL_TEXTURE_2D);
+      glEnableClientState(GL_TEXTURE_COORD_ARRAY);
       glBindTexture(GL_TEXTURE_2D, textures[i]->getTexID());
-    else 
-      glBindTexture(GL_TEXTURE_2D, _defaultTextureID);
+    } else {
+      glDisable(GL_TEXTURE_2D);
+      glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    }
     glTexCoordPointer(2, GL_FLOAT, stride, (const GLvoid*)offset);
   }
   offset += 2 * sizeof(float);
@@ -393,6 +398,29 @@ void RenderGroup::setTime(float time)
 }
 
 
+void RenderGroup::setupShaders()
+{
+  glUseProgram(_shaderProgramID);
+  checkGLError("Error setting up shaders (bad program ID?)");
+
+  if (_material != NULL) {
+    RawImage* textures[] = { _material->mapKa, _material->mapKd, _material->mapKs, _material->mapD };
+    const char* names[] = { "mapKa", "mapKd", "mapKs", "mapD" };
+    const char* flagNames[] = { "hasMapKa", "hasMapKd", "hasMapKs", "hasMapD" };
+
+    for (size_t i = 0; i < 4; ++i) {
+      if (textures[i] != NULL) {
+        glUniform1i(glGetUniformLocation(_shaderProgramID, names[i]), i);
+        checkGLError("Error setting up texture for shader");
+
+        glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 1);
+        checkGLError("Error setting up texture flag for shader");
+      }
+    }
+  }
+}
+
+
 //
 // Renderer METHODS
 //
@@ -413,7 +441,8 @@ Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t 
   _currentMapD(NULL),
   _fps(),
   _defaultTexture(NULL),
-  _programObject(0),
+  _shaderWithMaterial(0),
+  _shaderNoMaterial(0),
   _currentTime(0),
   _playing(false),
   _since(0)
@@ -504,9 +533,9 @@ void Renderer::prepare()
   loadTexture(_defaultTexture, false);
 
   prepareModel();
+  prepareShaders();
   prepareRenderGroups();
   prepareMaterials();
-  prepareShaders();
 
   loadTextures(_renderGroups);
   _camera->frontView(_model->low, _model->high);
@@ -549,25 +578,21 @@ void Renderer::render(int width, int height)
     }
 
     if (_drawPoints) {
-      glUseProgram(0);
       glDisable(GL_LIGHTING);
       for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
         RenderGroup* group = *iter;
         group->renderPoints(_currentTime);
       }
       glEnable(GL_LIGHTING);
-      glUseProgram(_programObject);
     }
 
     if (_drawLines) {
-      glUseProgram(0);
       glDisable(GL_LIGHTING);
       for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter) {
         RenderGroup* group = *iter;
         group->renderLines(_currentTime);
       }
       glEnable(GL_LIGHTING);
-      glUseProgram(_programObject);
     }
   } else {
     drawDefaultModel();
@@ -732,6 +757,29 @@ void Renderer::prepareModel()
         _model->vn[i][frame] = normalize(_model->vn[i][frame]);
     }
   }
+
+  // Count the animated points.
+  if (_model->numKeyframes() > 1) {
+    size_t totalPoints = 0;
+    size_t animatedPoints = 0;
+
+    Float4 size = _model->high - _model->low;
+    for (size_t i = 0; i < _model->v.size(); ++i) {
+      Curve& curve = _model->v[i];
+      const Float4 initialPos = curve[0];
+      for (size_t keyFrame = 1; keyFrame < curve.numKeyframes(); ++keyFrame) {
+        const Float4 keyPos = curve[keyFrame];
+        // If a vertex has moved by more than 1% of the total object size...
+        if (lengthSqr( (keyPos - initialPos) / size ) > 1e-4)
+          ++animatedPoints; 
+        ++totalPoints;
+      }
+    }
+
+    fprintf(stderr, "%ld of %ld points (%1.2f%%) are animated.\n",
+        animatedPoints, totalPoints,
+        100.0 * float(animatedPoints) / float(totalPoints));
+  }
 }
 
 
@@ -766,12 +814,14 @@ void Renderer::prepareRenderGroups()
 
     if (groupMap->find(material) == groupMap->end()) {
       (*groupMap)[material] = std::list<RenderGroup*>();
-      (*groupMap)[material].push_back(new RenderGroup(material, type, _defaultTexture->getTexID()));
+      (*groupMap)[material].push_back(new RenderGroup(material, type,
+          material ? _shaderWithMaterial : _shaderNoMaterial));
     }
 
     std::list<RenderGroup*>& groups = (*groupMap)[material];
     if ((!isTriangle && groups.front()->size() > 0) || groups.front()->size() >= MAX_FACES_PER_VBO)
-      groups.push_front(new RenderGroup(material, type, _defaultTexture->getTexID()));
+      groups.push_front(new RenderGroup(material, type,
+          material ? _shaderWithMaterial : _shaderNoMaterial));
     groups.front()->add(_model, face);
   }
 
@@ -826,59 +876,19 @@ void Renderer::prepareMaterials()
 
 void Renderer::prepareShaders()
 {
-  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  GLuint vertexShader, fragmentShader;
 
-  GLint status;
+  // Set up the shader program for objects with a material.
+  vertexShader = loadShader(GL_VERTEX_SHADER, "vertex.vert");
+  fragmentShader = loadShader(GL_FRAGMENT_SHADER, "fragment.frag");
+  if (vertexShader != 0 && fragmentShader != 0)
+    _shaderWithMaterial = linkProgram(vertexShader, fragmentShader);
 
-  // Get the shader source code.
-  const char* vertexShaderSrc = loadShader("vertex.vert");
-  const char* fragmentShaderSrc = loadShader("fragment.frag");
-  if (vertexShaderSrc == NULL || fragmentShaderSrc == NULL)
-    return;
-
-  // Associate the source code strings with the shader handles. We can delete
-  // the strings after these calls.
-  glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
-  glShaderSource(fragmentShader, 1, &fragmentShaderSrc, NULL);
-
-  // Compile the shaders.
-  glCompileShader(vertexShader);
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-  if (status != GL_TRUE) {
-    fprintf(stderr, "Vertex shader failed to compile:\n");
-    printShaderInfoLog(vertexShader);
-  }
-
-  glCompileShader(fragmentShader);
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-  if (status != GL_TRUE) {
-    fprintf(stderr, "Fragment shader failed to compile.\n");
-    printShaderInfoLog(fragmentShader);
-  }
-
-  // Create a program object and attach the shaders to it.
-  _programObject = glCreateProgram();
-  glAttachShader(_programObject, fragmentShader);
-  glAttachShader(_programObject, vertexShader);
-
-  // Link the program.
-  glLinkProgram(_programObject);
-  glGetProgramiv(_programObject, GL_LINK_STATUS, &status);
-  if (status != GL_TRUE) {
-    fprintf(stderr, "Shader program failed to link.\n");
-    printProgramInfoLog(_programObject);
-  }
-
-  // Enable the program.
-  glUseProgram(_programObject);
-
-  // Pass the textures to the program.
-  const char* names[] = { "mapKa", "mapKd", "mapKs", "mapD" };
-  for (int i = 0; i < 4; ++i) {
-    GLint location = glGetUniformLocation(_programObject, names[i]);
-    glUniform1i(location, i);
-  }
+  // Set up the shader program for objects without a material.
+  vertexShader = loadShader(GL_VERTEX_SHADER, "vertex-notexture.vert");
+  fragmentShader = loadShader(GL_FRAGMENT_SHADER, "fragment-notexture.frag");
+  if (vertexShader != 0 && fragmentShader != 0)
+    _shaderNoMaterial = linkProgram(vertexShader, fragmentShader);
 }
 
 
@@ -1003,7 +1013,6 @@ void Renderer::headlight(GLenum light, const Float4& color)
 
 void Renderer::drawHUD(int width, int height, float fps)
 {
-  glUseProgram(0);
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
@@ -1048,7 +1057,6 @@ void Renderer::drawHUD(int width, int height, float fps)
 
   glEnable(GL_LIGHTING);
   glEnable(GL_DEPTH_TEST);
-  glUseProgram(_programObject);
 }
 
 
@@ -1092,7 +1100,7 @@ void Renderer::drawRightAlignedBitmapString(float x, float y, void* font, char* 
 }
 
 
-const char* Renderer::loadShader(const char* path)
+GLuint Renderer::loadShader(GLenum shaderType, const char* path)
 {
   FILE* shaderFile = fopen(path, "r");
   if (shaderFile == NULL)
@@ -1108,7 +1116,40 @@ const char* Renderer::loadShader(const char* path)
   text[length] = '\0';
 
   fclose(shaderFile);
-  return text;
+
+  GLuint shaderID = glCreateShader(shaderType);
+  glShaderSource(shaderID, 1, (const GLchar**)&text, NULL);
+  glCompileShader(shaderID);
+
+  GLint status;
+  glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE) {
+    fprintf(stderr, "Shader %s failed to compile:\n", path);
+    printShaderInfoLog(shaderID);
+    shaderID = 0;
+  }
+
+  delete[] text;
+  return shaderID;
+}
+
+
+GLuint Renderer::linkProgram(GLuint vertexShaderID, GLuint fragmentShaderID)
+{
+  GLuint programID = glCreateProgram();
+  glAttachShader(programID, vertexShaderID);
+  glAttachShader(programID, fragmentShaderID);
+  glLinkProgram(programID);
+
+  GLint status;
+  glGetProgramiv(programID, GL_LINK_STATUS, &status);
+  if (status != GL_TRUE) {
+    fprintf(stderr, "Shader program failed to link.\n");
+    printProgramInfoLog(programID);
+    programID = 0;
+  }
+
+  return programID;
 }
 
 
