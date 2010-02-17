@@ -440,7 +440,6 @@ Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t 
   _currentMapKs(NULL),
   _currentMapD(NULL),
   _fps(),
-  _defaultTexture(NULL),
   _shaderWithMaterial(0),
   _shaderNoMaterial(0),
   _currentTime(0),
@@ -462,12 +461,6 @@ Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t 
   //float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
   //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
   glShadeModel(GL_SMOOTH);
-
-  // Create a default texture (1x1 pixel, pure white).
-  _defaultTexture = new RawImage(GL_RGBA, 4, 4, 4);
-  unsigned char* pixels = _defaultTexture->getPixels();
-  for (size_t i = 0; i < 4 * 4 * 4; ++i)
-    pixels[i] = 255;
 }
 
 
@@ -530,8 +523,6 @@ void Renderer::printGLInfo()
 
 void Renderer::prepare()
 {
-  loadTexture(_defaultTexture, false);
-
   prepareModel();
   prepareShaders();
   prepareRenderGroups();
