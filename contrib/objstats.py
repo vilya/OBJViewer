@@ -21,7 +21,7 @@ def main():
 
     print "--"
     print model
-    with open(sys.argv[1]) as f:
+    with open(model) as f:
       for line in f:
         if line.startswith('f ') or line.startswith('fo '):
           faces += 1
