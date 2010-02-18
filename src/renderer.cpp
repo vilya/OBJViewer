@@ -196,6 +196,7 @@ void RenderGroup::render(float time)
     } else {
       glDisable(GL_TEXTURE_2D);
       glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+      glBindTexture(GL_TEXTURE_2D, 0);
     }
   }
   offset += 2 * sizeof(float);
@@ -344,54 +345,55 @@ void RenderGroup::setTime(float time)
   _currentTime = time;
 
   // Calculate the current animation frame.
-  size_t vertexSize = floatsPerVertex();
+  const size_t vertexSize = floatsPerVertex();
   float* vertexBuffer = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-  float* vertexBufferPos = vertexBuffer;
+#pragma omp parallel for schedule(dynamic, 100)
   for (size_t i = 0; i < _coords.size(); ++i) {
     Float4 coord = _coords[i]->valueAt(time);
+    float* vertexBufferPos = vertexBuffer + (i * vertexSize);
     vertexBufferPos[0] = coord.x;
     vertexBufferPos[1] = coord.y;
     vertexBufferPos[2] = coord.z;
-    vertexBufferPos += vertexSize;
   }
   vertexBuffer += 3;
-  vertexBufferPos = vertexBuffer;
+#pragma omp parallel for schedule(dynamic, 100)
   for (size_t i = 0; i < _texCoords.size(); ++i) {
     Float4 texCoord = _texCoords[i]->valueAt(time);
+    float* vertexBufferPos = vertexBuffer + (i * vertexSize);
     vertexBufferPos[0] = texCoord.x;
     vertexBufferPos[1] = texCoord.y;
-    vertexBufferPos += vertexSize;
   }
   vertexBuffer += 2;
-  vertexBufferPos = vertexBuffer;
   if (!_flipNormals) {
+#pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _normals.size(); ++i) {
       Float4 normal = _normals[i]->valueAt(time);
+      float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = normal.x;
       vertexBufferPos[1] = normal.y;
       vertexBufferPos[2] = normal.z;
       vertexBufferPos[3] = normal.w;
-      vertexBufferPos += vertexSize;
     }
   } else {
+#pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _normals.size(); ++i) {
       Float4 normal = _normals[i]->valueAt(time);
+      float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = -normal.x;
       vertexBufferPos[1] = -normal.y;
       vertexBufferPos[2] = -normal.z;
       vertexBufferPos[3] = normal.w;
-      vertexBufferPos += vertexSize;
     }
   }
   vertexBuffer += 4;
   if (_hasColors) {
-    vertexBufferPos = vertexBuffer;
+#pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _colors.size(); ++i) {
       Float4 color = _colors[i]->valueAt(time);
+      float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = color.r;
       vertexBufferPos[1] = color.g;
       vertexBufferPos[2] = color.b;
-      vertexBufferPos += vertexSize;
     }
     vertexBuffer += 3;
   }

@@ -8,7 +8,8 @@ THIRDPARTY_OBJ := build/thirdparty_obj
 TESTSRC    := test
 TESTBIN    := build/test
 
-OPTFLAGS   := -g
+OPTFLAGS   := -O3 -fopenmp
+#OPTFLAGS   := -g
 
 ifeq ($(OSTYPE), linux-gnu)
 IMAGELIB	 := /home/vilya/ImageLib/dist
@@ -17,7 +18,7 @@ CCFLAGS    := $(OPTFLAGS) -Wall -fmessage-length=0 -m64
 CXX        := g++
 CXXFLAGS   := $(OPTFLAGS) -Wall -fmessage-length=0 -m64
 LD         := g++
-LDFLAGS    := -m64
+LDFLAGS    := -m64 -fopenmp
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
 else
@@ -27,7 +28,7 @@ CCFLAGS    := $(OPTFLAGS) -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x
 CXX        := g++
 CXXFLAGS   := $(OPTFLAGS) -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
 LD         := g++
-LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64
+LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
 endif
