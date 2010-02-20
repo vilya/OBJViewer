@@ -71,7 +71,11 @@ RenderGroup::RenderGroup(Material* iMaterial, RenderGroupType iType, GLuint iSha
   _size(0),
   _hasColors(false),
   _currentTime(-1e20),
+  _flipNormals(false),
   _coords(),
+  _texCoords(),
+  _normals(),
+  _colors(),
   _bufferID(0),
   _indexesID(0),
   _shaderProgramID(iShaderProgramID)
@@ -121,6 +125,7 @@ size_t RenderGroup::floatsPerVertex() const
 {
   // First 9 floats are: x, y, z, u, v, nx, ny, nz, nw.
   return 9 + (_hasColors ? 3 : 0);
+  //return 7 + (_hasColors ? 3 : 0); // skipping u,v coords while debugging.
 }
 
 
@@ -133,7 +138,7 @@ void RenderGroup::flipNormals()
 
 void RenderGroup::prepare()
 {
-  size_t bufferSize = _coords.size() * sizeof(float) * floatsPerVertex();
+  size_t bufferSize = _size * sizeof(float) * floatsPerVertex();
 
   // Get a buffer ID for the coords & allocate space for them. 
   glGenBuffers(1, &_bufferID);
@@ -406,10 +411,10 @@ void RenderGroup::setupShaders()
   glUseProgram(_shaderProgramID);
   checkGLError("Error setting up shaders (bad program ID?)");
 
+  const char* flagNames[] = { "hasMapKa", "hasMapKd", "hasMapKs", "hasMapD" };
   if (_material != NULL) {
     RawImage* textures[] = { _material->mapKa, _material->mapKd, _material->mapKs, _material->mapD };
     const char* names[] = { "mapKa", "mapKd", "mapKs", "mapD" };
-    const char* flagNames[] = { "hasMapKa", "hasMapKd", "hasMapKs", "hasMapD" };
 
     for (size_t i = 0; i < 4; ++i) {
       if (textures[i] != NULL) {
@@ -418,7 +423,15 @@ void RenderGroup::setupShaders()
 
         glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 1);
         checkGLError("Error setting up texture flag for shader");
+      } else {
+        glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 0);
+        checkGLError("Error setting up texture flag for shader");
       }
+    }
+  } else {
+    for (size_t i = 0; i < 4; ++i) {
+      glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 0);
+      checkGLError("Error setting up texture flag for shader");
     }
   }
 }
@@ -526,10 +539,10 @@ void Renderer::printGLInfo()
 
 void Renderer::prepare()
 {
+  prepareMaterials();
   prepareModel();
   prepareShaders();
   prepareRenderGroups();
-  prepareMaterials();
 
   loadTextures(_renderGroups);
   _camera->frontView(_model->low, _model->high);
