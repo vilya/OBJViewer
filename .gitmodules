@@ -1,0 +1,3 @@
+[submodule "ImageLib"]
+	path = ImageLib
+	url = git@github.com:vilya/ImageLib.git
