@@ -18,20 +18,26 @@ Pre-requisites
 ==============
 - MacOS X or Linux (tested on MacOS X 10.6).
 - Glut
-- ImageLib -- see http://github.com/vilya/ImageLib
 - A graphics card which supports OpenGL 2.1 or above. 
+
+
+Getting the code
+================
+OBJViewer uses git submodules, so once you've cloned the OBJViewer git
+repository you'll also need to update the submodules:
+
+  git clone http://github.com/vilya/OBJViewer.git
+  cd OBJViewer
+  git submodule update --init
 
 
 Compiling
 =========
 It's very simple:
 
-    make dirs   # Only if you're building for the first time.
     make
 
-That's all! Afterwards, the executable will be in the bin/ folder. You only
-need to make dirs once: it creates the intermediate and output directories used
-by the build. So long as they're there, you can skip it.
+That's all! Afterwards, the executable will be in the bin/ folder. 
 
 
 Running
@@ -41,6 +47,13 @@ If you are in the project root folder, type
     ./bin/objviewer -h
 
 to get information about how to run the app.
+
+
+Reporting bugs
+==============
+If you find any bugs, please report them here:
+
+  http://github.com/vilya/OBJViewer/issues
 
 
 Credits
