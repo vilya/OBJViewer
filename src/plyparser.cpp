@@ -75,7 +75,8 @@ void plyParseFaces(ParserCallbacks* callbacks, PlyFile* plySrc,
 // PUBLIC FUNCTIONS
 //
 
-void loadPLY(ParserCallbacks* callbacks, const char* path) throw(ParseException)
+void loadPLY(ParserCallbacks* callbacks, const char* path, ResourceManager* resources)
+  throw(ParseException)
 {
   int numElements = 0;
   char** elementNames = NULL;

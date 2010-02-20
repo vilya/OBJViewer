@@ -13,6 +13,9 @@
 // CONSTANTS
 //
 
+const unsigned int _MAX_LINE_LEN = 4096;
+
+
 enum MTLFileLineType {
   MTL_LINETYPE_UNKNOWN,
   MTL_LINETYPE_BLANK,
@@ -635,7 +638,8 @@ Material *objParseUSEMTL(char *line, char*& col, std::map<std::string, Material*
 // PUBLIC FUNCTIONS
 //
 
-void loadOBJ(ParserCallbacks* callbacks, const char* path) throw(ParseException)
+void loadOBJ(ParserCallbacks* callbacks, const char* path, ResourceManager* resources)
+  throw(ParseException)
 {
   FILE *f = fopen(path, "r");
   if (f == NULL)

@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <unistd.h> // for getcwd()
+#include <libgen.h> // for dirname()
 
 #include "resources.h"
 
@@ -14,7 +15,7 @@ ResourceException::ResourceException(const char *msg_format...) :
 {
   va_list args;
   va_start(args, msg_format);
-  vsnprintf(message, _MAX_LINE_LEN, msg_format, args);
+  vsnprintf(message, sizeof(message), msg_format, args);
   va_end(args);
 }
 
@@ -74,6 +75,14 @@ SearchPath& SearchPath::addCurrentDir()
 }
 
 
+SearchPath& SearchPath::addAppDir(const std::string& appArgv0, const std::string& relativePath)
+{
+  std::string appDir = dirname(const_cast<char*>(appArgv0.c_str()));
+  appDir = appDir + "/" + relativePath;
+  return addDir(appDir);
+}
+
+
 std::string SearchPath::find(const std::string& filename) const throw(ResourceException)
 {
   std::string normalisedFilename = normalisePath(filename);
@@ -124,7 +133,7 @@ bool SearchPath::isRelativePath(const std::string& path) const
 // ResourceManager methods
 //
 
-ResourceManager::ResourceManager(const std::string appPath) : textures(), shaders()
+ResourceManager::ResourceManager() : textures(), shaders()
 {
 }
 

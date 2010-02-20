@@ -15,7 +15,7 @@ ParseException::ParseException(const char *msg_format...) :
 {
   va_list args;
   va_start(args, msg_format);
-  vsnprintf(message, _MAX_LINE_LEN, msg_format, args);
+  vsnprintf(message, sizeof(message), msg_format, args);
   va_end(args);
 }
 
@@ -30,7 +30,8 @@ const char* ParseException::what() const throw()
 // PUBLIC FUNCTIONS
 //
 
-void loadModel(ParserCallbacks* callbacks, const char* path) throw(ParseException)
+void loadModel(ParserCallbacks* callbacks, const char* path, ResourceManager* resources)
+  throw(ParseException)
 {
   if (callbacks == NULL)
     throw ParseException("You didn't provide any callbacks; parsing will do nothing!");
@@ -52,11 +53,11 @@ void loadModel(ParserCallbacks* callbacks, const char* path) throw(ParseExceptio
 
   if (strcasecmp(ext, ".obj") == 0) {
     callbacks->beginModel(path);
-    loadOBJ(callbacks, path);
+    loadOBJ(callbacks, path, resources);
     callbacks->endModel();
   } else if (strcasecmp(ext, ".ply") == 0) {
     callbacks->beginModel(path);
-    loadPLY(callbacks, path);
+    loadPLY(callbacks, path, resources);
     callbacks->endModel();
   } else {
     throw ParseException("Unknown model format: %s", ext);

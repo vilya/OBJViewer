@@ -2,9 +2,11 @@
 #define OBJViewer_plyparser_h
 
 #include "parser.h"
+#include "resources.h"
 
 
-void loadPLY(ParserCallbacks* callbacks, const char* path) throw(ParseException);
+void loadPLY(ParserCallbacks* callbacks, const char* path, ResourceManager* resources)
+  throw(ParseException);
 
 
 #endif // OBJViewer_plyparser_h

@@ -43,12 +43,16 @@ void doMouseDragged(int x, int y);
 //
 
 OBJViewerApp::OBJViewerApp(int argc, char **argv) :
-  winX(100), winY(100), winWidth(800), winHeight(600),
+  winX(100),
+  winY(100),
+  winWidth(800),
+  winHeight(600),
   fullscreen(false),
   mouseX(0),
   mouseY(0),
   mouseButton(0),
   mouseModifiers(0),
+  _resources(NULL),
   _model(NULL),
   _renderer(NULL),
   _maxTextureWidth(0),
@@ -61,9 +65,13 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutInitWindowSize(winWidth, winHeight);
   glutCreateWindow("Vil's OBJ Viewer");
 
+  _resources = new ResourceManager();
+  _resources->textures.addAppDir(argv[0]);
+  _resources->shaders.addAppDir(argv[0]);
+
   _model = new Model();
   processArgs(argc, argv);
-  _renderer = new Renderer(_camera, _model, _maxTextureWidth, _maxTextureHeight);
+  _renderer = new Renderer(_resources, _model, _camera, _maxTextureWidth, _maxTextureHeight);
   _renderer->prepare();
 
   glutDisplayFunc(doRender);
@@ -402,7 +410,7 @@ void OBJViewerApp::processArgs(int argc, char **argv)
     const char* modelPath = argv[arg];
     try {
       fprintf(stderr, "Loading model %s\n", modelPath);
-      loadModel(this, modelPath);
+      loadModel(this, modelPath, _resources);
       fprintf(stderr, "Finished loading model %s\n", modelPath);
     } catch (ParseException& e) {
       fprintf(stderr, "%s\n", e.what());

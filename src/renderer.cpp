@@ -441,11 +441,13 @@ void RenderGroup::setupShaders()
 // Renderer METHODS
 //
 
-Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t maxTextureHeight) :
+Renderer::Renderer(ResourceManager* resources, Model* model, Camera* camera,
+    size_t maxTextureWidth, size_t maxTextureHeight) :
   _headlightType(kDirectional),
   _drawPolys(true),
   _drawPoints(false),
   _drawLines(false),
+  _resources(resources),
   _model(model),
   _camera(camera),
   _animFPS(30.0),
@@ -1108,35 +1110,40 @@ void Renderer::drawRightAlignedBitmapString(float x, float y, void* font, char* 
 }
 
 
-GLuint Renderer::loadShader(GLenum shaderType, const char* path)
+GLuint Renderer::loadShader(GLenum shaderType, const std::string& path)
 {
-  FILE* shaderFile = fopen(path, "r");
-  if (shaderFile == NULL)
-    return NULL;
+  GLuint shaderID;
+  char* text = NULL;
+  try {
+    FILE* shaderFile = fopen(_resources->shaders.find(path).c_str(), "r");
+    // We're guaranteed that the shader file won't be NULL if find doesn't throw.
 
-  // Get the length of the file.
-  fseek(shaderFile, 0, SEEK_END);
-  size_t length = ftell(shaderFile);
-  fseek(shaderFile, 0, SEEK_SET);
+    // Get the length of the file.
+    fseek(shaderFile, 0, SEEK_END);
+    size_t length = ftell(shaderFile);
+    fseek(shaderFile, 0, SEEK_SET);
 
-  char* text = new char[length + 1];
-  fread(text, sizeof(const char), length, shaderFile);
-  text[length] = '\0';
+    text = new char[length + 1];
+    fread(text, sizeof(const char), length, shaderFile);
+    text[length] = '\0';
 
-  fclose(shaderFile);
+    fclose(shaderFile);
 
-  GLuint shaderID = glCreateShader(shaderType);
-  glShaderSource(shaderID, 1, (const GLchar**)&text, NULL);
-  glCompileShader(shaderID);
+    GLuint shaderID = glCreateShader(shaderType);
+    glShaderSource(shaderID, 1, (const GLchar**)&text, NULL);
+    glCompileShader(shaderID);
 
-  GLint status;
-  glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
-  if (status != GL_TRUE) {
-    fprintf(stderr, "Shader %s failed to compile:\n", path);
-    printShaderInfoLog(shaderID);
+    GLint status;
+    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
+    if (status != GL_TRUE) {
+      fprintf(stderr, "Shader %s failed to compile:\n", path.c_str());
+      printShaderInfoLog(shaderID);
+      shaderID = 0;
+    }
+  } catch (ResourceException& ex) {
+    fprintf(stderr, "Unable to load shader: %s\n", ex.what());
     shaderID = 0;
   }
-
   delete[] text;
   return shaderID;
 }

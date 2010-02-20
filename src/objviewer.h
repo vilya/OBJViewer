@@ -3,6 +3,7 @@
 
 #include "model.h"
 #include "renderer.h"
+#include "resources.h"
 
 
 //
@@ -47,6 +48,7 @@ private:
   int winX, winY, winWidth, winHeight, currWidth, currHeight;
   bool fullscreen;
   int mouseX, mouseY, mouseButton, mouseModifiers;
+  ResourceManager* _resources;
   Model* _model;
   Renderer* _renderer;
   size_t _maxTextureWidth, _maxTextureHeight;

@@ -5,14 +5,12 @@
 #include <string>
 
 #include "model.h"
-
-
-const unsigned int _MAX_LINE_LEN = 4096;
+#include "resources.h"
 
 
 class ParseException : public virtual std::exception {
 public:
-  char message[_MAX_LINE_LEN];
+  char message[4096];
 
   ParseException(const char *msg_format...);
   virtual ~ParseException() throw() {}
@@ -38,7 +36,8 @@ public:
 };
 
 
-void loadModel(ParserCallbacks* callbacks, const char* path) throw(ParseException);
+void loadModel(ParserCallbacks* callbacks, const char* path, ResourceManager* resources)
+  throw(ParseException);
 
 
 #endif // OBJViewer_parser_h

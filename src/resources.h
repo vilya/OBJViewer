@@ -7,12 +7,9 @@
 #include <vector>
 
 
-const unsigned int _MAX_LINE_LEN = 4096;
-
-
 class ResourceException : public virtual std::exception {
 public:
-  char message[_MAX_LINE_LEN];
+  char message[4096];
 
   ResourceException(const char *msg_format...);
   virtual ~ResourceException() throw() {}
@@ -29,6 +26,7 @@ public:
 
   SearchPath& addDir(const std::string& dir);
   SearchPath& addCurrentDir();
+  SearchPath& addAppDir(const std::string& appArgv0, const std::string& relativePath = "");
 
   std::string find(const std::string& relativePath) const throw(ResourceException);
 
@@ -46,7 +44,7 @@ public:
   SearchPath textures;
   SearchPath shaders;
 
-  ResourceManager(const std::string appPath);
+  ResourceManager();
 };
 
 

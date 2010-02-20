@@ -9,6 +9,7 @@
 #include "model.h"
 #include "parser.h"
 #include "camera.h"
+#include "resources.h"
 
 
 //
@@ -85,7 +86,8 @@ private:
 
 class Renderer {
 public:
-  Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t maxTextureHeight);
+  Renderer(ResourceManager* resources, Model* model, Camera* camera,
+      size_t maxTextureWidth, size_t maxTextureHeight);
   ~Renderer();
 
   Camera* currentCamera();
@@ -127,7 +129,7 @@ private:
   void drawBitmapString(float x, float y, void* font, char* str);
   void drawRightAlignedBitmapString(float x, float y, void* font, char* str);
 
-  GLuint loadShader(GLenum shaderType, const char* path);
+  GLuint loadShader(GLenum shaderType, const std::string& path);
   GLuint linkProgram(GLuint vertexShaderID, GLuint fragmentShaderID);
   GLint glGet(GLenum what);
 
@@ -139,6 +141,7 @@ private:
 private:
   LightType _headlightType;
   bool _drawPolys, _drawPoints, _drawLines;
+  ResourceManager* _resources;
   Model* _model;
   Camera* _camera;
   float _animFPS;
