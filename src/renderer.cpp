@@ -448,6 +448,7 @@ Renderer::Renderer(Camera* camera, Model* model, size_t maxTextureWidth, size_t 
   _drawLines(false),
   _model(model),
   _camera(camera),
+  _animFPS(30.0),
   _maxTextureWidth(maxTextureWidth),
   _maxTextureHeight(maxTextureHeight),
   _renderGroups(),
@@ -1202,7 +1203,7 @@ void Renderer::printProgramInfoLog(GLuint obj)
 float Renderer::calculatePlaybackTime()
 {
   int now = glutGet(GLUT_ELAPSED_TIME);
-  float incr = 24.0 * float(now - _since) / 1000.0;
+  float incr = _animFPS * float(now - _since) / 1000.0;
   // Clamp incr to 1.0 so that we always see every frame, even when our frame
   // rate for display is less than 24 fps.
   if (incr > 1.0)

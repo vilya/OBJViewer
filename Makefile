@@ -8,8 +8,8 @@ THIRDPARTY_OBJ := build/thirdparty_obj
 TESTSRC    := test
 TESTBIN    := build/test
 
-OPTFLAGS   := -O3 -fopenmp
-#OPTFLAGS   := -g
+#OPTFLAGS   := -O3 -fopenmp
+OPTFLAGS   := -g
 
 ifeq ($(OSTYPE), linux-gnu)
 IMAGELIB	 := /home/vilya/ImageLib/dist

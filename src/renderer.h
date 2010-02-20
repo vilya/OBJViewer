@@ -141,6 +141,7 @@ private:
   bool _drawPolys, _drawPoints, _drawLines;
   Model* _model;
   Camera* _camera;
+  float _animFPS;
   size_t _maxTextureWidth, _maxTextureHeight;
   std::list<RenderGroup*> _renderGroups;
   size_t _transparentGroupsStart;
