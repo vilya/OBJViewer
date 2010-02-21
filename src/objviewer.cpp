@@ -66,8 +66,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   glutCreateWindow("Vil's OBJ Viewer");
 
   _resources = new ResourceManager();
-  _resources->textures.addAppDir(argv[0]);
-  _resources->shaders.addAppDir(argv[0]);
+  _resources->textures.addAppDir(argv[0], "..");
+  _resources->shaders.addAppDir(argv[0], "..");
 
   _model = new Model();
   processArgs(argc, argv);

@@ -1129,7 +1129,7 @@ GLuint Renderer::loadShader(GLenum shaderType, const std::string& path)
 
     fclose(shaderFile);
 
-    GLuint shaderID = glCreateShader(shaderType);
+    shaderID = glCreateShader(shaderType);
     glShaderSource(shaderID, 1, (const GLchar**)&text, NULL);
     glCompileShader(shaderID);
 

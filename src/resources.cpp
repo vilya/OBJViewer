@@ -112,6 +112,8 @@ std::string SearchPath::normalisePath(const std::string& path) const
     if (ch == '/') {
       if (bufIndex == 0 || buf[bufIndex-1] != '/')
         buf[bufIndex++] = ch;
+    } else {
+      buf[bufIndex++] = ch;
     }
   }
 
