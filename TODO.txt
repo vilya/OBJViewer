@@ -1,6 +1,14 @@
 Bugs:
 - See the issues page on github.
 
+Render state management:
+- Add a mechanism for keeping track of the render state and returning to earlier / known states.
+- Maybe a stack of render context objects?
+  - Pushing a new object onto the stack would just clone the top item.
+  - You could make all the changes you like via the top item.
+  - Popping would have to compare the top item with the item below to find the
+    differences and apply them.
+
 Animation:
 - Use the vertex shader to interpolate the keyframes:
   - Arrange data so that all data for a single keyframe is in a contiguous block,
