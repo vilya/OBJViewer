@@ -52,6 +52,7 @@ private:
   Model* _model;
   Renderer* _renderer;
   size_t _maxTextureWidth, _maxTextureHeight;
+  float _animFPS;
 
   Camera* _camera;
 };

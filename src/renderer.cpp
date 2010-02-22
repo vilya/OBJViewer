@@ -442,7 +442,7 @@ void RenderGroup::setupShaders()
 //
 
 Renderer::Renderer(ResourceManager* resources, Model* model, Camera* camera,
-    size_t maxTextureWidth, size_t maxTextureHeight) :
+    size_t maxTextureWidth, size_t maxTextureHeight, float animFPS) :
   _headlightType(kDirectional),
   _drawPolys(true),
   _drawPoints(false),
@@ -450,7 +450,7 @@ Renderer::Renderer(ResourceManager* resources, Model* model, Camera* camera,
   _resources(resources),
   _model(model),
   _camera(camera),
-  _animFPS(30.0),
+  _animFPS(animFPS),
   _maxTextureWidth(maxTextureWidth),
   _maxTextureHeight(maxTextureHeight),
   _renderGroups(),

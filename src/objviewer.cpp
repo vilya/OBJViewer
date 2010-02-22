@@ -57,6 +57,7 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
   _renderer(NULL),
   _maxTextureWidth(0),
   _maxTextureHeight(0),
+  _animFPS(30.0),
   _camera(new Camera())
 {
   glutInit(&argc, argv);
@@ -71,7 +72,8 @@ OBJViewerApp::OBJViewerApp(int argc, char **argv) :
 
   _model = new Model();
   processArgs(argc, argv);
-  _renderer = new Renderer(_resources, _model, _camera, _maxTextureWidth, _maxTextureHeight);
+  _renderer = new Renderer(_resources, _model, _camera,
+      _maxTextureWidth, _maxTextureHeight, _animFPS);
   _renderer->prepare();
 
   glutDisplayFunc(doRender);
@@ -351,10 +353,14 @@ void OBJViewerApp::usage(char *progname)
 "  -t,--max-texture-size WxH    Specify the maximum texture size. Any textures\n"
 "                               larger than this will be downsampled. The\n"
 "                               default is no maximum.\n"
+"  -f,--fps FPS                 The target playback speed for the animation.\n"
+"                               If our actual frame rate is different to this\n"
+"                               the frames will be interpolated. The default\n"
+"                               is 30.0 fps.\n"
 "  -h,--help                    Print this message and exit.\n"
 "\n"
 "You can also press keys to perform various functions while viewing a model.\n"
-"To see a list of these, press the '?' key."
+"To see a list of these, press the '?' key.\n"
             , basename(progname));
 }
 
@@ -378,9 +384,10 @@ bool OBJViewerApp::parseDimensions(char* dimensions, size_t& width, size_t& heig
 
 void OBJViewerApp::processArgs(int argc, char **argv)
 {
-  const char *short_opts = "ht:";
+  const char *short_opts = "ht:f:";
   struct option long_opts[] = {
     { "max-texture-size",   required_argument,  NULL, 't' },
+    { "fps",                required_argument,  NULL, 'f' },
     { "help",               no_argument,        NULL, 'h' },
     { NULL, 0, NULL, 0 }
   };
@@ -392,6 +399,9 @@ void OBJViewerApp::processArgs(int argc, char **argv)
         usage(argv[0]);
         exit(0);
       }
+      break;
+    case 'f':
+      _animFPS = atof(optarg);
       break;
     case 'h':
       usage(argv[0]);

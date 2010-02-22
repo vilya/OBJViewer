@@ -87,7 +87,7 @@ private:
 class Renderer {
 public:
   Renderer(ResourceManager* resources, Model* model, Camera* camera,
-      size_t maxTextureWidth, size_t maxTextureHeight);
+      size_t maxTextureWidth, size_t maxTextureHeight, float animFPS);
   ~Renderer();
 
   Camera* currentCamera();
