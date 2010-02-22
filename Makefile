@@ -8,8 +8,8 @@ THIRDPARTY_OBJ := build/thirdparty_obj
 TESTSRC    := test
 TESTBIN    := build/test
 
-#OPTFLAGS   := -O3 -fopenmp
-OPTFLAGS   := -g
+OPTFLAGS   := -O3 -fopenmp
+#OPTFLAGS   := -g
 
 # Linker options to check out:
 # -dylib_file
@@ -45,8 +45,6 @@ TARGET     := $(BIN)/objviewer
 
 ifeq ($(OSTYPE), linux-gnu)
 IMAGELIB	 := ImageLib/dist
-CC         := gcc
-CCFLAGS    := $(OPTFLAGS) -Wall -fmessage-length=0 -m64
 CXX        := g++
 CXXFLAGS   := $(OPTFLAGS) -Wall -fmessage-length=0 -m64
 LD         := g++
@@ -55,10 +53,8 @@ INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
 else
 IMAGELIB	 := ImageLib/dist
-CC         := gcc
-CCFLAGS    := $(OPTFLAGS) -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
 CXX        := g++
-CXXFLAGS   := $(OPTFLAGS) -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64
+CXXFLAGS   := $(OPTFLAGS) -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -msse4.2 -mfpmath=sse
 LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/../$(IMAGELIB)/lib
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
