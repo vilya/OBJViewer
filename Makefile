@@ -25,6 +25,7 @@ DBGFLAGS   := -g
 
 
 MODULES    := ImageLib
+IMAGELIB	 := ImageLib/dist
 
 OBJS       := $(OBJ)/objviewer.o \
 							$(OBJ)/model.o \
@@ -44,7 +45,6 @@ TARGET     := $(BIN)/objviewer
 
 
 ifeq ($(OSTYPE), linux-gnu)
-IMAGELIB	 := ImageLib/dist
 CXX        := g++
 CXXFLAGS   := -Wall -fmessage-length=0 -m64
 CC         := gcc
@@ -53,6 +53,8 @@ LD         := g++
 LDFLAGS    := -m64 -fopenmp -Wl,--rpath,\$$ORIGIN
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
+DYLIB_EXT	 := .so
+IMAGELIB_LIB := $(IMAGELIB)/lib/libimagelib.so
 else
 IMAGELIB	 := ImageLib/dist
 CXX        := g++
@@ -60,10 +62,12 @@ CXXFLAGS   := -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -msse4
 CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
-LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/../$(IMAGELIB)/lib
+LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
+IMAGELIB_LIB := $(IMAGELIB)/lib/libimagelib.dylib
 endif
+
 
 
 .PHONY: debug
@@ -106,7 +110,7 @@ dirs:
 .PHONY: $(MODULES)
 ImageLib:
 	$(MAKE) -C $@
-	cp ImageLib/dist/lib/libimagelib.so $(BIN)
+	cp $(IMAGELIB_LIB) $(BIN)
 
 
 $(TARGET): $(MODULES) $(OBJS) $(THIRDPARTY_OBJS)
