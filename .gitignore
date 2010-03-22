@@ -5,3 +5,5 @@ contrib/vbo
 contrib/glutglsl-unix
 contrib/OpenGL
 dist
+.cproject
+.project
