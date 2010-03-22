@@ -106,6 +106,7 @@ dirs:
 .PHONY: $(MODULES)
 ImageLib:
 	$(MAKE) -C $@
+	cp ImageLib/dist/lib/libimagelib.so $(BIN)
 
 
 $(TARGET): $(MODULES) $(OBJS) $(THIRDPARTY_OBJS)
