@@ -9,7 +9,7 @@ TESTSRC    := test
 TESTBIN    := build/test
 
 OPTFLAGS   := -O3 -fopenmp
-#OPTFLAGS   := -g
+DBGFLAGS   := -g
 
 # Linker options to check out:
 # -dylib_file
@@ -46,20 +46,34 @@ TARGET     := $(BIN)/objviewer
 ifeq ($(OSTYPE), linux-gnu)
 IMAGELIB	 := ImageLib/dist
 CXX        := g++
-CXXFLAGS   := $(OPTFLAGS) -Wall -fmessage-length=0 -m64
+CXXFLAGS   := -Wall -fmessage-length=0 -m64
+CC         := gcc
+CCFLAGS    := $(CXXFLAGS)
 LD         := g++
-LDFLAGS    := -m64 -fopenmp -rpath ../$(IMAGELIB)/lib
+LDFLAGS    := -m64 -fopenmp -Wl,--rpath,\$$ORIGIN
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
 else
 IMAGELIB	 := ImageLib/dist
 CXX        := g++
-CXXFLAGS   := $(OPTFLAGS) -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -msse4.2 -mfpmath=sse
+CXXFLAGS   := -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -msse4.2 -mfpmath=sse
+CC         := gcc
+CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/../$(IMAGELIB)/lib
 INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
 LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
 endif
+
+
+.PHONY: debug
+debug:
+	$(MAKE) CXXFLAGS="$(DBGFLAGS) $(CXXFLAGS)" CCFLAGS="$(DBGFLAGS) $(CCFLAGS)" all
+
+
+.PHONY: release
+release:
+	$(MAKE) CXXFLAGS="$(OPTFLAGS) $(CXXFLAGS)" CCFLAGS="$(OPTFLAGS) $(CXXFLAGS)" all
 
 
 .PHONY: all
