@@ -74,9 +74,9 @@ private:
   // - Next 2 are texture u and v (if _hasTexCoords == true).
   // - Next 4 are normal x, y, z and w (if _hasNormalCoords == true).
   // - Final 3 are color r, g and b (if _hasColors == true).
-  std::vector<Curve4*> _coords;
-  std::vector<Curve4*> _texCoords;
-  std::vector<Curve4*> _normals;
+  std::vector<Curve3*> _coords;
+  std::vector<Curve2*> _texCoords;
+  std::vector<Curve3*> _normals;
   std::vector<Curve4*> _colors;
   GLuint _bufferID;
   GLuint _indexesID;
@@ -113,7 +113,7 @@ public:
   void flipNormals();
 
 private:
-  void setupCamera(int width, int height, const vh::Vector4& low, const vh::Vector4& high);
+  void setupCamera(int width, int height, const vh::Vector3& low, const vh::Vector3& high);
   void transformToCamera();
   void prepareModel();
   void prepareRenderGroups();

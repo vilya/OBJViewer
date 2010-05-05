@@ -123,11 +123,11 @@ void loadPLY(ParserCallbacks* callbacks, const char* path, ResourceManager* reso
         PLYVertex plyVert;
         ply_get_element(plySrc, &plyVert);
 
-        callbacks->coordParsed(vh::Vector4(plyVert.x, plyVert.y, plyVert.z, 1.0));
+        callbacks->coordParsed(vh::Vector3(plyVert.x, plyVert.y, plyVert.z));
         if (hasTexCoords)
-          callbacks->texCoordParsed(vh::Vector4(plyVert.u, plyVert.v, 0.0, 1.0));
+          callbacks->texCoordParsed(vh::Vector2(plyVert.u, plyVert.v));
         if (hasNormals)
-          callbacks->normalParsed(vh::Vector4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0));
+          callbacks->normalParsed(vh::Vector3(plyVert.nx, plyVert.ny, plyVert.nz));
 
         if (hasRGB)
           callbacks->colorParsed(vh::Vector4(plyVert.r, plyVert.g, plyVert.b, 1.0));

@@ -11,7 +11,7 @@
 //
 
 Camera::Camera() :
-  _target(0, 0, 0, 1),
+  _target(0, 0, 0),
   _rotation(0, 0, 0, 10),
   _fieldOfViewY(30)
 {
@@ -44,7 +44,7 @@ void Camera::rotateByV(float angle)
 }
 
 
-vh::Vector4 Camera::getTarget() const
+vh::Vector3 Camera::getTarget() const
 {
   return _target;
 }
@@ -68,7 +68,7 @@ float Camera::getFieldOfViewY() const
 }
 
 
-void Camera::centerView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::centerView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.z - low.z) / 10.0;
@@ -76,7 +76,7 @@ void Camera::centerView(const vh::Vector4& low, const vh::Vector4& high)
 }
 
 
-void Camera::frontView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::frontView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.z - low.z) / 2 +
@@ -85,7 +85,7 @@ void Camera::frontView(const vh::Vector4& low, const vh::Vector4& high)
 }
 
 
-void Camera::backView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::backView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.z - low.z) / 2 +
@@ -94,7 +94,7 @@ void Camera::backView(const vh::Vector4& low, const vh::Vector4& high)
 }
 
 
-void Camera::leftView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::leftView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.x - low.x) / 2 +
@@ -103,7 +103,7 @@ void Camera::leftView(const vh::Vector4& low, const vh::Vector4& high)
 }
 
 
-void Camera::rightView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::rightView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.x - low.x) / 2 +
@@ -112,7 +112,7 @@ void Camera::rightView(const vh::Vector4& low, const vh::Vector4& high)
 }
 
 
-void Camera::topView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::topView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.y - low.y) +
@@ -121,7 +121,7 @@ void Camera::topView(const vh::Vector4& low, const vh::Vector4& high)
 }
 
 
-void Camera::bottomView(const vh::Vector4& low, const vh::Vector4& high)
+void Camera::bottomView(const vh::Vector3& low, const vh::Vector3& high)
 {
   _target = (high + low) / 2;
   float distance = (high.y - low.y) +

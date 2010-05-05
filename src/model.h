@@ -48,26 +48,29 @@ struct Face {
 };
 
 
+typedef vh::Curve<vh::Vector2> Curve2;
+typedef vh::Curve<vh::Vector3> Curve3;
 typedef vh::Curve<vh::Vector4> Curve4;
+
 
 class Model {
 public:
-  std::vector<Curve4> v;
-  std::vector<Curve4> vt;
-  std::vector<Curve4> vn;
+  std::vector<Curve3> v;
+  std::vector<Curve2> vt;
+  std::vector<Curve3> vn;
   std::vector<Curve4> colors;
   std::vector<Face*> faces;
   std::map<std::string, Material*> materials;
 
-  vh::Vector4 low;
-  vh::Vector4 high;
+  vh::Vector3 low;
+  vh::Vector3 high;
 
   Model();
   ~Model();
 
-  void addV(const vh::Vector4& newV);
-  void addVt(const vh::Vector4& newVt);
-  void addVn(const vh::Vector4& newVn);
+  void addV(const vh::Vector3& newV);
+  void addVt(const vh::Vector2& newVt);
+  void addVn(const vh::Vector3& newVn);
   void addColor(const vh::Vector4& newColor);
 
   void addFace(Face* newFace);

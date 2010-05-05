@@ -27,9 +27,9 @@ public:
   // Parser callbacks
   virtual void beginModel(const char* path);
   virtual void endModel();
-  virtual void coordParsed(const vh::Vector4& coord);
-  virtual void texCoordParsed(const vh::Vector4& coord);
-  virtual void normalParsed(const vh::Vector4& normal);
+  virtual void coordParsed(const vh::Vector3& coord);
+  virtual void texCoordParsed(const vh::Vector2& coord);
+  virtual void normalParsed(const vh::Vector3& normal);
   virtual void colorParsed(const vh::Vector4& color);
   virtual void faceParsed(Face* face);
   virtual void materialParsed(const std::string& name, Material* material);

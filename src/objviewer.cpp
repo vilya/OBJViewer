@@ -112,8 +112,8 @@ void OBJViewerApp::changeSize(int width, int height)
 
 void OBJViewerApp::keyPressed(unsigned char key, int x, int y)
 {
-  vh::Vector4 low(-1, -1, -1, 1);
-  vh::Vector4 high(1, 1, 1, 1);
+  vh::Vector3 low(-1, -1, -1);
+  vh::Vector3 high(1, 1, 1);
   if (currentRenderer() != NULL && currentRenderer()->currentModel() != NULL) {
     low = currentRenderer()->currentModel()->low;
     high = currentRenderer()->currentModel()->high;
@@ -283,19 +283,19 @@ void OBJViewerApp::endModel()
 }
 
 
-void OBJViewerApp::coordParsed(const vh::Vector4& coord)
+void OBJViewerApp::coordParsed(const vh::Vector3& coord)
 {
   _model->addV(coord);
 }
 
 
-void OBJViewerApp::texCoordParsed(const vh::Vector4& coord)
+void OBJViewerApp::texCoordParsed(const vh::Vector2& coord)
 {
   _model->addVt(coord);
 }
 
 
-void OBJViewerApp::normalParsed(const vh::Vector4& normal)
+void OBJViewerApp::normalParsed(const vh::Vector3& normal)
 {
   _model->addVn(normal);
 }

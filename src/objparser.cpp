@@ -511,7 +511,7 @@ OBJFileLineType objParseLineType(char* line, char*& col) throw(ParseException) {
 }
 
 
-vh::Vector4 objParseV(char *line, char*& col) throw(ParseException) {
+vh::Vector3 objParseV(char *line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float x = parseFloat(col, col);
@@ -521,45 +521,46 @@ vh::Vector4 objParseV(char *line, char*& col) throw(ParseException) {
   float z = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return vh::Vector4(x, y, z, 1);
+    return vh::Vector3(x, y, z);
   float w = parseFloat(col, col);
-  return vh::Vector4(x, y, z, w);
+  return vh::Vector3(x, y, z) / w;
 }
 
 
-vh::Vector4 objParseVT(char *line, char*& col) throw(ParseException) {
+vh::Vector2 objParseVT(char *line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float u = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return vh::Vector4(u, 0, 0, 1);
+    return vh::Vector2(u, 0);
   float v = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return vh::Vector4(u, v, 0, 1);
+    return vh::Vector2(u, v);
   float w = parseFloat(col, col);
-  return vh::Vector4(u, v, w, 1);
+  // XXX the w parameter is being ignored...
+  return vh::Vector2(u, v);
 }
 
 
-vh::Vector4 objParseVP(char *line, char*& col) throw(ParseException) {
+vh::Vector3 objParseVP(char *line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float u = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return vh::Vector4(u, 0, 0, 1);
+    return vh::Vector3(u, 0, 0);
   float v = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return vh::Vector4(u, v, 0, 1);
+    return vh::Vector3(u, v, 0);
   float w = parseFloat(col, col);
-  return vh::Vector4(u, v, w, 1);
+  return vh::Vector3(u, v, w);
 }
 
 
-vh::Vector4 objParseVN(char* line, char*& col) throw(ParseException) {
+vh::Vector3 objParseVN(char* line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float i = parseFloat(col, col);
@@ -567,7 +568,7 @@ vh::Vector4 objParseVN(char* line, char*& col) throw(ParseException) {
   float j = parseFloat(col, col);
   eatSpace(col, true);
   float k = parseFloat(col, col);
-  return vh::Vector4(i, j, k, 1);
+  return vh::Vector3(i, j, k);
 }
 
 

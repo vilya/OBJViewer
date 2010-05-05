@@ -63,8 +63,8 @@ unsigned int Face::size() const
 
 Model::Model() :
     v(), vt(), vn(), colors(), faces(), materials(),
-    low(1e20, 1e20, 1e20, 0),
-    high(-1e20, -1e20, -1e20, 0),
+    low(1e20, 1e20, 1e20),
+    high(-1e20, -1e20, -1e20),
     _coordNum(0),
     _texCoordNum(0),
     _normalNum(0),
@@ -82,10 +82,10 @@ Model::~Model()
 }
 
 
-void Model::addV(const vh::Vector4& newV)
+void Model::addV(const vh::Vector3& newV)
 {
   while (_coordNum >= v.size())
-    v.push_back(Curve4());
+    v.push_back(Curve3());
   v[_coordNum].addKeyframe(newV);
   ++_coordNum;
 
@@ -99,19 +99,19 @@ void Model::addV(const vh::Vector4& newV)
 }
 
 
-void Model::addVt(const vh::Vector4& newVt)
+void Model::addVt(const vh::Vector2& newVt)
 {
   while (_texCoordNum >= vt.size())
-    vt.push_back(Curve4());
+    vt.push_back(Curve2());
   vt[_texCoordNum].addKeyframe(newVt);
   ++_texCoordNum;
 }
 
 
-void Model::addVn(const vh::Vector4& newVn)
+void Model::addVn(const vh::Vector3& newVn)
 {
   while (_normalNum >= vn.size())
-    vn.push_back(Curve4());
+    vn.push_back(Curve3());
   vn[_normalNum].addKeyframe(newVn);
   ++_normalNum;
 }
