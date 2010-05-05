@@ -273,17 +273,17 @@ std::string mtlParseNEWMTL(char* line, char*& col) throw(ParseException) {
 }
 
 
-Float4 mtlParseColor(char* line, char*& col) throw(ParseException) {
+vh::Vector4 mtlParseColor(char* line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float r = parseFloat(col, col);
   eatSpace(col, false);
   if (isEnd(*col) || isCommentStart(*col))
-    return Float4(r, r, r);
+    return vh::Vector4(r, r, r, 1);
   float g = parseFloat(col, col);
   eatSpace(col, true);
   float b = parseFloat(col, col);
-  return Float4(r, g, b);
+  return vh::Vector4(r, g, b, 1);
 }
 
 
@@ -511,7 +511,7 @@ OBJFileLineType objParseLineType(char* line, char*& col) throw(ParseException) {
 }
 
 
-Float4 objParseV(char *line, char*& col) throw(ParseException) {
+vh::Vector4 objParseV(char *line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float x = parseFloat(col, col);
@@ -521,45 +521,45 @@ Float4 objParseV(char *line, char*& col) throw(ParseException) {
   float z = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return Float4(x, y, z);
+    return vh::Vector4(x, y, z, 1);
   float w = parseFloat(col, col);
-  return Float4(x, y, z, w);
+  return vh::Vector4(x, y, z, w);
 }
 
 
-Float4 objParseVT(char *line, char*& col) throw(ParseException) {
+vh::Vector4 objParseVT(char *line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float u = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return Float4(u, 0.0f, 0.0f);
+    return vh::Vector4(u, 0, 0, 1);
   float v = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return Float4(u, v, 0.0f);
+    return vh::Vector4(u, v, 0, 1);
   float w = parseFloat(col, col);
-  return Float4(u, v, w);
+  return vh::Vector4(u, v, w, 1);
 }
 
 
-Float4 objParseVP(char *line, char*& col) throw(ParseException) {
+vh::Vector4 objParseVP(char *line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float u = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return Float4(u, 0.0f, 0.0f);
+    return vh::Vector4(u, 0, 0, 1);
   float v = parseFloat(col, col);
   eatSpace(col);
   if (isEnd(*col) || isCommentStart(*col))
-    return Float4(u, v, 0.0f);
+    return vh::Vector4(u, v, 0, 1);
   float w = parseFloat(col, col);
-  return Float4(u, v, w);
+  return vh::Vector4(u, v, w, 1);
 }
 
 
-Float4 objParseVN(char* line, char*& col) throw(ParseException) {
+vh::Vector4 objParseVN(char* line, char*& col) throw(ParseException) {
   col = line;
   eatSpace(col, true);
   float i = parseFloat(col, col);
@@ -567,7 +567,7 @@ Float4 objParseVN(char* line, char*& col) throw(ParseException) {
   float j = parseFloat(col, col);
   eatSpace(col, true);
   float k = parseFloat(col, col);
-  return Float4(i, j, k);
+  return vh::Vector4(i, j, k, 1);
 }
 
 

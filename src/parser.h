@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+//#include "math3d.h"
+#include "vector.h"
 #include "model.h"
 #include "resources.h"
 
@@ -26,10 +28,10 @@ public:
   virtual void beginModel(const char* path) = 0;
   virtual void endModel() = 0;
 
-  virtual void coordParsed(const Float4& coord) = 0;
-  virtual void texCoordParsed(const Float4& coord) = 0;
-  virtual void normalParsed(const Float4& normal) = 0;
-  virtual void colorParsed(const Float4& color) = 0;
+  virtual void coordParsed(const vh::Vector4& coord) = 0;
+  virtual void texCoordParsed(const vh::Vector4& coord) = 0;
+  virtual void normalParsed(const vh::Vector4& normal) = 0;
+  virtual void colorParsed(const vh::Vector4& color) = 0;
   virtual void faceParsed(Face* face) = 0;
   virtual void materialParsed(const std::string& name, Material* material) = 0;
   virtual void textureParsed(RawImage* texture) = 0;

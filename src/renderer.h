@@ -5,7 +5,8 @@
 #include <map>
 
 #include <imagelib.h>
-#include "math3d.h"
+//#include "math3d.h"
+#include "vector.h"
 #include "model.h"
 #include "parser.h"
 #include "camera.h"
@@ -112,7 +113,7 @@ public:
   void flipNormals();
 
 private:
-  void setupCamera(int width, int height, const Float4& low, const Float4& high);
+  void setupCamera(int width, int height, const vh::Vector4& low, const vh::Vector4& high);
   void transformToCamera();
   void prepareModel();
   void prepareRenderGroups();
@@ -124,7 +125,7 @@ private:
 
   void loadTextures(std::list<RenderGroup*>& groups);
   void loadTexture(RawImage* tex, bool isMatte);
-  void headlight(GLenum light, const Float4& color);
+  void headlight(GLenum light, const vh::Vector4& color);
   void drawHUD(int width, int height, float fps);
   void drawBitmapString(float x, float y, void* font, char* str);
   void drawRightAlignedBitmapString(float x, float y, void* font, char* str);

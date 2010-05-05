@@ -1,6 +1,8 @@
 #ifndef OBJViewer_objviewer_h
 #define OBJViewer_objviewer_h
 
+//#include "math3d.h"
+#include "vector.h"
 #include "model.h"
 #include "renderer.h"
 #include "resources.h"
@@ -25,10 +27,10 @@ public:
   // Parser callbacks
   virtual void beginModel(const char* path);
   virtual void endModel();
-  virtual void coordParsed(const Float4& coord);
-  virtual void texCoordParsed(const Float4& coord);
-  virtual void normalParsed(const Float4& normal);
-  virtual void colorParsed(const Float4& color);
+  virtual void coordParsed(const vh::Vector4& coord);
+  virtual void texCoordParsed(const vh::Vector4& coord);
+  virtual void normalParsed(const vh::Vector4& normal);
+  virtual void colorParsed(const vh::Vector4& color);
   virtual void faceParsed(Face* face);
   virtual void materialParsed(const std::string& name, Material* material);
   virtual void textureParsed(RawImage* texture);

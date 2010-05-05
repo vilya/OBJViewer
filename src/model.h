@@ -5,15 +5,16 @@
 #include <vector>
 
 #include <imagelib.h>
-#include "math3d.h"
+//#include "math3d.h"
+#include "vector.h"
 #include "curve.h"
 
 
 struct Material {
-  Float4 Ka; // Ambient colour
-  Float4 Kd; // Diffuse colour
-  Float4 Ks; // Specular colour
-  Float4 Tf; // Transmission filter.
+  vh::Vector4 Ka; // Ambient colour
+  vh::Vector4 Kd; // Diffuse colour
+  vh::Vector4 Ks; // Specular colour
+  vh::Vector4 Tf; // Transmission filter.
   float d;   // Dissolve factor.
   float Ns;  // Specular exponent.
 
@@ -56,16 +57,16 @@ public:
   std::vector<Face*> faces;
   std::map<std::string, Material*> materials;
 
-  Float4 low;
-  Float4 high;
+  vh::Vector4 low;
+  vh::Vector4 high;
 
   Model();
   ~Model();
 
-  void addV(const Float4& newV);
-  void addVt(const Float4& newVt);
-  void addVn(const Float4& newVn);
-  void addColor(const Float4& newColor);
+  void addV(const vh::Vector4& newV);
+  void addVt(const vh::Vector4& newVt);
+  void addVn(const vh::Vector4& newVn);
+  void addColor(const vh::Vector4& newColor);
 
   void addFace(Face* newFace);
   void addMaterial(const std::string& name, Material* newMaterial);

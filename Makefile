@@ -30,13 +30,15 @@ IMAGELIB	 := ImageLib/dist
 OBJS       := $(OBJ)/objviewer.o \
 							$(OBJ)/model.o \
 							$(OBJ)/renderer.o \
-							$(OBJ)/math3d.o \
+							$(OBJ)/vector.o \
 							$(OBJ)/parser.o \
 							$(OBJ)/plyparser.o \
 							$(OBJ)/objparser.o \
 							$(OBJ)/camera.o \
 							$(OBJ)/curve.o \
 							$(OBJ)/resources.o
+
+#							$(OBJ)/math3d.o \
 
 THIRDPARTY_OBJS := $(THIRDPARTY_OBJ)/ply.o
 

@@ -9,7 +9,7 @@ Material::Material() :
     Ka(),
     Kd(),
     Ks(),
-    Tf(1, 1, 1),
+    Tf(1, 1, 1, 1),
     d(1.0),
     Ns(1.0),
     mapKa(NULL),
@@ -63,8 +63,8 @@ unsigned int Face::size() const
 
 Model::Model() :
     v(), vt(), vn(), colors(), faces(), materials(),
-    low(1e20, 1e20, 1e20),
-    high(-1e20, -1e20, -1e20),
+    low(1e20, 1e20, 1e20, 0),
+    high(-1e20, -1e20, -1e20, 0),
     _coordNum(0),
     _texCoordNum(0),
     _normalNum(0),
@@ -82,7 +82,7 @@ Model::~Model()
 }
 
 
-void Model::addV(const Float4& newV)
+void Model::addV(const vh::Vector4& newV)
 {
   while (_coordNum >= v.size())
     v.push_back(Curve());
@@ -91,15 +91,15 @@ void Model::addV(const Float4& newV)
 
   // TODO: bounding box should be represented as a pair of curves too.
   for (unsigned int i = 0; i < 3; ++i) {
-    if (newV[i] < low[i])
-      low[i] = newV[i];
-    if (newV[i] > high[i])
-      high[i] = newV[i];
+    if (newV.data[i] < low.data[i])
+      low.data[i] = newV.data[i];
+    if (newV.data[i] > high.data[i])
+      high.data[i] = newV.data[i];
   }
 }
 
 
-void Model::addVt(const Float4& newVt)
+void Model::addVt(const vh::Vector4& newVt)
 {
   while (_texCoordNum >= vt.size())
     vt.push_back(Curve());
@@ -108,7 +108,7 @@ void Model::addVt(const Float4& newVt)
 }
 
 
-void Model::addVn(const Float4& newVn)
+void Model::addVn(const vh::Vector4& newVn)
 {
   while (_normalNum >= vn.size())
     vn.push_back(Curve());
@@ -117,7 +117,7 @@ void Model::addVn(const Float4& newVn)
 }
 
 
-void Model::addColor(const Float4& newColor)
+void Model::addColor(const vh::Vector4& newColor)
 {
   while (_colorNum >= colors.size())
     colors.push_back(Curve());

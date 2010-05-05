@@ -1,6 +1,8 @@
 #include <cstdio>
 #include "ply.h"  // From the thirdparty directory.
 
+//#include "math3d.h"
+#include "vector.h"
 #include "model.h"
 #include "plyparser.h"
 
@@ -121,16 +123,16 @@ void loadPLY(ParserCallbacks* callbacks, const char* path, ResourceManager* reso
         PLYVertex plyVert;
         ply_get_element(plySrc, &plyVert);
 
-        callbacks->coordParsed(Float4(plyVert.x, plyVert.y, plyVert.z, 1.0));
+        callbacks->coordParsed(vh::Vector4(plyVert.x, plyVert.y, plyVert.z, 1.0));
         if (hasTexCoords)
-          callbacks->texCoordParsed(Float4(plyVert.u, plyVert.v, 0.0, 1.0));
+          callbacks->texCoordParsed(vh::Vector4(plyVert.u, plyVert.v, 0.0, 1.0));
         if (hasNormals)
-          callbacks->normalParsed(Float4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0));
+          callbacks->normalParsed(vh::Vector4(plyVert.nx, plyVert.ny, plyVert.nz, 1.0));
 
         if (hasRGB)
-          callbacks->colorParsed(Float4(plyVert.r, plyVert.g, plyVert.b, 1.0));
+          callbacks->colorParsed(vh::Vector4(plyVert.r, plyVert.g, plyVert.b, 1.0));
         else if (hasIntensity)
-          callbacks->colorParsed(Float4(plyVert.intensity, plyVert.intensity, plyVert.intensity, 1.0));
+          callbacks->colorParsed(vh::Vector4(plyVert.intensity, plyVert.intensity, plyVert.intensity, 1.0));
       }
     } else if (strcmp("face", sectionName) == 0) {
       ply_get_property(plySrc, sectionName, &faceProps[0]);

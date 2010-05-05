@@ -354,7 +354,7 @@ void RenderGroup::setTime(float time)
   float* vertexBuffer = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 #pragma omp parallel for schedule(dynamic, 100)
   for (size_t i = 0; i < _coords.size(); ++i) {
-    Float4 coord = _coords[i]->valueAt(time);
+    vh::Vector4 coord = _coords[i]->valueAt(time);
     float* vertexBufferPos = vertexBuffer + (i * vertexSize);
     vertexBufferPos[0] = coord.x;
     vertexBufferPos[1] = coord.y;
@@ -363,7 +363,7 @@ void RenderGroup::setTime(float time)
   vertexBuffer += 3;
 #pragma omp parallel for schedule(dynamic, 100)
   for (size_t i = 0; i < _texCoords.size(); ++i) {
-    Float4 texCoord = _texCoords[i]->valueAt(time);
+    vh::Vector4 texCoord = _texCoords[i]->valueAt(time);
     float* vertexBufferPos = vertexBuffer + (i * vertexSize);
     vertexBufferPos[0] = texCoord.x;
     vertexBufferPos[1] = texCoord.y;
@@ -372,7 +372,7 @@ void RenderGroup::setTime(float time)
   if (!_flipNormals) {
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _normals.size(); ++i) {
-      Float4 normal = _normals[i]->valueAt(time);
+      vh::Vector4 normal = _normals[i]->valueAt(time);
       float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = normal.x;
       vertexBufferPos[1] = normal.y;
@@ -382,7 +382,7 @@ void RenderGroup::setTime(float time)
   } else {
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _normals.size(); ++i) {
-      Float4 normal = _normals[i]->valueAt(time);
+      vh::Vector4 normal = _normals[i]->valueAt(time);
       float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = -normal.x;
       vertexBufferPos[1] = -normal.y;
@@ -394,7 +394,7 @@ void RenderGroup::setTime(float time)
   if (_hasColors) {
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _colors.size(); ++i) {
-      Float4 color = _colors[i]->valueAt(time);
+      vh::Vector4 color = _colors[i]->valueAt(time);
       float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = color.r;
       vertexBufferPos[1] = color.g;
@@ -564,8 +564,8 @@ void Renderer::render(int width, int height)
   if (_model != NULL) {
     setupCamera(width, height, _model->low, _model->high);
   } else {
-    Float4 low(-1, -1, -1, 1);
-    Float4 high(1, 1, 1, 1);
+    vh::Vector4 low(-1, -1, -1, 1);
+    vh::Vector4 high(1, 1, 1, 1);
     setupCamera(width, height, low, high);
   }
 
@@ -574,7 +574,7 @@ void Renderer::render(int width, int height)
   glLoadIdentity();
 
   // Put a light at the same position as the camera.
-  headlight(GL_LIGHT0, Float4(1, 1, 1, 1));
+  headlight(GL_LIGHT0, vh::Vector4(1, 1, 1, 1));
 
   transformToCamera();
   if (_model != NULL) {
@@ -669,9 +669,9 @@ void Renderer::flipNormals()
 }
 
 
-void Renderer::setupCamera(int width, int height, const Float4& low, const Float4& high)
+void Renderer::setupCamera(int width, int height, const vh::Vector4& low, const vh::Vector4& high)
 {
-  Float4 target = _camera->getTarget();
+  vh::Vector4 target = _camera->getTarget();
   float distance = _camera->getDistance();
 
   // Here we use the model's bounding sphere to calculate good values for
@@ -710,8 +710,8 @@ void Renderer::setupCamera(int width, int height, const Float4& low, const Float
 
 void Renderer::transformToCamera()
 {
-  Float4 target = _camera->getTarget();
-  Float4 rotation = _camera->getRotation();
+  vh::Vector4 target = _camera->getTarget();
+  vh::Vector4 rotation = _camera->getRotation();
   float distance = _camera->getDistance();
   glTranslatef(-target.x, -target.y, -target.z - distance);
   glRotatef(rotation.x, 1, 0, 0);
@@ -724,7 +724,7 @@ void Renderer::prepareModel()
 {
   // Fill in default texture coordinates where necessary.
   size_t defaultTexCoordIndex = _model->vt.size();
-  _model->addVt(Float4(0.5, 0.5, 0.0, 1.0));
+  _model->addVt(vh::Vector4(0.5, 0.5, 0.0, 1.0));
   for (size_t i = 0; i < _model->faces.size(); ++i) {
     Face& face = *_model->faces[i];
     for (size_t vertexNum = 0; vertexNum < face.size(); ++vertexNum) {
@@ -741,17 +741,17 @@ void Renderer::prepareModel()
     while (_model->vn.size() < _model->v.size()) {
       Curve curve;
       while (curve.numKeyframes() < _model->numKeyframes())
-        curve.addKeyframe(Float4(0, 0, 0, 0));
+        curve.addKeyframe(vh::Vector4(0, 0, 0, 0));
       _model->vn.push_back(curve);
     }
 
     for (size_t i = 0; i < _model->faces.size(); ++i) {
       Face& face = *_model->faces[i];
       for (size_t frame = 0; frame < _model->numKeyframes(); ++frame) {
-        const Float4& a = _model->v[face[0].v][frame];
-        const Float4& b = _model->v[face[1].v][frame];
-        const Float4& c = _model->v[face[2].v][frame];
-        Float4 faceNormal = normalize(cross(b - a, c - a));
+        const vh::Vector4& a = _model->v[face[0].v][frame];
+        const vh::Vector4& b = _model->v[face[1].v][frame];
+        const vh::Vector4& c = _model->v[face[2].v][frame];
+        vh::Vector4 faceNormal = vh::norm(vh::cross(b - a, c - a));
 
         for (size_t j = 0; j < face.size(); ++j) {
           Curve& curve = _model->vn[face[j].v];
@@ -764,7 +764,7 @@ void Renderer::prepareModel()
 
     for (size_t i = 0; i < _model->vn.size(); ++i) {
       for (size_t frame = 0; frame < _model->numKeyframes(); ++frame)
-        _model->vn[i][frame] = normalize(_model->vn[i][frame]);
+        _model->vn[i][frame] = vh::norm(_model->vn[i][frame]);
     }
   }
 
@@ -773,12 +773,12 @@ void Renderer::prepareModel()
     size_t totalPoints = 0;
     size_t animatedPoints = 0;
 
-    Float4 size = _model->high - _model->low;
+    vh::Vector4 size = _model->high - _model->low;
     for (size_t i = 0; i < _model->v.size(); ++i) {
       Curve& curve = _model->v[i];
-      const Float4 initialPos = curve[0];
+      const vh::Vector4 initialPos = curve[0];
       for (size_t keyFrame = 1; keyFrame < curve.numKeyframes(); ++keyFrame) {
-        const Float4 keyPos = curve[keyFrame];
+        const vh::Vector4 keyPos = curve[keyFrame];
         // If a vertex has moved by more than 1% of the total object size...
         if (lengthSqr( (keyPos - initialPos) / size ) > 1e-4)
           ++animatedPoints; 
@@ -1000,10 +1000,10 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
 }
 
 
-void Renderer::headlight(GLenum light, const Float4& color)
+void Renderer::headlight(GLenum light, const vh::Vector4& color)
 {
-  Float4 pos(0, 0, 0, 1); // Relative to camera position.
-  Float4 direction(0, 0, -1, 1);
+  vh::Vector4 pos(0, 0, 0, 1); // Relative to camera position.
+  vh::Vector4 direction(0, 0, -1, 1);
 
   glPushMatrix();
   glLoadIdentity();

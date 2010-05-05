@@ -13,19 +13,19 @@ Curve::Curve() : _keyframes()
 }
 
 
-Float4& Curve::operator [] (size_t index)
+vh::Vector4& Curve::operator [] (size_t index)
 {
   return _keyframes[index];
 }
 
 
-Float4 Curve::operator [] (size_t index) const
+vh::Vector4 Curve::operator [] (size_t index) const
 {
   return _keyframes[index];
 }
 
 
-void Curve::addKeyframe(const Float4& value)
+void Curve::addKeyframe(const vh::Vector4& value)
 {
   _keyframes.push_back(value);
 }
@@ -37,11 +37,11 @@ size_t Curve::numKeyframes() const
 }
 
 
-Float4 Curve::valueAt(float time) const
+vh::Vector4 Curve::valueAt(float time) const
 {
   switch (_keyframes.size()) {
     case 0:
-      return Float4();
+      return vh::Vector4();
     case 1:
       return _keyframes[0];
     default:
