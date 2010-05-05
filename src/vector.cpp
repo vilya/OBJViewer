@@ -394,6 +394,7 @@ namespace vh {
     m.m11 = sy;
     m.m22 = sz;
     m.m33 = sw;
+    return m;
   }
 
 

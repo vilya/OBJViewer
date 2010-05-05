@@ -739,7 +739,7 @@ void Renderer::prepareModel()
 
     // Setup a normal of 0,0,0,0 for all keyframes.
     while (_model->vn.size() < _model->v.size()) {
-      Curve curve;
+      Curve4 curve;
       while (curve.numKeyframes() < _model->numKeyframes())
         curve.addKeyframe(vh::Vector4(0, 0, 0, 0));
       _model->vn.push_back(curve);
@@ -754,7 +754,7 @@ void Renderer::prepareModel()
         vh::Vector4 faceNormal = vh::norm(vh::cross(b - a, c - a));
 
         for (size_t j = 0; j < face.size(); ++j) {
-          Curve& curve = _model->vn[face[j].v];
+          Curve4& curve = _model->vn[face[j].v];
           curve[frame] = curve[frame] + faceNormal;
         }
       }
@@ -775,7 +775,7 @@ void Renderer::prepareModel()
 
     vh::Vector4 size = _model->high - _model->low;
     for (size_t i = 0; i < _model->v.size(); ++i) {
-      Curve& curve = _model->v[i];
+      Curve4& curve = _model->v[i];
       const vh::Vector4 initialPos = curve[0];
       for (size_t keyFrame = 1; keyFrame < curve.numKeyframes(); ++keyFrame) {
         const vh::Vector4 keyPos = curve[keyFrame];

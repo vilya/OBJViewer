@@ -74,10 +74,10 @@ private:
   // - Next 2 are texture u and v (if _hasTexCoords == true).
   // - Next 4 are normal x, y, z and w (if _hasNormalCoords == true).
   // - Final 3 are color r, g and b (if _hasColors == true).
-  std::vector<Curve*> _coords;
-  std::vector<Curve*> _texCoords;
-  std::vector<Curve*> _normals;
-  std::vector<Curve*> _colors;
+  std::vector<Curve4*> _coords;
+  std::vector<Curve4*> _texCoords;
+  std::vector<Curve4*> _normals;
+  std::vector<Curve4*> _colors;
   GLuint _bufferID;
   GLuint _indexesID;
 

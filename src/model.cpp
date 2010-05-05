@@ -85,7 +85,7 @@ Model::~Model()
 void Model::addV(const vh::Vector4& newV)
 {
   while (_coordNum >= v.size())
-    v.push_back(Curve());
+    v.push_back(Curve4());
   v[_coordNum].addKeyframe(newV);
   ++_coordNum;
 
@@ -102,7 +102,7 @@ void Model::addV(const vh::Vector4& newV)
 void Model::addVt(const vh::Vector4& newVt)
 {
   while (_texCoordNum >= vt.size())
-    vt.push_back(Curve());
+    vt.push_back(Curve4());
   vt[_texCoordNum].addKeyframe(newVt);
   ++_texCoordNum;
 }
@@ -111,7 +111,7 @@ void Model::addVt(const vh::Vector4& newVt)
 void Model::addVn(const vh::Vector4& newVn)
 {
   while (_normalNum >= vn.size())
-    vn.push_back(Curve());
+    vn.push_back(Curve4());
   vn[_normalNum].addKeyframe(newVn);
   ++_normalNum;
 }
@@ -120,7 +120,7 @@ void Model::addVn(const vh::Vector4& newVn)
 void Model::addColor(const vh::Vector4& newColor)
 {
   while (_colorNum >= colors.size())
-    colors.push_back(Curve());
+    colors.push_back(Curve4());
   colors[_colorNum].addKeyframe(newColor);
   ++_colorNum;
 }

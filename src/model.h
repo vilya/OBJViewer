@@ -48,12 +48,14 @@ struct Face {
 };
 
 
+typedef vh::Curve<vh::Vector4> Curve4;
+
 class Model {
 public:
-  std::vector<Curve> v;
-  std::vector<Curve> vt;
-  std::vector<Curve> vn;
-  std::vector<Curve> colors;
+  std::vector<Curve4> v;
+  std::vector<Curve4> vt;
+  std::vector<Curve4> vn;
+  std::vector<Curve4> colors;
   std::vector<Face*> faces;
   std::map<std::string, Material*> materials;
 
