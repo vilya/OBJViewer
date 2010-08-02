@@ -770,7 +770,6 @@ void Renderer::prepareModel()
 
   // Count the animated points.
   if (_model->numKeyframes() > 1) {
-    size_t totalPoints = 0;
     size_t animatedPoints = 0;
 
     vh::Vector3 size = _model->high - _model->low;
@@ -780,15 +779,16 @@ void Renderer::prepareModel()
       for (size_t keyFrame = 1; keyFrame < curve.numKeyframes(); ++keyFrame) {
         const vh::Vector3 keyPos = curve[keyFrame];
         // If a vertex has moved by more than 1% of the total object size...
-        if (lengthSqr( (keyPos - initialPos) / size ) > 1e-4)
-          ++animatedPoints; 
-        ++totalPoints;
+        if (lengthSqr( (keyPos - initialPos) / size ) > 1e-4) {
+          ++animatedPoints;
+          break;
+        }
       }
     }
 
     fprintf(stderr, "%ld of %ld points (%1.2f%%) are animated.\n",
-        animatedPoints, totalPoints,
-        100.0 * float(animatedPoints) / float(totalPoints));
+        animatedPoints, _model->v.size(),
+        100.0 * float(animatedPoints) / float(_model->v.size()));
   }
 }
 
