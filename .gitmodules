@@ -1,0 +1,3 @@
+[submodule "VGL"]
+	path = VGL
+	url = git@github.com:vilya/VGL.git
