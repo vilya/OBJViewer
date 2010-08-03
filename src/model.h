@@ -4,25 +4,27 @@
 #include <map>
 #include <vector>
 
-#include <imagelib.h>
-//#include "math3d.h"
-#include "vector.h"
+#include "vgl_image.h"
+#include "vgl_vec2.h"
+#include "vgl_vec3.h"
+#include "vgl_vec4.h"
+
 #include "curve.h"
 
 
 struct Material {
-  vh::Vector4 Ka; // Ambient colour
-  vh::Vector4 Kd; // Diffuse colour
-  vh::Vector4 Ks; // Specular colour
-  vh::Vector4 Tf; // Transmission filter.
+  vgl::Vec4f Ka; // Ambient colour
+  vgl::Vec4f Kd; // Diffuse colour
+  vgl::Vec4f Ks; // Specular colour
+  vgl::Vec4f Tf; // Transmission filter.
   float d;   // Dissolve factor.
   float Ns;  // Specular exponent.
 
-  RawImage* mapKa; // Ambient texture map.
-  RawImage* mapKd; // Diffuse texture map.
-  RawImage* mapKs; // Specular texture map.
-  RawImage* mapD;  // Dissolve texture map.
-  RawImage* mapBump; // Bump map.
+  vgl::RawImage* mapKa; // Ambient texture map.
+  vgl::RawImage* mapKd; // Diffuse texture map.
+  vgl::RawImage* mapKs; // Specular texture map.
+  vgl::RawImage* mapD;  // Dissolve texture map.
+  vgl::RawImage* mapBump; // Bump map.
 
   Material();
 };
@@ -48,9 +50,9 @@ struct Face {
 };
 
 
-typedef vh::Curve<vh::Vector2> Curve2;
-typedef vh::Curve<vh::Vector3> Curve3;
-typedef vh::Curve<vh::Vector4> Curve4;
+typedef vh::Curve<vgl::Vec2f> Curve2;
+typedef vh::Curve<vgl::Vec3f> Curve3;
+typedef vh::Curve<vgl::Vec4f> Curve4;
 
 
 class Model {
@@ -62,16 +64,16 @@ public:
   std::vector<Face*> faces;
   std::map<std::string, Material*> materials;
 
-  vh::Vector3 low;
-  vh::Vector3 high;
+  vgl::Vec3f low;
+  vgl::Vec3f high;
 
   Model();
   ~Model();
 
-  void addV(const vh::Vector3& newV);
-  void addVt(const vh::Vector2& newVt);
-  void addVn(const vh::Vector3& newVn);
-  void addColor(const vh::Vector4& newColor);
+  void addV(const vgl::Vec3f& newV);
+  void addVt(const vgl::Vec2f& newVt);
+  void addVn(const vgl::Vec3f& newVn);
+  void addColor(const vgl::Vec4f& newColor);
 
   void addFace(Face* newFace);
   void addMaterial(const std::string& name, Material* newMaterial);

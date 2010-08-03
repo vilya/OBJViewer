@@ -4,12 +4,10 @@
 #include <list>
 #include <map>
 
-#include <imagelib.h>
-//#include "math3d.h"
-#include "vector.h"
+#include "vgl.h"
+
 #include "model.h"
-#include "parser.h"
-#include "camera.h"
+//#include "camera.h"
 #include "resources.h"
 
 
@@ -85,13 +83,12 @@ private:
 };
 
 
-class Renderer {
+class Renderer : public vgl::Renderer {
 public:
-  Renderer(ResourceManager* resources, Model* model, Camera* camera,
+  Renderer(ResourceManager* resources, Model* model,
       size_t maxTextureWidth, size_t maxTextureHeight, float animFPS);
   ~Renderer();
 
-  Camera* currentCamera();
   Model* currentModel();
 
   void toggleDrawPolys();
@@ -100,8 +97,8 @@ public:
   void toggleHeadlightType();
   void printGLInfo();
 
-  void prepare();
-  void render(int width, int height);
+  virtual void setup();
+  virtual void render();
 
   void setTime(float time);
   void nextFrame();
@@ -113,8 +110,6 @@ public:
   void flipNormals();
 
 private:
-  void setupCamera(int width, int height, const vh::Vector3& low, const vh::Vector3& high);
-  void transformToCamera();
   void prepareModel();
   void prepareRenderGroups();
   void prepareMaterials();
@@ -124,9 +119,9 @@ private:
   void drawDefaultModel();
 
   void loadTextures(std::list<RenderGroup*>& groups);
-  void loadTexture(RawImage* tex, bool isMatte);
-  void headlight(GLenum light, const vh::Vector4& color);
-  void drawHUD(int width, int height, float fps);
+  void loadTexture(vgl::RawImage* tex, bool isMatte);
+  void headlight(GLenum light, const vgl::Vec4f& color);
+  void drawHUD();
   void drawBitmapString(float x, float y, void* font, char* str);
   void drawRightAlignedBitmapString(float x, float y, void* font, char* str);
 
@@ -144,16 +139,15 @@ private:
   bool _drawPolys, _drawPoints, _drawLines;
   ResourceManager* _resources;
   Model* _model;
-  Camera* _camera;
   float _animFPS;
   size_t _maxTextureWidth, _maxTextureHeight;
   std::list<RenderGroup*> _renderGroups;
   size_t _transparentGroupsStart;
 
-  RawImage* _currentMapKa;
-  RawImage* _currentMapKd;
-  RawImage* _currentMapKs;
-  RawImage* _currentMapD;
+  vgl::RawImage* _currentMapKa;
+  vgl::RawImage* _currentMapKd;
+  vgl::RawImage* _currentMapKs;
+  vgl::RawImage* _currentMapD;
 
   FramesPerSecond _fps;
 

@@ -24,18 +24,16 @@ DBGFLAGS   := -g
 # -msse, -msse2, ... -msse4.2
 
 
-MODULES    := ImageLib
-IMAGELIB	 := ImageLib/dist
+MODULES    := VGL
+VGL				 := VGL/dist
 
-OBJS       := $(OBJ)/objviewer.o \
-							$(OBJ)/model.o \
-							$(OBJ)/renderer.o \
-							$(OBJ)/vector.o \
-							$(OBJ)/parser.o \
-							$(OBJ)/plyparser.o \
-							$(OBJ)/objparser.o \
+OBJS       := \
 							$(OBJ)/camera.o \
-							$(OBJ)/resources.o
+							$(OBJ)/model.o \
+							$(OBJ)/objviewer.o \
+							$(OBJ)/renderer.o \
+							$(OBJ)/resources.o \
+							$(OBJ)/vector.o
 
 #							$(OBJ)/curve.o \
 #							$(OBJ)/math3d.o \
@@ -53,21 +51,19 @@ CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -m64 -fopenmp -Wl,--rpath,\$$ORIGIN
-INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
-LIBS       := -L$(IMAGELIB)/lib -lm -lglut -lpthread -limagelib
-DYLIB_EXT	 := .so
-IMAGELIB_LIB := $(IMAGELIB)/lib/libimagelib.so
+INCLUDE	   := -I$(VGL)/include -I$(THIRDPARTY_SRC)
+LIBS       := -L$(VGL)/lib -lm -lglut -lpthread -lvgl
+VGL_LIB		 := $(VGL)/lib/libvgl.so
 else
-IMAGELIB	 := ImageLib/dist
 CXX        := g++
 CXXFLAGS   := -Wall -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -msse4.2 -mfpmath=sse
 CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/
-INCLUDE	   := -I$(IMAGELIB)/include -I$(THIRDPARTY_SRC)
-LIBS       := -L$(IMAGELIB)/lib -lm -limagelib
-IMAGELIB_LIB := $(IMAGELIB)/lib/libimagelib.dylib
+INCLUDE	   := -I$(VGL)/include -I$(THIRDPARTY_SRC)
+LIBS       := -L$(VGL)/lib -lm -lvgl
+VGL_LIB    := $(VGL)/lib/libvgl.dylib
 endif
 
 
@@ -83,7 +79,7 @@ release:
 
 
 .PHONY: all
-all: dirs $(TARGET)
+all: dirs $(MODULES) $(TARGET)
 
 
 .PHONY: test
@@ -98,7 +94,7 @@ clean:
 
 .PHONY: allclean
 allclean: clean
-	$(MAKE) -C ImageLib clean
+	$(MAKE) -C VGL clean
 
 
 .PHONY: dirs
@@ -110,9 +106,9 @@ dirs:
 
 
 .PHONY: $(MODULES)
-ImageLib:
+VGL:
 	$(MAKE) -C $@
-	cp $(IMAGELIB_LIB) $(BIN)
+	cp $(VGL_LIB) $(BIN)
 
 
 $(TARGET): $(MODULES) $(OBJS) $(THIRDPARTY_OBJS)

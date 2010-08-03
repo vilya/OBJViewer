@@ -1,9 +1,9 @@
+#include "camera.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-
-#include "camera.h"
 
 
 //
@@ -11,6 +11,7 @@
 //
 
 Camera::Camera() :
+  vgl::Camera(800, 600),
   _target(0, 0, 0),
   _rotation(0, 0, 0, 10),
   _fieldOfViewY(30)
@@ -44,13 +45,13 @@ void Camera::rotateByV(float angle)
 }
 
 
-vh::Vector3 Camera::getTarget() const
+vgl::Vec3f Camera::getTarget() const
 {
   return _target;
 }
 
 
-vh::Vector4 Camera::getRotation() const
+vgl::Vec4f Camera::getRotation() const
 {
   return _rotation;
 }
@@ -68,65 +69,65 @@ float Camera::getFieldOfViewY() const
 }
 
 
-void Camera::centerView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::centerView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.z - low.z) / 10.0;
-  _rotation = vh::Vector4(0, 0, 0, distance);
+  _rotation = vgl::Vec4f(0, 0, 0, distance);
 }
 
 
-void Camera::frontView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::frontView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.z - low.z) / 2 +
       distanceFrom(high.x, low.x, high.y, low.y);
-  _rotation = vh::Vector4(0, 0, 0, distance);
+  _rotation = vgl::Vec4f(0, 0, 0, distance);
 }
 
 
-void Camera::backView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::backView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.z - low.z) / 2 +
       distanceFrom(high.x, low.x, high.y, low.y);
-  _rotation = vh::Vector4(0, 180, 0, distance);
+  _rotation = vgl::Vec4f(0, 180, 0, distance);
 }
 
 
-void Camera::leftView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::leftView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.x - low.x) / 2 +
       distanceFrom(high.z, low.z, high.y, low.y);
-  _rotation = vh::Vector4(0, 270, 0, distance);
+  _rotation = vgl::Vec4f(0, 270, 0, distance);
 }
 
 
-void Camera::rightView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::rightView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.x - low.x) / 2 +
       distanceFrom(high.z, low.z, high.y, low.y);
-  _rotation = vh::Vector4(0, 90, 0, distance);
+  _rotation = vgl::Vec4f(0, 90, 0, distance);
 }
 
 
-void Camera::topView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::topView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.y - low.y) +
       distanceFrom(high.x, low.x, high.z, low.z);
-  _rotation = vh::Vector4(90, 0, 0, distance);
+  _rotation = vgl::Vec4f(90, 0, 0, distance);
 }
 
 
-void Camera::bottomView(const vh::Vector3& low, const vh::Vector3& high)
+void Camera::bottomView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
   _target = (high + low) / 2;
   float distance = (high.y - low.y) +
       distanceFrom(high.x, low.x, high.z, low.z);
-  _rotation = vh::Vector4(270, 0, 0, distance);
+  _rotation = vgl::Vec4f(270, 0, 0, distance);
 }
 
 

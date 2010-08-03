@@ -183,7 +183,7 @@ void RenderGroup::render(float time)
   offset += 3 * sizeof(float);
   checkGLError("Error setting up vertex pointer");
 
-  RawImage* textures[4] = { NULL, NULL, NULL, NULL };
+  vgl::RawImage* textures[4] = { NULL, NULL, NULL, NULL };
   if (_material != NULL) {
     textures[0] = _material->mapKa;
     textures[1] = _material->mapKd;
@@ -354,7 +354,7 @@ void RenderGroup::setTime(float time)
   float* vertexBuffer = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 #pragma omp parallel for schedule(dynamic, 100)
   for (size_t i = 0; i < _coords.size(); ++i) {
-    vh::Vector3 coord = _coords[i]->valueAt(time);
+    vgl::Vec3f coord = _coords[i]->valueAt(time);
     float* vertexBufferPos = vertexBuffer + (i * vertexSize);
     vertexBufferPos[0] = coord.x;
     vertexBufferPos[1] = coord.y;
@@ -363,7 +363,7 @@ void RenderGroup::setTime(float time)
   vertexBuffer += 3;
 #pragma omp parallel for schedule(dynamic, 100)
   for (size_t i = 0; i < _texCoords.size(); ++i) {
-    vh::Vector2 texCoord = _texCoords[i]->valueAt(time);
+    vgl::Vec2f texCoord = _texCoords[i]->valueAt(time);
     float* vertexBufferPos = vertexBuffer + (i * vertexSize);
     vertexBufferPos[0] = texCoord.x;
     vertexBufferPos[1] = texCoord.y;
@@ -372,7 +372,7 @@ void RenderGroup::setTime(float time)
   if (!_flipNormals) {
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _normals.size(); ++i) {
-      vh::Vector3 normal = _normals[i]->valueAt(time);
+      vgl::Vec3f normal = _normals[i]->valueAt(time);
       float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = normal.x;
       vertexBufferPos[1] = normal.y;
@@ -382,7 +382,7 @@ void RenderGroup::setTime(float time)
   } else {
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _normals.size(); ++i) {
-      vh::Vector3 normal = _normals[i]->valueAt(time);
+      vgl::Vec3f normal = _normals[i]->valueAt(time);
       float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = -normal.x;
       vertexBufferPos[1] = -normal.y;
@@ -394,7 +394,7 @@ void RenderGroup::setTime(float time)
   if (_hasColors) {
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < _colors.size(); ++i) {
-      vh::Vector4 color = _colors[i]->valueAt(time);
+      vgl::Vec4f color = _colors[i]->valueAt(time);
       float* vertexBufferPos = vertexBuffer + (i * vertexSize);
       vertexBufferPos[0] = color.r;
       vertexBufferPos[1] = color.g;
@@ -413,7 +413,7 @@ void RenderGroup::setupShaders()
 
   const char* flagNames[] = { "hasMapKa", "hasMapKd", "hasMapKs", "hasMapD" };
   if (_material != NULL) {
-    RawImage* textures[] = { _material->mapKa, _material->mapKd, _material->mapKs, _material->mapD };
+    vgl::RawImage* textures[] = { _material->mapKa, _material->mapKd, _material->mapKs, _material->mapD };
     const char* names[] = { "mapKa", "mapKd", "mapKs", "mapD" };
 
     for (size_t i = 0; i < 4; ++i) {
@@ -441,7 +441,7 @@ void RenderGroup::setupShaders()
 // Renderer METHODS
 //
 
-Renderer::Renderer(ResourceManager* resources, Model* model, Camera* camera,
+Renderer::Renderer(ResourceManager* resources, Model* model,
     size_t maxTextureWidth, size_t maxTextureHeight, float animFPS) :
   _headlightType(kDirectional),
   _drawPolys(true),
@@ -449,7 +449,6 @@ Renderer::Renderer(ResourceManager* resources, Model* model, Camera* camera,
   _drawLines(false),
   _resources(resources),
   _model(model),
-  _camera(camera),
   _animFPS(animFPS),
   _maxTextureWidth(maxTextureWidth),
   _maxTextureHeight(maxTextureHeight),
@@ -465,21 +464,6 @@ Renderer::Renderer(ResourceManager* resources, Model* model, Camera* camera,
   _playing(false),
   _since(0)
 {
-  glClearColor(0.2, 0.2, 0.2, 1.0);
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_LIGHTING);
-  glEnable(GL_LIGHT0);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  for (unsigned int i = 0; i < 4; ++i) {
-    glActiveTexture(GL_TEXTURE0 + i);
-    glEnable(GL_TEXTURE_2D);
-  }
-
-  //float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
-  //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
-  glShadeModel(GL_SMOOTH);
 }
 
 
@@ -489,12 +473,6 @@ Renderer::~Renderer()
   std::list<RenderGroup*>::iterator iter;
   for (iter = _renderGroups.begin(); iter != _renderGroups.end(); ++iter)
     delete *iter;
-}
-
-
-Camera* Renderer::currentCamera()
-{
-  return _camera;
 }
 
 
@@ -540,43 +518,43 @@ void Renderer::printGLInfo()
 }
 
 
-void Renderer::prepare()
+void Renderer::setup()
 {
+  glClearColor(0.2, 0.2, 0.2, 1.0);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  for (unsigned int i = 0; i < 4; ++i) {
+    glActiveTexture(GL_TEXTURE0 + i);
+    glEnable(GL_TEXTURE_2D);
+  }
+
+  //float ambient[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+  //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+  glShadeModel(GL_SMOOTH);
+
   prepareMaterials();
   prepareModel();
   prepareShaders();
   prepareRenderGroups();
 
   loadTextures(_renderGroups);
-  _camera->frontView(_model->low, _model->high);
 }
 
 
-void Renderer::render(int width, int height)
+void Renderer::render()
 {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   // If we're playing the animation, calculate the new frame time.
   if (_playing)
     setTime(calculatePlaybackTime());
 
-  // Apply the camera settings.
-  if (_model != NULL) {
-    setupCamera(width, height, _model->low, _model->high);
-  } else {
-    vh::Vector3 low(-1, -1, -1);
-    vh::Vector3 high(1, 1, 1);
-    setupCamera(width, height, low, high);
-  }
+  // Put a light at the same position as the camera.
+  headlight(GL_LIGHT0, vgl::Vec4f(1, 1, 1, 1));
 
   // Draw the scene.
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
-  // Put a light at the same position as the camera.
-  headlight(GL_LIGHT0, vh::Vector4(1, 1, 1, 1));
-
-  transformToCamera();
   if (_model != NULL) {
     std::list<RenderGroup*>::iterator iter;
 
@@ -607,11 +585,7 @@ void Renderer::render(int width, int height)
   } else {
     drawDefaultModel();
   }
-  drawHUD(width, height, _fps.fps());
-
-  glutSwapBuffers();
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
+  drawHUD();
 
   _fps.increment();
 }
@@ -669,62 +643,11 @@ void Renderer::flipNormals()
 }
 
 
-void Renderer::setupCamera(int width, int height, const vh::Vector3& low, const vh::Vector3& high)
-{
-  vh::Vector3 target = _camera->getTarget();
-  float distance = _camera->getDistance();
-
-  // Here we use the model's bounding sphere to calculate good values for
-  // the near and far clipping planes.
-  
-  // Radius of bounding sphere == half distance between opposite bbox corners
-  // FIXME: For some reason the radius ends up being too small, so instead I'm
-  // using the diameter for now.
-  float radius = length(high - low); 
-  // v is the vector from our target to the bbox center, but we'll only need
-  // the z component (see below) so that's all we calculate.
-  float vz = ((high.z + low.z) / 2.0) - target.z;
-  // Since our direction vector d for the camera is 0,0,1 the dot product of v
-  // and d is simply v.z. This gives us the distance along our direction vector
-  // at which we're level with the bbox center: _rotation.w + vz. Subtract the
-  // radius from that and we've got out near clip plane.
-  float nearClip = distance + vz - radius;
-  // The far clip plane will always be the near clip plane plus the diameter.
-  float farClip = nearClip + 2 * radius;
-  // Make sure the near clip plane doesn't end up behind us.
-  if (nearClip < 0.01)
-    nearClip = 0.01;
-  // Make sure the far clip plane doesn't end up behind the near clip plane.
-  if (farClip <= nearClip)
-    farClip = nearClip + 0.01;
-
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-
-  glLoadIdentity();
-  glViewport(0, 0, width, height); // Set the viewport to be the entire window
-  gluPerspective(_camera->getFieldOfViewY(), double(width) / double(height),
-      nearClip, farClip);
-}
-
-
-void Renderer::transformToCamera()
-{
-  vh::Vector3 target = _camera->getTarget();
-  vh::Vector4 rotation = _camera->getRotation();
-  float distance = _camera->getDistance();
-  glTranslatef(-target.x, -target.y, -target.z - distance);
-  glRotatef(rotation.x, 1, 0, 0);
-  glRotatef(rotation.y, 0, 1, 0);
-  glRotatef(rotation.z, 0, 0, 1);
-}
-
-
 void Renderer::prepareModel()
 {
   // Fill in default texture coordinates where necessary.
   size_t defaultTexCoordIndex = _model->vt.size();
-  _model->addVt(vh::Vector2(0.5, 0.5));
+  _model->addVt(vgl::Vec2f(0.5, 0.5));
   for (size_t i = 0; i < _model->faces.size(); ++i) {
     Face& face = *_model->faces[i];
     for (size_t vertexNum = 0; vertexNum < face.size(); ++vertexNum) {
@@ -741,17 +664,17 @@ void Renderer::prepareModel()
     while (_model->vn.size() < _model->v.size()) {
       Curve3 curve;
       while (curve.numKeyframes() < _model->numKeyframes())
-        curve.addKeyframe(vh::Vector3(0, 0, 0));
+        curve.addKeyframe(vgl::Vec3f(0, 0, 0));
       _model->vn.push_back(curve);
     }
 
     for (size_t i = 0; i < _model->faces.size(); ++i) {
       Face& face = *_model->faces[i];
       for (size_t frame = 0; frame < _model->numKeyframes(); ++frame) {
-        const vh::Vector3& a = _model->v[face[0].v][frame];
-        const vh::Vector3& b = _model->v[face[1].v][frame];
-        const vh::Vector3& c = _model->v[face[2].v][frame];
-        vh::Vector3 faceNormal = vh::norm(vh::cross(b - a, c - a));
+        const vgl::Vec3f& a = _model->v[face[0].v][frame];
+        const vgl::Vec3f& b = _model->v[face[1].v][frame];
+        const vgl::Vec3f& c = _model->v[face[2].v][frame];
+        vgl::Vec3f faceNormal = vgl::norm(vgl::cross(b - a, c - a));
 
         for (size_t j = 0; j < face.size(); ++j) {
           Curve3& curve = _model->vn[face[j].v];
@@ -764,7 +687,7 @@ void Renderer::prepareModel()
 
     for (size_t i = 0; i < _model->vn.size(); ++i) {
       for (size_t frame = 0; frame < _model->numKeyframes(); ++frame)
-        _model->vn[i][frame] = vh::norm(_model->vn[i][frame]);
+        _model->vn[i][frame] = vgl::norm(_model->vn[i][frame]);
     }
   }
 
@@ -772,14 +695,14 @@ void Renderer::prepareModel()
   if (_model->numKeyframes() > 1) {
     size_t animatedPoints = 0;
 
-    vh::Vector3 size = _model->high - _model->low;
+    vgl::Vec3f size = _model->high - _model->low;
     for (size_t i = 0; i < _model->v.size(); ++i) {
       Curve3& curve = _model->v[i];
-      const vh::Vector3 initialPos = curve[0];
+      const vgl::Vec3f initialPos = curve[0];
       for (size_t keyFrame = 1; keyFrame < curve.numKeyframes(); ++keyFrame) {
-        const vh::Vector3 keyPos = curve[keyFrame];
+        const vgl::Vec3f keyPos = curve[keyFrame];
         // If a vertex has moved by more than 1% of the total object size...
-        if (lengthSqr( (keyPos - initialPos) / size ) > 1e-4) {
+        if (vgl::lengthSqr( (keyPos - initialPos) / size ) > 1e-4) {
           ++animatedPoints;
           break;
         }
@@ -929,7 +852,7 @@ void Renderer::loadTextures(std::list<RenderGroup*>& groups)
 }
 
 
-void Renderer::loadTexture(RawImage* tex, bool isMatte)
+void Renderer::loadTexture(vgl::RawImage* tex, bool isMatte)
 {
   // If tex is null, or tex is already loaded.
   if (tex == NULL || tex->getTexID() != (unsigned int)-1)
@@ -986,7 +909,7 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
     fprintf(stderr, "Downsampling texture %d: %ux%u --> %ux%u\n", texID,
       tex->getWidth(), tex->getHeight(),
       tex->getWidth() / downsampleX, tex->getHeight() / downsampleY);
-    RawImage* downsampledTex = downsample(tex, downsampleX, downsampleY);
+    vgl::RawImage* downsampledTex = downsample(tex, downsampleX, downsampleY);
     glTexImage2D(GL_TEXTURE_2D, 0, targetType,
                  downsampledTex->getWidth(), downsampledTex->getHeight(), 0,
                  downsampledTex->getType(), GL_UNSIGNED_BYTE, downsampledTex->getPixels());
@@ -1000,10 +923,10 @@ void Renderer::loadTexture(RawImage* tex, bool isMatte)
 }
 
 
-void Renderer::headlight(GLenum light, const vh::Vector4& color)
+void Renderer::headlight(GLenum light, const vgl::Vec4f& color)
 {
-  vh::Vector4 pos(0, 0, 0, 1); // Relative to camera position.
-  vh::Vector4 direction(0, 0, -1, 1);
+  vgl::Vec4f pos(0, 0, 0, 1); // Relative to camera position.
+  vgl::Vec4f direction(0, 0, -1, 1);
 
   glPushMatrix();
   glLoadIdentity();
@@ -1021,8 +944,14 @@ void Renderer::headlight(GLenum light, const vh::Vector4& color)
 }
 
 
-void Renderer::drawHUD(int width, int height, float fps)
+void Renderer::drawHUD()
 {
+  int viewport[4];
+  glGetIntegerv(GL_VIEWPORT, viewport);
+  int width = viewport[2];
+  int height = viewport[3];
+  float fps = _fps.fps();
+
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 

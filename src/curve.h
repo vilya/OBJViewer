@@ -3,8 +3,6 @@
 
 #include <cmath>
 #include <vector>
-//#include "math3d.h"
-#include "vector.h"
 
 
 namespace vh {

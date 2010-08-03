@@ -1,38 +1,38 @@
 #ifndef OBJViewer_camera_h
 #define OBJViewer_camera_h
 
+#include "vgl_camera.h"
+#include "vgl_vec3.h"
+#include "vgl_vec4.h"
 
-//#include "math3d.h"
-#include "vector.h"
 
-
-class Camera {
+class Camera : public vgl::Camera {
 public:
   Camera();
 
-  void moveBy(float x, float y, float z);
-  void zoomBy(float amount);
+  virtual void moveBy(float dx, float dy, float dz);
+  virtual void zoomBy(float dz);
   void rotateByU(float angle);
   void rotateByV(float angle);
 
-  vh::Vector3 getTarget() const;
-  vh::Vector4 getRotation() const;
+  vgl::Vec3f getTarget() const;
+  vgl::Vec4f getRotation() const;
   float getDistance() const;
   float getFieldOfViewY() const;
 
-  void centerView(const vh::Vector3& low, const vh::Vector3& high);
-  void frontView(const vh::Vector3& low, const vh::Vector3& high);
-  void backView(const vh::Vector3& low, const vh::Vector3& high);
-  void leftView(const vh::Vector3& low, const vh::Vector3& high);
-  void rightView(const vh::Vector3& low, const vh::Vector3& high);
-  void topView(const vh::Vector3& low, const vh::Vector3& high);
-  void bottomView(const vh::Vector3& low, const vh::Vector3& high);
+  void centerView(const vgl::Vec3f& low, const vgl::Vec3f& high);
+  void frontView(const vgl::Vec3f& low, const vgl::Vec3f& high);
+  void backView(const vgl::Vec3f& low, const vgl::Vec3f& high);
+  void leftView(const vgl::Vec3f& low, const vgl::Vec3f& high);
+  void rightView(const vgl::Vec3f& low, const vgl::Vec3f& high);
+  void topView(const vgl::Vec3f& low, const vgl::Vec3f& high);
+  void bottomView(const vgl::Vec3f& low, const vgl::Vec3f& high);
 
   void printCameraInfo() const;
 
 private:
-  vh::Vector3 _target;
-  vh::Vector4 _rotation; // x,y,z are rotations around that axis; w is the distance.
+  vgl::Vec3f _target;
+  vgl::Vec4f _rotation; // x,y,z are rotations around that axis; w is the distance.
 
   float _fieldOfViewY;
 

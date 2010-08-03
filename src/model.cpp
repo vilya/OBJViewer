@@ -82,7 +82,7 @@ Model::~Model()
 }
 
 
-void Model::addV(const vh::Vector3& newV)
+void Model::addV(const vgl::Vec3f& newV)
 {
   while (_coordNum >= v.size())
     v.push_back(Curve3());
@@ -99,7 +99,7 @@ void Model::addV(const vh::Vector3& newV)
 }
 
 
-void Model::addVt(const vh::Vector2& newVt)
+void Model::addVt(const vgl::Vec2f& newVt)
 {
   while (_texCoordNum >= vt.size())
     vt.push_back(Curve2());
@@ -108,7 +108,7 @@ void Model::addVt(const vh::Vector2& newVt)
 }
 
 
-void Model::addVn(const vh::Vector3& newVn)
+void Model::addVn(const vgl::Vec3f& newVn)
 {
   while (_normalNum >= vn.size())
     vn.push_back(Curve3());
@@ -117,7 +117,7 @@ void Model::addVn(const vh::Vector3& newVn)
 }
 
 
-void Model::addColor(const vh::Vector4& newColor)
+void Model::addColor(const vgl::Vec4f& newColor)
 {
   while (_colorNum >= colors.size())
     colors.push_back(Curve4());
