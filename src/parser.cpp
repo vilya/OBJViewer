@@ -1,5 +1,6 @@
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <libgen.h>
 
 #include "parser.h"

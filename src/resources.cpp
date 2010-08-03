@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cstdarg>
 #include <cstdio>
 #include <unistd.h> // for getcwd()
 #include <libgen.h> // for dirname()
