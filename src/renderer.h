@@ -7,7 +7,6 @@
 #include "vgl.h"
 
 #include "model.h"
-//#include "camera.h"
 #include "resources.h"
 
 
@@ -122,16 +121,8 @@ private:
   void loadTexture(vgl::RawImage* tex, bool isMatte);
   void headlight(GLenum light, const vgl::Vec4f& color);
   void drawHUD();
-  void drawBitmapString(float x, float y, void* font, char* str);
-  void drawRightAlignedBitmapString(float x, float y, void* font, char* str);
 
-  GLuint loadShader(GLenum shaderType, const std::string& path);
-  GLuint linkProgram(GLuint vertexShaderID, GLuint fragmentShaderID);
   GLint glGet(GLenum what);
-
-  void printShaderInfoLog(GLuint obj);
-  void printProgramInfoLog(GLuint obj);
-
   float calculatePlaybackTime();
 
 private:

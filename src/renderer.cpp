@@ -1,21 +1,7 @@
-#define GL_GLEXT_PROTOTYPES 1
-
-#ifdef linux
-#include <GL/gl.h>
-#include <GL/glext.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
-#else
-#include <OpenGL/gl.h>
-#include <OpenGL/glext.h>
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
-#endif
+#include "renderer.h"
 
 #include <cmath>
 #include <cstdlib>
-
-#include "renderer.h"
 
 
 //
@@ -23,14 +9,6 @@
 //
 
 const size_t MAX_FACES_PER_VBO = 1000000;
-
-
-//
-// FUNCTION DECLARATIONS
-//
-
-void checkGLError(const char *errMsg, const char *okMsg = NULL);
-size_t systemTimeInMilliseconds();
 
 
 //
@@ -144,33 +122,33 @@ void RenderGroup::prepare()
   glGenBuffers(1, &_bufferID);
   glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_STREAM_DRAW);
-  checkGLError("Error setting up vertex buffer");
+  vgl::checkGLError("Error setting up vertex buffer");
 
   // Get a buffer ID for the indexes, upload them and clear out the local copy.
   glGenBuffers(1, &_indexesID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
       sizeof(GLuint) * _size, NULL, GL_STATIC_DRAW);
-  checkGLError("Error setting up index buffer");
+  vgl::checkGLError("Error setting up index buffer");
 
   GLuint* indexBuffer = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
   for (GLuint i = 0; i < _size; ++i)
     indexBuffer[i] = i;
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-  checkGLError("Error filling index buffer");
+  vgl::checkGLError("Error filling index buffer");
 }
 
 
 void RenderGroup::render(float time)
 {
-  checkGLError("Error before RenderGroup::render");
+  vgl::checkGLError("Error before RenderGroup::render");
   glBindBuffer(GL_ARRAY_BUFFER, _bufferID);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexesID);
 
   glEnableClientState(GL_VERTEX_ARRAY);
-  checkGLError("Error before setTime");
+  vgl::checkGLError("Error before setTime");
   setTime(time);
-  checkGLError("Error in setTime.");
+  vgl::checkGLError("Error in setTime.");
 
   // Set up the shaders for this render group.
   setupShaders();
@@ -181,7 +159,7 @@ void RenderGroup::render(float time)
 
   glVertexPointer(3, GL_FLOAT, stride, (const GLvoid*)offset);
   offset += 3 * sizeof(float);
-  checkGLError("Error setting up vertex pointer");
+  vgl::checkGLError("Error setting up vertex pointer");
 
   vgl::RawImage* textures[4] = { NULL, NULL, NULL, NULL };
   if (_material != NULL) {
@@ -205,12 +183,12 @@ void RenderGroup::render(float time)
     }
   }
   offset += 2 * sizeof(float);
-  checkGLError("Error setting up textures.");
+  vgl::checkGLError("Error setting up textures.");
 
   glEnableClientState(GL_NORMAL_ARRAY);
   glNormalPointer(GL_FLOAT, stride, (const GLvoid*)offset);
   offset += 4 * sizeof(float);
-  checkGLError("Error setting up normals.");
+  vgl::checkGLError("Error setting up normals.");
 
   if (_hasColors) {
     glEnableClientState(GL_COLOR_ARRAY);
@@ -228,7 +206,7 @@ void RenderGroup::render(float time)
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, defaultColor);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultColor);
   }
-  checkGLError("Error setting up colors.");
+  vgl::checkGLError("Error setting up colors.");
 
   if (_material != NULL) {
     float shininess = std::min(_material->Ns * 128.0, 128.0);
@@ -236,7 +214,7 @@ void RenderGroup::render(float time)
   } else {
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10.0);
   }
-  checkGLError("Error setting up shininess.");
+  vgl::checkGLError("Error setting up shininess.");
  
   switch (_type) {
     case kTriangleGroup:
@@ -246,7 +224,7 @@ void RenderGroup::render(float time)
       glDrawElements(GL_POLYGON, _size, GL_UNSIGNED_INT, 0);
       break;
   }
-  checkGLError("Error drawing elements.");
+  vgl::checkGLError("Error drawing elements.");
 
   glDisableClientState(GL_VERTEX_ARRAY);
   for (int i = 0; i < 4; ++i) {
@@ -263,7 +241,7 @@ void RenderGroup::render(float time)
   // Release the VBOs.
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  checkGLError("Error clearing up.");
+  vgl::checkGLError("Error clearing up.");
 }
 
 
@@ -409,7 +387,7 @@ void RenderGroup::setTime(float time)
 void RenderGroup::setupShaders()
 {
   glUseProgram(_shaderProgramID);
-  checkGLError("Error setting up shaders (bad program ID?)");
+  vgl::checkGLError("Error setting up shaders (bad program ID?)");
 
   const char* flagNames[] = { "hasMapKa", "hasMapKd", "hasMapKs", "hasMapD" };
   if (_material != NULL) {
@@ -419,19 +397,19 @@ void RenderGroup::setupShaders()
     for (size_t i = 0; i < 4; ++i) {
       if (textures[i] != NULL) {
         glUniform1i(glGetUniformLocation(_shaderProgramID, names[i]), i);
-        checkGLError("Error setting up texture for shader");
+        vgl::checkGLError("Error setting up texture for shader");
 
         glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 1);
-        checkGLError("Error setting up texture flag for shader");
+        vgl::checkGLError("Error setting up texture flag for shader");
       } else {
         glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 0);
-        checkGLError("Error setting up texture flag for shader");
+        vgl::checkGLError("Error setting up texture flag for shader");
       }
     }
   } else {
     for (size_t i = 0; i < 4; ++i) {
       glUniform1i(glGetUniformLocation(_shaderProgramID, flagNames[i]), 0);
-      checkGLError("Error setting up texture flag for shader");
+      vgl::checkGLError("Error setting up texture flag for shader");
     }
   }
 }
@@ -812,16 +790,16 @@ void Renderer::prepareShaders()
   GLuint vertexShader, fragmentShader;
 
   // Set up the shader program for objects with a material.
-  vertexShader = loadShader(GL_VERTEX_SHADER, "vertex.vert");
-  fragmentShader = loadShader(GL_FRAGMENT_SHADER, "fragment.frag");
+  vertexShader = vgl::loadShader(GL_VERTEX_SHADER, _resources->shaders.find("vertex.vert").c_str());
+  fragmentShader = vgl::loadShader(GL_FRAGMENT_SHADER, _resources->shaders.find("fragment.frag").c_str());
   if (vertexShader != 0 && fragmentShader != 0)
-    _shaderWithMaterial = linkProgram(vertexShader, fragmentShader);
+    _shaderWithMaterial = vgl::linkShader(vertexShader, fragmentShader);
 
   // Set up the shader program for objects without a material.
-  vertexShader = loadShader(GL_VERTEX_SHADER, "vertex-notexture.vert");
-  fragmentShader = loadShader(GL_FRAGMENT_SHADER, "fragment-notexture.frag");
+  vertexShader = vgl::loadShader(GL_VERTEX_SHADER, _resources->shaders.find("vertex-notexture.vert").c_str());
+  fragmentShader = vgl::loadShader(GL_FRAGMENT_SHADER, _resources->shaders.find("fragment-notexture.frag").c_str());
   if (vertexShader != 0 && fragmentShader != 0)
-    _shaderNoMaterial = linkProgram(vertexShader, fragmentShader);
+    _shaderNoMaterial = vgl::linkShader(vertexShader, fragmentShader);
 }
 
 
@@ -876,20 +854,20 @@ void Renderer::loadTexture(vgl::RawImage* tex, bool isMatte)
       break;
     }
   }
-  checkGLError("Some GL error before loading texture.");
+  vgl::checkGLError("Some GL error before loading texture.");
 
   GLuint texID;
   glGenTextures(1, &texID);
 
   glBindTexture(GL_TEXTURE_2D, texID);
-  checkGLError("Texture not bound.");
+  vgl::checkGLError("Texture not bound.");
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  checkGLError("Pixel storage format not set.");
+  vgl::checkGLError("Pixel storage format not set.");
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  checkGLError("Texture parameters not set.");
+  vgl::checkGLError("Texture parameters not set.");
   
   unsigned int downsampleX = 1;
   unsigned int downsampleY = 1;
@@ -916,7 +894,7 @@ void Renderer::loadTexture(vgl::RawImage* tex, bool isMatte)
     delete downsampledTex;
   }
 
-  checkGLError("Texture failed to load.");
+  vgl::checkGLError("Texture failed to load.");
 
   tex->setTexID(texID);
   tex->deletePixels();
@@ -978,16 +956,16 @@ void Renderer::drawHUD()
         "%lu materials\n"
         "%lu render groups",
         fps, _model->faces.size(), _model->v.size(), _model->materials.size(), _renderGroups.size());
-    drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
+    vgl::drawBitmapString(10, 70, GLUT_BITMAP_8_BY_13, buf);
 
     sprintf(buf, "Frame %0.1f of %ld", _currentTime, _model->numKeyframes());
-    drawRightAlignedBitmapString(width - 10, 10, GLUT_BITMAP_8_BY_13, buf);
+    vgl::drawBitmapString(width - 10, 10, GLUT_BITMAP_8_BY_13, buf, vgl::ALIGN_RIGHT);
   } else {
     sprintf(buf,
         "%5.2f FPS\n"
         "Anyone for tea?",
         fps);
-    drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
+    vgl::drawBitmapString(10, 25, GLUT_BITMAP_8_BY_13, buf);
   }
   glPopMatrix();
 
@@ -999,140 +977,11 @@ void Renderer::drawHUD()
 }
 
 
-void Renderer::drawBitmapString(float x, float y, void* font, char* str)
-{
-  float xPos = x;
-  for (char* ch = str; *ch != '\0'; ++ch) {
-    glRasterPos2f(xPos, y);
-    switch (*ch) {
-      case '\n':
-        xPos = x;
-        y -= 15;
-        break;
-      default:
-        glutBitmapCharacter(font, *ch);
-        xPos += glutBitmapWidth(font, *ch);
-        break;
-    }
-  }
-}
-
-
-void Renderer::drawRightAlignedBitmapString(float x, float y, void* font, char* str)
-{
-  float xPos = x;
-  while (*str != '\0') {
-    char* ch = str;
-    for (ch = str; *ch != '\0' && *ch != '\n'; ++ch)
-      xPos -= glutBitmapWidth(font, *ch);
-    for (; str < ch; ++str) {
-      glRasterPos2f(xPos, y);
-      glutBitmapCharacter(font, *str);
-      xPos += glutBitmapWidth(font, *str);
-    }
-    if (*str == '\n') {
-      ++str;
-      xPos = x;
-      y -= 15;
-    }
-  }
-}
-
-
-GLuint Renderer::loadShader(GLenum shaderType, const std::string& path)
-{
-  GLuint shaderID;
-  char* text = NULL;
-  try {
-    FILE* shaderFile = fopen(_resources->shaders.find(path).c_str(), "r");
-    // We're guaranteed that the shader file won't be NULL if find doesn't throw.
-
-    // Get the length of the file.
-    fseek(shaderFile, 0, SEEK_END);
-    size_t length = ftell(shaderFile);
-    fseek(shaderFile, 0, SEEK_SET);
-
-    text = new char[length + 1];
-    fread(text, sizeof(const char), length, shaderFile);
-    text[length] = '\0';
-
-    fclose(shaderFile);
-
-    shaderID = glCreateShader(shaderType);
-    glShaderSource(shaderID, 1, (const GLchar**)&text, NULL);
-    glCompileShader(shaderID);
-
-    GLint status;
-    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
-    if (status != GL_TRUE) {
-      fprintf(stderr, "Shader %s failed to compile:\n", path.c_str());
-      printShaderInfoLog(shaderID);
-      shaderID = 0;
-    }
-  } catch (ResourceException& ex) {
-    fprintf(stderr, "Unable to load shader: %s\n", ex.what());
-    shaderID = 0;
-  }
-  delete[] text;
-  return shaderID;
-}
-
-
-GLuint Renderer::linkProgram(GLuint vertexShaderID, GLuint fragmentShaderID)
-{
-  GLuint programID = glCreateProgram();
-  glAttachShader(programID, vertexShaderID);
-  glAttachShader(programID, fragmentShaderID);
-  glLinkProgram(programID);
-
-  GLint status;
-  glGetProgramiv(programID, GL_LINK_STATUS, &status);
-  if (status != GL_TRUE) {
-    fprintf(stderr, "Shader program failed to link.\n");
-    printProgramInfoLog(programID);
-    programID = 0;
-  }
-
-  return programID;
-}
-
-
 GLint Renderer::glGet(GLenum what)
 {
   GLint val;
   glGetIntegerv(what, &val);
   return val;
-}
-
-
-void Renderer::printShaderInfoLog(GLuint obj)
-{
-  int infologLength = 0;
-	int charsWritten  = 0;
-	char *infoLog;
-
-	glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
-	if (infologLength > 0) {
-	  infoLog = new char[infologLength];
-	  glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-		fprintf(stderr, "%s\n", infoLog);
-    delete[] infoLog;
-	}
-}
-
-void Renderer::printProgramInfoLog(GLuint obj)
-{
-  int infologLength = 0;
-  int charsWritten  = 0;
-  char *infoLog;
-
-	glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
-  if (infologLength > 0) {
-    infoLog = new char[infologLength];
-    glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-		fprintf(stderr, "%s\n", infoLog);
-    delete[] infoLog;
-  }
 }
 
 
@@ -1146,16 +995,5 @@ float Renderer::calculatePlaybackTime()
     incr = 1.0;
   _since = now;
   return _currentTime + incr;
-}
-
-
-void checkGLError(const char *errMsg, const char *okMsg)
-{
-  GLenum err = glGetError();
-  if (err != GL_NO_ERROR) {
-    fprintf(stderr, "%s: %s (%d)\n", errMsg, gluErrorString(err), err);
-  } else if (okMsg != NULL) {
-    fprintf(stderr, "%s\n", okMsg);
-  }
 }
 
