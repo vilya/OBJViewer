@@ -833,70 +833,35 @@ void Renderer::loadTextures(std::list<RenderGroup*>& groups)
 void Renderer::loadTexture(vgl::RawImage* tex, bool isMatte)
 {
   // If tex is null, or tex is already loaded.
-  if (tex == NULL || tex->getTexID() != (unsigned int)-1)
+  if (tex == NULL || tex->getTexID() != 0)
     return;
   fprintf(stderr, "Loading %dx%d %d bpp texture onto the GPU.\n",
       tex->getWidth(), tex->getHeight(), tex->getBytesPerPixel() * 8);
 
-  GLenum targetType;
-  if (isMatte) {
-    targetType = GL_ALPHA;
-  } else {
-    switch (tex->getType()) {
-    case GL_BGR:
-      targetType = GL_RGB;
-      break;
-    case GL_BGRA:
-      targetType = GL_RGBA;
-      break;
-    default:
-      targetType = tex->getType();
-      break;
-    }
-  }
-  vgl::checkGLError("Some GL error before loading texture.");
-
-  GLuint texID;
-  glGenTextures(1, &texID);
-
-  glBindTexture(GL_TEXTURE_2D, texID);
-  vgl::checkGLError("Texture not bound.");
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  vgl::checkGLError("Pixel storage format not set.");
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  vgl::checkGLError("Texture parameters not set.");
-  
+  // Do we need to downsample the texture?
   unsigned int downsampleX = 1;
   unsigned int downsampleY = 1;
-  if (_maxTextureWidth > 0) {
-    while (tex->getWidth() / downsampleX > _maxTextureWidth)
-      ++downsampleX;
-  }
-  if (_maxTextureHeight > 0) {
-    while (tex->getHeight() / downsampleY > _maxTextureHeight)
-      ++downsampleY;
-  }
+  if (_maxTextureWidth > 0)
+    downsampleX = (tex->getWidth() / _maxTextureWidth) + 1;
+  if (_maxTextureHeight > 0)
+    downsampleY = (tex->getHeight() / _maxTextureHeight) + 1;
 
-  if (downsampleX == 1 || downsampleY == 1) {
-    glTexImage2D(GL_TEXTURE_2D, 0, targetType, tex->getWidth(), tex->getHeight(), 0,
-                 tex->getType(), GL_UNSIGNED_BYTE, tex->getPixels());
-  } else {
-    fprintf(stderr, "Downsampling texture %d: %ux%u --> %ux%u\n", texID,
+  if (downsampleX != 1 || downsampleY != 1) {
+    fprintf(stderr, "Downsampling texture %d: %ux%u --> %ux%u\n", tex->getTexID(),
       tex->getWidth(), tex->getHeight(),
       tex->getWidth() / downsampleX, tex->getHeight() / downsampleY);
-    vgl::RawImage* downsampledTex = downsample(tex, downsampleX, downsampleY);
-    glTexImage2D(GL_TEXTURE_2D, 0, targetType,
-                 downsampledTex->getWidth(), downsampledTex->getHeight(), 0,
-                 downsampledTex->getType(), GL_UNSIGNED_BYTE, downsampledTex->getPixels());
-    delete downsampledTex;
+    tex->downsampleInPlace(downsampleX, downsampleY);
   }
 
+  if (isMatte)
+    tex->uploadTextureAs(GL_ALPHA);
+  else
+    tex->uploadTexture();
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  
   vgl::checkGLError("Texture failed to load.");
 
-  tex->setTexID(texID);
   tex->deletePixels();
 }
 
