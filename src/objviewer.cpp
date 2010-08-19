@@ -1,5 +1,6 @@
 #include "objviewer.h"
 
+#include "camera.h"
 #include "curve.h"
 
 #include <cstdio>
@@ -13,13 +14,13 @@
 // OBJViewer METHODS
 //
 
-OBJViewer::OBJViewer(Renderer* renderer) :
-  vgl::Viewer("Vil's OBJ Viewer", 1024, 768, renderer)
+OBJViewer::OBJViewer(Renderer* renderer, vgl::Camera* camera) :
+  vgl::Viewer("Vil's OBJ Viewer", 1024, 768, renderer, camera)
 {
 }
 
 
-int OBJViewer::actionForKeyPress(unsigned char key, int x, int y)
+int OBJViewer::actionForKeyPress(unsigned int key, int x, int y)
 {
   switch (key) {
     case 'o': return ACTION_TOGGLE_DRAW_POLYS;
@@ -39,7 +40,6 @@ int OBJViewer::actionForKeyPress(unsigned char key, int x, int y)
     case 'm': return ACTION_FRAME_FIRST;
     case '/': return ACTION_FRAME_LAST;
     case ' ': return ACTION_TOGGLE_PLAYBACK;
-    case 'c': return ACTION_PRINT_CAMERA_INFO;
     case 'g': return ACTION_PRINT_GL_INFO;
     case '?': return ACTION_PRINT_HELP;
     default: return vgl::Viewer::actionForKeyPress(key, x, y);
@@ -62,15 +62,13 @@ void OBJViewer::actionHandler(int action)
     case ACTION_TOGGLE_DRAW_POLYS: renderer->toggleDrawPolys(); break;
     case ACTION_TOGGLE_DRAW_POINTS: renderer->toggleDrawPoints(); break;
     case ACTION_TOGGLE_DRAW_LINES: renderer->toggleDrawLines(); break;
-    /*
-    case ACTION_VIEW_CENTER: _camera->centerView(low, high); break;
-    case ACTION_VIEW_FRONT: _camera->frontView(low, high); break;
-    case ACTION_VIEW_BACK: _camera->backView(low, high); break;
-    case ACTION_VIEW_LEFT: _camera->leftView(low, high); break;
-    case ACTION_VIEW_RIGHT: _camera->rightView(low, high); break;
-    case ACTION_VIEW_TOP: _camera->topView(low, high); break;
-    case ACTION_VIEW_BOTTOM: _camera->bottomView(low, high); break;
-    */
+    case ACTION_VIEW_CENTER: dynamic_cast<Camera*>(_camera)->centerView(low, high); break;
+    case ACTION_VIEW_FRONT: dynamic_cast<Camera*>(_camera)->frontView(low, high); break;
+    case ACTION_VIEW_BACK: dynamic_cast<Camera*>(_camera)->backView(low, high); break;
+    case ACTION_VIEW_LEFT: dynamic_cast<Camera*>(_camera)->leftView(low, high); break;
+    case ACTION_VIEW_RIGHT: dynamic_cast<Camera*>(_camera)->rightView(low, high); break;
+    case ACTION_VIEW_TOP: dynamic_cast<Camera*>(_camera)->topView(low, high); break;
+    case ACTION_VIEW_BOTTOM: dynamic_cast<Camera*>(_camera)->bottomView(low, high); break;
     case ACTION_FLIP_NORMALS: renderer->flipNormals(); break;
     case ACTION_TOGGLE_HEADLIGHT_TYPE: renderer->toggleHeadlightType(); break;
     case ACTION_FRAME_PREVIOUS: renderer->previousFrame(); break;
@@ -78,9 +76,6 @@ void OBJViewer::actionHandler(int action)
     case ACTION_FRAME_FIRST: renderer->firstFrame(); break;
     case ACTION_FRAME_LAST: renderer->lastFrame(); break;
     case ACTION_TOGGLE_PLAYBACK: renderer->togglePlaying(); break;
-    /*
-    case ACTION_PRINT_CAMERA_INFO: _camera->printCameraInfo(); break;
-    */
     case ACTION_PRINT_GL_INFO: renderer->printGLInfo(); break;
     case ACTION_PRINT_HELP:
       printf("Esc   Exit the program.\n");
@@ -88,7 +83,6 @@ void OBJViewer::actionHandler(int action)
       printf("o     Toggle display of polyons.\n");
       printf("p     Toggle display of points.\n");
       printf("l     Toggle display of lines.\n");
-      /*
       printf("0     Center view (in the middle of the object).\n");
       printf("1     Front view.\n");
       printf("2     Back view.\n");
@@ -96,8 +90,6 @@ void OBJViewer::actionHandler(int action)
       printf("4     Right view.\n");
       printf("5     Top view.\n");
       printf("6     Bottom view.\n");
-      printf("c     Print current camera info.\n");
-      */
       printf("g     Print OpenGL info.\n");
       printf("n     Flip the normals.\n");
       printf("h     Toggle the type of headlight between directional and spot.\n");
@@ -385,9 +377,10 @@ int main(int argc, char **argv)
     }
   }
 
+  Camera camera;
   Renderer renderer(&resources, &model, maxTextureWidth, maxTextureHeight, animFPS);
 
-  OBJViewer app(&renderer);
+  OBJViewer app(&renderer, &camera);
   app.run();
   return 0;
 }

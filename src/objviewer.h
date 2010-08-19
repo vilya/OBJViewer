@@ -39,16 +39,15 @@ public:
     ACTION_FRAME_LAST,
     ACTION_TOGGLE_PLAYBACK,
 
-    ACTION_PRINT_CAMERA_INFO,
     ACTION_PRINT_GL_INFO,
     ACTION_PRINT_HELP
   };
 
 public:
-  OBJViewer(Renderer* renderer);
+  OBJViewer(Renderer* renderer, vgl::Camera* camera = NULL);
 
 protected:
-  virtual int actionForKeyPress(unsigned char key, int x, int y);
+  virtual int actionForKeyPress(unsigned int key, int x, int y);
   virtual void actionHandler(int action);
 };
 
