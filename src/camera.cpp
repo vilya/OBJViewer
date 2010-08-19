@@ -11,7 +11,7 @@
 //
 
 Camera::Camera() :
-  vgl::Camera(800, 600),
+  vgl::BaseCamera(800, 600),
   _target(0, 0, 0),
   _rotation(0, 0, 0, 10),
   _fieldOfViewY(30)
@@ -71,16 +71,16 @@ float Camera::getFieldOfViewY() const
 
 void Camera::centerView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
-  float distance = (high.z - low.z) / 10.0;
+  _target = (high + low) / 2.0f;
+  float distance = (high.z - low.z) / 10.0f;
   _rotation = vgl::Vec4f(0, 0, 0, distance);
 }
 
 
 void Camera::frontView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
-  float distance = (high.z - low.z) / 2 +
+  _target = (high + low) / 2.0f;
+  float distance = (high.z - low.z) / 2.0f +
       distanceFrom(high.x, low.x, high.y, low.y);
   _rotation = vgl::Vec4f(0, 0, 0, distance);
 }
@@ -88,8 +88,8 @@ void Camera::frontView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 
 void Camera::backView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
-  float distance = (high.z - low.z) / 2 +
+  _target = (high + low) / 2.0f;
+  float distance = (high.z - low.z) / 2.0f +
       distanceFrom(high.x, low.x, high.y, low.y);
   _rotation = vgl::Vec4f(0, 180, 0, distance);
 }
@@ -97,8 +97,8 @@ void Camera::backView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 
 void Camera::leftView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
-  float distance = (high.x - low.x) / 2 +
+  _target = (high + low) / 2.0f;
+  float distance = (high.x - low.x) / 2.0f +
       distanceFrom(high.z, low.z, high.y, low.y);
   _rotation = vgl::Vec4f(0, 270, 0, distance);
 }
@@ -106,8 +106,8 @@ void Camera::leftView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 
 void Camera::rightView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
-  float distance = (high.x - low.x) / 2 +
+  _target = (high + low) / 2.0f;
+  float distance = (high.x - low.x) / 2.0f +
       distanceFrom(high.z, low.z, high.y, low.y);
   _rotation = vgl::Vec4f(0, 90, 0, distance);
 }
@@ -115,7 +115,7 @@ void Camera::rightView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 
 void Camera::topView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
+  _target = (high + low) / 2.0f;
   float distance = (high.y - low.y) +
       distanceFrom(high.x, low.x, high.z, low.z);
   _rotation = vgl::Vec4f(90, 0, 0, distance);
@@ -124,7 +124,7 @@ void Camera::topView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 
 void Camera::bottomView(const vgl::Vec3f& low, const vgl::Vec3f& high)
 {
-  _target = (high + low) / 2;
+  _target = (high + low) / 2.0f;
   float distance = (high.y - low.y) +
       distanceFrom(high.x, low.x, high.z, low.z);
   _rotation = vgl::Vec4f(270, 0, 0, distance);

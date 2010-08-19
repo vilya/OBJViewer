@@ -1,12 +1,12 @@
 #ifndef OBJViewer_camera_h
 #define OBJViewer_camera_h
 
-#include "vgl_camera.h"
+#include "vgl_basecamera.h"
 #include "vgl_vec3.h"
 #include "vgl_vec4.h"
 
 
-class Camera : public vgl::Camera {
+class Camera : public vgl::BaseCamera {
 public:
   Camera();
 

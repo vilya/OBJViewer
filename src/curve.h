@@ -36,7 +36,7 @@ namespace vh {
       int left = (int)floorf(time);
       int right = (left + 1) % _keyframes.size();
       float t = time - left;
-      return _keyframes[left] * (1.0 - t) + _keyframes[right] * t;
+      return _keyframes[left] * (1.0f - t) + _keyframes[right] * t;
     }
 
   private:

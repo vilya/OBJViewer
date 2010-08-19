@@ -13,8 +13,8 @@
 // OBJViewer METHODS
 //
 
-OBJViewer::OBJViewer(vgl::Camera* camera, Renderer* renderer) :
-  vgl::Viewer("Vil's OBJ Viewer", 800, 600, camera, renderer)
+OBJViewer::OBJViewer(Renderer* renderer) :
+  vgl::Viewer("Vil's OBJ Viewer", 1024, 768, renderer)
 {
 }
 
@@ -385,10 +385,9 @@ int main(int argc, char **argv)
     }
   }
 
-  vgl::Camera camera(800, 600);
   Renderer renderer(&resources, &model, maxTextureWidth, maxTextureHeight, animFPS);
 
-  OBJViewer app(&camera, &renderer);
+  OBJViewer app(&renderer);
   app.run();
   return 0;
 }

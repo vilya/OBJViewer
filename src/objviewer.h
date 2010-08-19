@@ -45,7 +45,7 @@ public:
   };
 
 public:
-  OBJViewer(vgl::Camera* camera, Renderer* renderer);
+  OBJViewer(Renderer* renderer);
 
 protected:
   virtual int actionForKeyPress(unsigned char key, int x, int y);
