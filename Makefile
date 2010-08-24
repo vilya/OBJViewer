@@ -19,7 +19,7 @@ DBGFLAGS   := -g
 
 
 MODULES    := VGL
-VGL				 := VGL/dist
+VGL				 := build/VGL
 
 OBJS       := \
 							$(OBJ)/camera.o \
@@ -39,6 +39,7 @@ CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -m64 -fopenmp -Wl,--rpath,\$$ORIGIN
+CMAKE      := cmake
 INCLUDE	   := -I$(VGL)/include
 LIBS       := -L$(VGL)/lib -lm -lglut -lpthread -lvgl
 VGL_LIB		 := $(VGL)/lib/libvgl.so
@@ -49,6 +50,7 @@ CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/
+CMAKE      := cmake
 INCLUDE	   := -I$(VGL)/include
 LIBS       := -L$(VGL)/lib -lm -lvgl
 VGL_LIB    := $(VGL)/lib/libvgl.dylib
@@ -72,24 +74,25 @@ all: dirs $(MODULES) $(TARGET)
 
 .PHONY: clean
 clean:
-	rm -rf $(BIN)/* build/* *.linkinfo
+	rm -rf $(BIN) $(OBJ) *.linkinfo
 
 
 .PHONY: allclean
 allclean: clean
-	$(MAKE) -C VGL clean
+	rm -rf $(VGL)
 
 
 .PHONY: dirs
 dirs:
+	@mkdir -p $(VGL)
 	@mkdir -p $(OBJ)
 	@mkdir -p $(BIN)
 
 
 .PHONY: $(MODULES)
-VGL:
-	$(MAKE) -C $@
-	cp $(VGL_LIB) $(BIN)
+VGL: dirs
+	@cd $(VGL) && cmake -D CMAKE_INSTALL_PREFIX=. ../../VGL && $(MAKE) install
+	@cp $(VGL_LIB) $(BIN)
 
 
 $(TARGET): $(MODULES) $(OBJS)
