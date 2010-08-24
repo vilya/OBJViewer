@@ -2,12 +2,6 @@ SRC        := src
 OBJ        := build/obj
 BIN        := bin
 
-THIRDPARTY_SRC := thirdparty
-THIRDPARTY_OBJ := build/thirdparty_obj
-
-TESTSRC    := test
-TESTBIN    := build/test
-
 OPTFLAGS   := -O3 -fopenmp
 DBGFLAGS   := -g
 
@@ -35,12 +29,6 @@ OBJS       := \
 							$(OBJ)/resources.o \
 							$(OBJ)/vector.o
 
-#							$(OBJ)/curve.o \
-#							$(OBJ)/math3d.o \
-
-THIRDPARTY_OBJS := $(THIRDPARTY_OBJ)/ply.o
-
-
 TARGET     := $(BIN)/objviewer
 
 
@@ -51,7 +39,7 @@ CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -m64 -fopenmp -Wl,--rpath,\$$ORIGIN
-INCLUDE	   := -I$(VGL)/include -I$(THIRDPARTY_SRC)
+INCLUDE	   := -I$(VGL)/include
 LIBS       := -L$(VGL)/lib -lm -lglut -lpthread -lvgl
 VGL_LIB		 := $(VGL)/lib/libvgl.so
 else
@@ -61,7 +49,7 @@ CC         := gcc
 CCFLAGS    := $(CXXFLAGS)
 LD         := g++
 LDFLAGS    := -framework OpenGL -framework GLUT -Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch x86_64 -fopenmp -Wl,-rpath,@loader_path/
-INCLUDE	   := -I$(VGL)/include -I$(THIRDPARTY_SRC)
+INCLUDE	   := -I$(VGL)/include
 LIBS       := -L$(VGL)/lib -lm -lvgl
 VGL_LIB    := $(VGL)/lib/libvgl.dylib
 endif
@@ -82,14 +70,9 @@ release:
 all: dirs $(MODULES) $(TARGET)
 
 
-.PHONY: test
-test: $(TESTBIN)/math3dtest
-	$(TESTBIN)/math3dtest
-
-
 .PHONY: clean
 clean:
-	rm -rf $(BIN)/* $(OBJ)/* $(THIRDPARTY_OBJ)/* $(TESTBIN)/* *.linkinfo
+	rm -rf $(BIN)/* build/* *.linkinfo
 
 
 .PHONY: allclean
@@ -100,9 +83,7 @@ allclean: clean
 .PHONY: dirs
 dirs:
 	@mkdir -p $(OBJ)
-	@mkdir -p $(THIRDPARTY_OBJ)
 	@mkdir -p $(BIN)
-	@mkdir -p $(TESTBIN)
 
 
 .PHONY: $(MODULES)
@@ -111,18 +92,10 @@ VGL:
 	cp $(VGL_LIB) $(BIN)
 
 
-$(TARGET): $(MODULES) $(OBJS) $(THIRDPARTY_OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(THIRDPARTY_OBJS) $(LIBS)
+$(TARGET): $(MODULES) $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 
 $(OBJ)/%.o: $(SRC)/%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
-
-
-$(THIRDPARTY_OBJ)/ply.o: $(THIRDPARTY_SRC)/ply.c
-	$(CC) $(CCFLAGS) $(INCLUDE) -c $< -o $@
-
-
-$(TESTBIN)/math3dtest: $(TESTSRC)/math3dtest.cpp $(OBJ)/math3d.o
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -I$(SRC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
