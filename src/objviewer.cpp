@@ -1,8 +1,5 @@
 #include "objviewer.h"
 
-#include "camera.h"
-#include "curve.h"
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -62,13 +59,13 @@ void OBJViewer::actionHandler(int action)
     case ACTION_TOGGLE_DRAW_POLYS: renderer->toggleDrawPolys(); break;
     case ACTION_TOGGLE_DRAW_POINTS: renderer->toggleDrawPoints(); break;
     case ACTION_TOGGLE_DRAW_LINES: renderer->toggleDrawLines(); break;
-    case ACTION_VIEW_CENTER: dynamic_cast<Camera*>(_camera)->centerView(low, high); break;
-    case ACTION_VIEW_FRONT: dynamic_cast<Camera*>(_camera)->frontView(low, high); break;
-    case ACTION_VIEW_BACK: dynamic_cast<Camera*>(_camera)->backView(low, high); break;
-    case ACTION_VIEW_LEFT: dynamic_cast<Camera*>(_camera)->leftView(low, high); break;
-    case ACTION_VIEW_RIGHT: dynamic_cast<Camera*>(_camera)->rightView(low, high); break;
-    case ACTION_VIEW_TOP: dynamic_cast<Camera*>(_camera)->topView(low, high); break;
-    case ACTION_VIEW_BOTTOM: dynamic_cast<Camera*>(_camera)->bottomView(low, high); break;
+    case ACTION_VIEW_CENTER: _camera->centerView(low, high); break;
+    case ACTION_VIEW_FRONT: _camera->frontView(low, high); break;
+    case ACTION_VIEW_BACK: _camera->backView(low, high); break;
+    case ACTION_VIEW_LEFT: _camera->leftView(low, high); break;
+    case ACTION_VIEW_RIGHT: _camera->rightView(low, high); break;
+    case ACTION_VIEW_TOP: _camera->topView(low, high); break;
+    case ACTION_VIEW_BOTTOM: _camera->bottomView(low, high); break;
     case ACTION_FLIP_NORMALS: renderer->flipNormals(); break;
     case ACTION_TOGGLE_HEADLIGHT_TYPE: renderer->toggleHeadlightType(); break;
     case ACTION_FRAME_PREVIOUS: renderer->previousFrame(); break;
@@ -377,10 +374,9 @@ int main(int argc, char **argv)
     }
   }
 
-  Camera camera;
   Renderer renderer(&resources, &model, maxTextureWidth, maxTextureHeight, animFPS);
 
-  OBJViewer app(&renderer, &camera);
+  OBJViewer app(&renderer);
   app.run();
   return 0;
 }
